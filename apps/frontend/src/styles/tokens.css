@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Real CTCJ design tokens as CSS custom properties, mirroring
+ * tailwind.config.js one-to-one. Only needed here for the handful of places
+ * a raw CSS value is more convenient than a Tailwind utility (inline SVG
+ * `fill`, the booking-grid diagonal-stripe pattern) -- everywhere else,
+ * prefer the Tailwind utility classes over reading these directly.
+ */
+:root {
+  --color-navy-500: #001a4d;
+  --color-navy-600: #001642;
+  --color-green-300: #9ee67c;
+  --color-green-600: #4c942e;
+  --color-neutral-200: #e5e6e7;
+  --color-neutral-300: #cfd1d4;
+
+  --color-text-primary: #001a4d;
+  --color-text-secondary: #5a606a;
+  --color-text-onInverse: #ffffff;
+
+  --color-booking-maintenance-border: #adb0b5;
+
+  --font-display: 'Archivo Narrow', 'Helvetica Neue Condensed', 'Arial Narrow', sans-serif;
+  --font-body: Archivo, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Back-compat aliases -- see tailwind.config.js for why these stay. */
+  --color-brand: #001a4d;
+  --color-brand-accent: #9ee67c;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+}
+
+/* RNF-A-08: motion communicates orientation, never spectacle -- respect
+   the user's OS-level reduced-motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

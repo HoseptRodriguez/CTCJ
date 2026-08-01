@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ctcj-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ctcj
+      POSTGRES_PASSWORD: ctcj_dev_password
+      POSTGRES_DB: ctcj_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - ctcj_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ctcj -d ctcj_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: ctcj-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025' # SMTP -- matches SMTP_HOST/SMTP_PORT in .env.example
+      - '8025:8025' # web UI, http://localhost:8025
+
+volumes:
+  ctcj_postgres_data:
