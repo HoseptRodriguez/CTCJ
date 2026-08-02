@@ -31,7 +31,12 @@ jobs:
           - 8025:8025
 
     env:
+      NODE_ENV: test
       DATABASE_URL: 'postgresql://ctcj:ctcj_dev_password@localhost:5432/ctcj_test?schema=public'
+      # Test-only secret (never a production credential) -- required, no
+      # default, by src/config/env.js's zod schema. .env.test provides this
+      # locally but is correctly gitignored, so CI needs its own copy.
+      JWT_ACCESS_SECRET: 'ci-test-secret-not-for-production-use-only'
 
     steps:
       - name: Checkout
