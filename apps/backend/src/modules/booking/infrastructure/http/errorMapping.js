@@ -12,6 +12,7 @@ const STATUS_BY_CODE = {
   max_concurrent_reservations_exceeded: 409,
   reservation_already_paid: 409,
   reservation_has_no_price: 409,
+  membership_overdue_booking_blocked: 403,
 };
 
 export function mapBookingError(err) {

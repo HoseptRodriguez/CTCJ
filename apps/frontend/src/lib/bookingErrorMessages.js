@@ -10,6 +10,8 @@ const BOOKING_ERROR_MESSAGES = {
   max_concurrent_reservations_exceeded: 'Ya tienes el maximo de reservas activas permitidas.',
   reservation_already_paid: 'Esta reserva ya tiene un pago registrado.',
   reservation_has_no_price: 'Esta cancha no tiene un precio configurado todavia.',
+  membership_overdue_booking_blocked:
+    'Tu cuenta tiene un estado de membresía que no permite reservar canchas por ahora. Contacta a recepción.',
 };
 
 export function describeBookingError(err) {

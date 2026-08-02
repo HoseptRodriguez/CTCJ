@@ -73,5 +73,28 @@ export function createBookingController(container) {
     res.status(201).json(result);
   });
 
-  return { listCourts, getSchedule, hold, confirm, cancel, setCourtPrice, recordPayment };
+  const getOverduePolicy = asyncHandler(async (req, res) => {
+    const result = await container.getOverdueBookingPolicy();
+    res.status(200).json(result);
+  });
+
+  const setOverduePolicy = asyncHandler(async (req, res) => {
+    const result = await container.setOverdueBookingPolicy({
+      enabled: req.body.enabled,
+      updatedByUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
+  return {
+    listCourts,
+    getSchedule,
+    hold,
+    confirm,
+    cancel,
+    setCourtPrice,
+    recordPayment,
+    getOverduePolicy,
+    setOverduePolicy,
+  };
 }

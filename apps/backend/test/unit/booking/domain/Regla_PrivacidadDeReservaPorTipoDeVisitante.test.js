@@ -75,4 +75,22 @@ describe('Regla 2: privacidad de reserva por tipo de visitante', () => {
     expect(result.holderUserId).toBe('user-1');
     expect(result.notes).toBe('private notes');
   });
+
+  it('(Phase 5) staff receives holderMembershipStatus when supplied', () => {
+    const reservation = buildReservation({ reservationType: 'PRIVATE' });
+    const result = projectForViewer(reservation, STAFF, 'OVERDUE');
+    expect(result.holderMembershipStatus).toBe('OVERDUE');
+  });
+
+  it('(Phase 5) the owner never receives holderMembershipStatus, even if supplied -- key is entirely absent, not null', () => {
+    const reservation = buildReservation({ reservationType: 'PRIVATE' });
+    const result = projectForViewer(reservation, OWNER, 'OVERDUE');
+    expect('holderMembershipStatus' in result).toBe(false);
+  });
+
+  it('(Phase 5) anonymous/institutional projections never carry holderMembershipStatus, even if supplied', () => {
+    const reservation = buildReservation({ reservationType: 'CLASS' });
+    const result = projectForViewer(reservation, ANONYMOUS, 'OVERDUE');
+    expect('holderMembershipStatus' in result).toBe(false);
+  });
 });

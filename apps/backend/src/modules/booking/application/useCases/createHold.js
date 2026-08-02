@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
 
+import { BOOKING_BLOCKED_MEMBERSHIP_STATUSES } from '@ctcj/shared';
+
 import { validateSlot, MAX_CONCURRENT_PER_PLAYER } from '../../domain/policies/bookingPolicy.js';
 import { Reservation } from '../../domain/entities/Reservation.js';
 import { CourtNotFound } from '../errors/CourtNotFound.js';
 import { MaxConcurrentReservationsExceeded } from '../errors/MaxConcurrentReservationsExceeded.js';
+import { MembershipOverdueBookingBlocked } from '../errors/MembershipOverdueBookingBlocked.js';
 
 /**
  * @param {{
@@ -11,9 +14,18 @@ import { MaxConcurrentReservationsExceeded } from '../errors/MaxConcurrentReserv
  *   courtRepository: import('../ports/CourtRepository.js').CourtRepository,
  *   clock: import('../ports/Clock.js').Clock,
  *   clubId: string,
+ *   membershipStatusProvider: import('../ports/MembershipStatusProvider.js').MembershipStatusProvider,
+ *   bookingPolicySettings: import('../ports/BookingPolicySettings.js').BookingPolicySettings,
  * }} deps
  */
-export function createCreateHold({ reservationRepository, courtRepository, clock, clubId }) {
+export function createCreateHold({
+  reservationRepository,
+  courtRepository,
+  clock,
+  clubId,
+  membershipStatusProvider,
+  bookingPolicySettings,
+}) {
   /**
    * @param {{ courtId: string, periodStart: Date, periodEnd: Date, holderUserId: string }} input
    */
@@ -30,6 +42,15 @@ export function createCreateHold({ reservationRepository, courtRepository, clock
     const concurrentCount = await reservationRepository.countOccupyingByHolder(holderUserId);
     if (concurrentCount >= MAX_CONCURRENT_PER_PLAYER) {
       throw new MaxConcurrentReservationsExceeded();
+    }
+
+    // Checked first so the cross-module membership lookup only ever runs
+    // when the club has actually opted in -- zero added cost by default.
+    if (await bookingPolicySettings.isOverdueBookingBlockEnabled()) {
+      const status = await membershipStatusProvider.getStatus(holderUserId);
+      if (BOOKING_BLOCKED_MEMBERSHIP_STATUSES.includes(status)) {
+        throw new MembershipOverdueBookingBlocked();
+      }
     }
 
     const reservation = Reservation.createHold({

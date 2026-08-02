@@ -4,6 +4,10 @@ import { PAYMENT_METHOD } from '@ctcj/shared';
 import { bookingClient } from '../../api/bookingClient.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
+import {
+  MEMBERSHIP_STATUS_DISPLAY,
+  describeMembershipStatus,
+} from '../../lib/membershipStatusLabels.js';
 import { bogotaTodayKey, DatePicker } from '../reservation/DatePicker.jsx';
 
 const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
@@ -24,6 +28,19 @@ const METHOD_LABELS = {
   [PAYMENT_METHOD.TRANSFER]: 'Transferencia',
   [PAYMENT_METHOD.CARD_IN_PERSON]: 'Tarjeta en el club',
 };
+
+function MembershipStatusBadge({ status }) {
+  const display = MEMBERSHIP_STATUS_DISPLAY[status];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${
+        display ? display.className : 'border-neutral-200 bg-neutral-100 text-secondary'
+      }`}
+    >
+      {describeMembershipStatus(status)}
+    </span>
+  );
+}
 
 function ReservationRow({ reservation, courtName, onPaid }) {
   const [method, setMethod] = useState(PAYMENT_METHOD.CASH);
@@ -47,7 +64,12 @@ function ReservationRow({ reservation, courtName, onPaid }) {
     <li className="rounded-md border border-neutral-200 bg-canvas p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-display font-semibold text-primary">{courtName}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-display font-semibold text-primary">{courtName}</p>
+            {reservation.holderMembershipStatus !== undefined ? (
+              <MembershipStatusBadge status={reservation.holderMembershipStatus} />
+            ) : null}
+          </div>
           <p className="text-sm text-secondary">
             {TIME_FORMATTER.format(new Date(reservation.periodStart))} –{' '}
             {TIME_FORMATTER.format(new Date(reservation.periodEnd))}

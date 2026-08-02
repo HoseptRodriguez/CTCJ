@@ -4,10 +4,17 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { cn } from '../../components/ui/cn.js';
 import { Section } from '../../components/ui/Section.jsx';
 
-// No ranking schema exists yet anywhere in @ctcj/shared or the backend, so
-// categories are numbered placeholders, never invented names. This section
-// must never render player names or table rows -- see Ranking.test.jsx.
-const CATEGORIES = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'];
+// No ranking schema exists yet anywhere in @ctcj/shared or the backend. These
+// four names (Segunda-Quinta -- there is no "Primera") are confirmed real per
+// the club's own docs (00-MASTER-PLAN.md, 01-DECISIONES-CRITICAS.md §2.1,
+// 04-FLUJOS.md, ADR-0004), not invented placeholders. This section must never
+// render player names or table rows -- see Ranking.test.jsx.
+const CATEGORIES = [
+  'Segunda categoría',
+  'Tercera categoría',
+  'Cuarta categoría',
+  'Quinta categoría',
+];
 const MODALITIES = [
   { value: 'singles', label: 'Singles' },
   { value: 'dobles', label: 'Dobles' },

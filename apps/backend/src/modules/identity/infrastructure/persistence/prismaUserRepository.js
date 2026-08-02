@@ -14,6 +14,9 @@ function toDomainUser(row, roleCodes) {
     lockedUntil: row.lockedUntil,
     lastLoginAt: row.lastLoginAt,
     emailVerifiedAt: row.emailVerifiedAt,
+    membershipStatus: row.membershipStatus,
+    membershipStatusUpdatedAt: row.membershipStatusUpdatedAt,
+    membershipStatusUpdatedBy: row.membershipStatusUpdatedBy,
   });
 }
 
@@ -89,6 +92,9 @@ export function createPrismaUserRepository(prisma) {
           lockedUntil: user.lockedUntil,
           lastLoginAt: user.lastLoginAt,
           emailVerifiedAt: user.emailVerifiedAt,
+          membershipStatus: user.membershipStatus,
+          membershipStatusUpdatedAt: user.membershipStatusUpdatedAt,
+          membershipStatusUpdatedBy: user.membershipStatusUpdatedBy,
         },
       });
       return toDomainUser(updated, await getActiveRoleCodes(user.id));

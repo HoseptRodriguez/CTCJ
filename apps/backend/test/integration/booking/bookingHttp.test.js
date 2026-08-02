@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { ROLE_CODES } from '@ctcj/shared';
+import { ROLE_CODES, MEMBERSHIP_STATUS } from '@ctcj/shared';
 
 import { createApp } from '../../../src/app.js';
 import { createArgon2PasswordHasher } from '../../../src/modules/identity/infrastructure/security/argon2PasswordHasher.js';
@@ -428,6 +428,135 @@ describe('Booking HTTP API (real Postgres)', () => {
         .set('Authorization', `Bearer ${playerToken}`)
         .send({ method: 'CASH' })
         .expect(403);
+    });
+  });
+
+  describe('membership overdue booking block (Phase 5)', () => {
+    afterEach(async () => {
+      // The overdue-policy toggle is a club-wide SystemSetting, not reset by
+      // resetUsers()/resetReservations() -- clear it explicitly so one test's
+      // enable/OVERDUE state never leaks into the next.
+      await prisma.systemSetting.deleteMany({ where: { key: 'booking.blockOnOverdueMembership' } });
+    });
+
+    it('full flow: policy off allows booking an OVERDUE player; enabling blocks with 403; disabling restores it', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/admin/users/${player.id}/membership-status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: MEMBERSHIP_STATUS.OVERDUE })
+        .expect(200);
+
+      // Policy defaults to off -- an OVERDUE player can still book.
+      const policyRes = await request(app)
+        .get('/api/booking/settings/overdue-policy')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(policyRes.body).toEqual({ enabled: false });
+
+      const { start, end } = futureSlot(13);
+      const firstHold = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      const confirmRes = await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: firstHold.body.reservationId })
+        .expect(200);
+      expect(confirmRes.body.status).toBe('CONFIRMED');
+
+      // Enable the policy.
+      await request(app)
+        .put('/api/booking/settings/overdue-policy')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ enabled: true })
+        .expect(200);
+
+      const blockedSlot = futureSlot(14);
+      const blockedRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start: blockedSlot.start, end: blockedSlot.end })
+        .expect(403);
+      expect(blockedRes.body.code).toBe('membership_overdue_booking_blocked');
+
+      // The reservation confirmed before the policy was enabled is unaffected.
+      const cancelRes = await request(app)
+        .post(`/api/booking/${firstHold.body.reservationId}/cancel`)
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(200);
+      expect(cancelRes.body.status).toBe('CANCELLED');
+
+      // Disable the policy -- booking succeeds again.
+      await request(app)
+        .put('/api/booking/settings/overdue-policy')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ enabled: false })
+        .expect(200);
+
+      const restoredSlot = futureSlot(15);
+      await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start: restoredSlot.start, end: restoredSlot.end })
+        .expect(201);
+    });
+
+    it('non-admin cannot read or write the overdue policy', async () => {
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const staffToken = await login(app, staff.email, staff.password);
+
+      await request(app)
+        .get('/api/booking/settings/overdue-policy')
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(403);
+      await request(app)
+        .put('/api/booking/settings/overdue-policy')
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ enabled: true })
+        .expect(403);
+    });
+
+    it('staff schedule view includes holderMembershipStatus, anonymous view does not', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/admin/users/${player.id}/membership-status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: MEMBERSHIP_STATUS.OVERDUE })
+        .expect(200);
+
+      const { start, end } = futureSlot(16);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+
+      const date = start.slice(0, 10);
+      const staffRes = await request(app)
+        .get('/api/booking/schedule')
+        .query({ date })
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+      const staffView = staffRes.body.reservations.find((r) => r.id === holdRes.body.reservationId);
+      expect(staffView.holderMembershipStatus).toBe(MEMBERSHIP_STATUS.OVERDUE);
+
+      const anonRes = await request(app).get('/api/booking/schedule').query({ date }).expect(200);
+      const anonView = anonRes.body.reservations.find((r) => r.courtId === courtId);
+      expect(anonView).toBeTruthy();
+      expect(anonView.holderMembershipStatus).toBeUndefined();
     });
   });
 });

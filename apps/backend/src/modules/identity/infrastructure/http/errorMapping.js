@@ -16,6 +16,7 @@ const STATUS_BY_CODE = {
   invalid_verification_token: 400,
   invalid_refresh_token: 401,
   user_not_found: 404,
+  membership_not_applicable: 409,
 };
 
 export function mapIdentityError(err) {

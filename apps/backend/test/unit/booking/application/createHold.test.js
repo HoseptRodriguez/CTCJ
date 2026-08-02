@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { MEMBERSHIP_STATUS } from '@ctcj/shared';
 
 import { createCreateHold } from '../../../../src/modules/booking/application/useCases/createHold.js';
 import { InvalidTimeSlot } from '../../../../src/modules/booking/domain/errors/InvalidTimeSlot.js';
 import { CourtNotFound } from '../../../../src/modules/booking/application/errors/CourtNotFound.js';
 import { MaxConcurrentReservationsExceeded } from '../../../../src/modules/booking/application/errors/MaxConcurrentReservationsExceeded.js';
 import { SlotNotAvailable } from '../../../../src/modules/booking/application/errors/SlotNotAvailable.js';
+import { MembershipOverdueBookingBlocked } from '../../../../src/modules/booking/application/errors/MembershipOverdueBookingBlocked.js';
 
 import {
   createFakeCourtRepository,
   createFakeReservationRepository,
   createFakeClock,
+  createFakeMembershipStatusProvider,
+  createFakeBookingPolicySettings,
 } from './fakes.js';
 
 const CLUB_ID = 'club-1';
@@ -35,6 +39,8 @@ function buildDeps() {
     reservationRepository: createFakeReservationRepository(),
     clock: createFakeClock(NOW),
     clubId: CLUB_ID,
+    membershipStatusProvider: createFakeMembershipStatusProvider(),
+    bookingPolicySettings: createFakeBookingPolicySettings(false), // safe/permissive default
   };
 }
 
@@ -116,5 +122,58 @@ describe('createHold', () => {
     await expect(
       createHold({ ...slot(6), courtId: COURT.id, holderUserId: 'user-2' }),
     ).resolves.toBeTruthy();
+  });
+
+  describe('overdue-membership booking policy (Phase 5)', () => {
+    it('an OVERDUE player can still book when the policy is disabled (default)', async () => {
+      deps.membershipStatusProvider = createFakeMembershipStatusProvider({
+        'user-1': MEMBERSHIP_STATUS.OVERDUE,
+      });
+      createHold = createCreateHold(deps);
+
+      await expect(
+        createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' }),
+      ).resolves.toBeTruthy();
+    });
+
+    it.each([MEMBERSHIP_STATUS.OVERDUE, MEMBERSHIP_STATUS.INACTIVE, MEMBERSHIP_STATUS.SUSPENDED])(
+      'blocks a %s player when the policy is enabled',
+      async (status) => {
+        deps.membershipStatusProvider = createFakeMembershipStatusProvider({ 'user-1': status });
+        deps.bookingPolicySettings = createFakeBookingPolicySettings(true);
+        createHold = createCreateHold(deps);
+
+        await expect(
+          createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' }),
+        ).rejects.toThrow(MembershipOverdueBookingBlocked);
+      },
+    );
+
+    it.each([MEMBERSHIP_STATUS.ACTIVE, MEMBERSHIP_STATUS.PENDING, null])(
+      'still allows a %s player when the policy is enabled',
+      async (status) => {
+        deps.membershipStatusProvider = createFakeMembershipStatusProvider({ 'user-1': status });
+        deps.bookingPolicySettings = createFakeBookingPolicySettings(true);
+        createHold = createCreateHold(deps);
+
+        await expect(
+          createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' }),
+        ).resolves.toBeTruthy();
+      },
+    );
+
+    it('never calls the membership status provider when the policy is disabled', async () => {
+      let called = false;
+      deps.membershipStatusProvider = {
+        async getStatus() {
+          called = true;
+          return MEMBERSHIP_STATUS.OVERDUE;
+        },
+      };
+      createHold = createCreateHold(deps);
+
+      await createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' });
+      expect(called).toBe(false);
+    });
   });
 });

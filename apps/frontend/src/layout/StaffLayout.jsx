@@ -26,6 +26,12 @@ export function StaffLayout() {
               >
                 Pagos
               </Link>
+              <Link
+                to="/staff/membresias"
+                className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+              >
+                Membresías
+              </Link>
               {isAdmin ? (
                 <Link
                   to="/staff/precios"

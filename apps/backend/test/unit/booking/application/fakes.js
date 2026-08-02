@@ -134,6 +134,27 @@ export function createFakePaymentRepository(reservationsById) {
   };
 }
 
+/** @param {Record<string, string|null>} statusByUserId */
+export function createFakeMembershipStatusProvider(statusByUserId = {}) {
+  return {
+    async getStatus(userId) {
+      return statusByUserId[userId] ?? null;
+    },
+  };
+}
+
+export function createFakeBookingPolicySettings(enabled = false) {
+  let current = enabled;
+  return {
+    async isOverdueBookingBlockEnabled() {
+      return current;
+    },
+    async setOverdueBookingBlockEnabled(next) {
+      current = next;
+    },
+  };
+}
+
 export function createFakeClock(initial) {
   let current = initial;
   return {

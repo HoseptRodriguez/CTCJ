@@ -5,6 +5,7 @@ import {
   scheduleQuerySchema,
   setCourtPriceSchema,
   recordPaymentSchema,
+  overduePolicySchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -37,6 +38,20 @@ export function createBookingRoutes(controller) {
     requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
     validateBody(recordPaymentSchema),
     controller.recordPayment,
+  );
+
+  router.get(
+    '/settings/overdue-policy',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    controller.getOverduePolicy,
+  );
+  router.put(
+    '/settings/overdue-policy',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(overduePolicySchema),
+    controller.setOverduePolicy,
   );
 
   return router;

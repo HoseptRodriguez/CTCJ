@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import { ROLE_DEFINITIONS } from '@ctcj/shared';
+import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 
 import { bookingClient } from '../api/bookingClient.js';
+import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import {
+  MEMBERSHIP_STATUS_DISPLAY,
+  describeMembershipStatus,
+} from '../lib/membershipStatusLabels.js';
 
 import { bogotaTodayKey } from './reservation/DatePicker.jsx';
 
@@ -48,6 +53,7 @@ export function MyCtcjPage() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState(null);
   const [error, setError] = useState(null);
+  const [membershipStatus, setMembershipStatus] = useState(undefined);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -73,9 +79,28 @@ export function MyCtcjPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    membershipClient
+      .getMyStatus()
+      .then((data) => {
+        if (!cancelled) setMembershipStatus(data.status);
+      })
+      .catch(() => {
+        // Own-status display is a courtesy, not load-bearing -- fail silent
+        // rather than blocking the rest of the panel on it.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const roleNames = (user?.roles ?? []).map(
     (code) => ROLE_DEFINITIONS.find((role) => role.code === code)?.name ?? code,
   );
+  const isJugador = (user?.roles ?? []).includes(ROLE_CODES.JUGADOR);
+  const membershipDisplay = MEMBERSHIP_STATUS_DISPLAY[membershipStatus];
 
   return (
     <Section
@@ -85,6 +110,21 @@ export function MyCtcjPage() {
         lede: roleNames.length > 0 ? `Cuenta con rol: ${roleNames.join(', ')}` : undefined,
       }}
     >
+      {isJugador && membershipStatus !== undefined ? (
+        <p className="mt-4 text-sm text-secondary">
+          Estado de membresía:{' '}
+          <span
+            className={`ml-1 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+              membershipDisplay
+                ? membershipDisplay.className
+                : 'border-neutral-200 bg-neutral-100 text-secondary'
+            }`}
+          >
+            {describeMembershipStatus(membershipStatus)}
+          </span>
+        </p>
+      ) : null}
+
       <div className="mt-10 grid gap-8 lg:grid-cols-[2fr_1fr]">
         <div>
           <h3 className="font-display text-lg font-semibold text-primary">Tus próximas reservas</h3>

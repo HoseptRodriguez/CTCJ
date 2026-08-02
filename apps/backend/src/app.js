@@ -14,9 +14,15 @@ import { createAuthController } from './modules/identity/infrastructure/http/aut
 import { createAuthRoutes } from './modules/identity/infrastructure/http/authRoutes.js';
 import { createRoleAdminController } from './modules/identity/infrastructure/http/roleAdminController.js';
 import { createRoleAdminRoutes } from './modules/identity/infrastructure/http/adminRoutes.js';
+import { createUserAdminController } from './modules/identity/infrastructure/http/userAdminController.js';
+import { createUserAdminRoutes } from './modules/identity/infrastructure/http/userAdminRoutes.js';
+import { createMeController } from './modules/identity/infrastructure/http/meController.js';
+import { createMeRoutes } from './modules/identity/infrastructure/http/meRoutes.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
 import { createBookingController } from './modules/booking/infrastructure/http/bookingController.js';
 import { createBookingRoutes } from './modules/booking/infrastructure/http/bookingRoutes.js';
+import { createIdentityMembershipStatusProvider } from './modules/booking/infrastructure/adapters/membershipStatusProviderAdapter.js';
+import { createIdentitySystemSettingBookingPolicy } from './modules/booking/infrastructure/adapters/bookingPolicySettingsAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -40,11 +46,28 @@ export function createApp() {
   const identityContainer = buildIdentityContainer();
   const authController = createAuthController(identityContainer);
   const roleAdminController = createRoleAdminController(identityContainer);
+  const userAdminController = createUserAdminController(identityContainer);
+  const meController = createMeController(identityContainer);
 
   app.use('/api/auth', createAuthRoutes(authController));
   app.use('/api/admin/roles', createRoleAdminRoutes(roleAdminController));
+  app.use('/api/admin/users', createUserAdminRoutes(userAdminController));
+  app.use('/api/identity/me', createMeRoutes(meController));
 
-  const bookingContainer = buildBookingContainer();
+  // Cross-module wiring (Phase 5): booking owns narrow, single-purpose ports;
+  // these adapters are the only bridge to identity, and app.js is the only
+  // place allowed to connect them -- see .dependency-cruiser.js.
+  const membershipStatusProvider = createIdentityMembershipStatusProvider({
+    getMembershipStatus: identityContainer.getMembershipStatus,
+  });
+  const bookingPolicySettings = createIdentitySystemSettingBookingPolicy({
+    getSystemSetting: identityContainer.getSystemSetting,
+    setSystemSetting: identityContainer.setSystemSetting,
+  });
+  const bookingContainer = buildBookingContainer({
+    membershipStatusProvider,
+    bookingPolicySettings,
+  });
   const bookingController = createBookingController(bookingContainer);
   app.use('/api/booking', createBookingRoutes(bookingController));
 

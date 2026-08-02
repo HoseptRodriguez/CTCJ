@@ -70,6 +70,16 @@ model User {
   updatedAt         DateTime  @updatedAt @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
 
+  // Membership/payment status (Phase 5) -- deliberately independent of
+  // `status` above (account-verification lifecycle) and of role grants.
+  // Null means "no membership plan" (not yet enrolled as JUGADOR, or a
+  // non-player account) -- see User.setMembershipStatus()'s JUGADOR-only
+  // invariant. No FK on membershipStatusUpdatedBy, matching
+  // SystemSetting.updatedBy's existing precedent for an audit-only field.
+  membershipStatus          String?   @map("membership_status") @db.VarChar(20)
+  membershipStatusUpdatedAt DateTime? @map("membership_status_updated_at")
+  membershipStatusUpdatedBy String?   @map("membership_status_updated_by") @db.Uuid
+
   userRolesGranted    UserRole[]          @relation("GrantedBy")
   userRolesRevoked    UserRole[]          @relation("RevokedBy")
   userRoles           UserRole[]          @relation("UserRoleOwner")

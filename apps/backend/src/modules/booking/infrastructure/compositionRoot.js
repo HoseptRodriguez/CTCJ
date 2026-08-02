@@ -8,16 +8,32 @@ import { createConfirmReservation } from '../application/useCases/confirmReserva
 import { createCancelReservation } from '../application/useCases/cancelReservation.js';
 import { createSetCourtPrice } from '../application/useCases/setCourtPrice.js';
 import { createRecordPayment } from '../application/useCases/recordPayment.js';
+import { createGetOverdueBookingPolicy } from '../application/useCases/getOverdueBookingPolicy.js';
+import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
 import { createPrismaReservationRepository } from './persistence/prismaReservationRepository.js';
 import { createPrismaCourtRepository } from './persistence/prismaCourtRepository.js';
 import { createPrismaPaymentRepository } from './persistence/prismaPaymentRepository.js';
+import {
+  createNullMembershipStatusProvider,
+  createStaticBookingPolicySettings,
+} from './adapters/nullAdapters.js';
 
 /**
  * Wires concrete infrastructure adapters to application use cases. Mirrors
  * identity's compositionRoot.js exactly for consistency.
+ *
+ * `membershipStatusProvider`/`bookingPolicySettings` are optional, cross-
+ * module dependencies (Phase 5) -- app.js supplies the real ones, wired to
+ * identity's application layer. Left unset (e.g. in a standalone/test call),
+ * they default to null-object adapters that never block a booking, matching
+ * the policy's own documented safe/permissive default.
  */
-export function buildBookingContainer({ prismaClient = prisma } = {}) {
+export function buildBookingContainer({
+  prismaClient = prisma,
+  membershipStatusProvider = createNullMembershipStatusProvider(),
+  bookingPolicySettings = createStaticBookingPolicySettings(false),
+} = {}) {
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
   const paymentRepository = createPrismaPaymentRepository(prismaClient);
@@ -29,12 +45,15 @@ export function buildBookingContainer({ prismaClient = prisma } = {}) {
       reservationRepository,
       courtRepository,
       clubId: DEFAULT_CLUB_ID,
+      membershipStatusProvider,
     }),
     createHold: createCreateHold({
       reservationRepository,
       courtRepository,
       clock,
       clubId: DEFAULT_CLUB_ID,
+      membershipStatusProvider,
+      bookingPolicySettings,
     }),
     confirmReservation: createConfirmReservation({ reservationRepository, clock }),
     cancelReservation: createCancelReservation({ reservationRepository, clock }),
@@ -45,5 +64,7 @@ export function buildBookingContainer({ prismaClient = prisma } = {}) {
       clock,
       clubId: DEFAULT_CLUB_ID,
     }),
+    getOverdueBookingPolicy: createGetOverdueBookingPolicy({ bookingPolicySettings }),
+    setOverdueBookingPolicy: createSetOverdueBookingPolicy({ bookingPolicySettings }),
   };
 }

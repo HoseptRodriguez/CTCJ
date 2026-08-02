@@ -2,6 +2,7 @@ import { ROLE_CODES } from '@ctcj/shared';
 
 import { SelfAssignmentForbidden } from '../errors/SelfAssignmentForbidden.js';
 import { EmailNotVerified } from '../errors/EmailNotVerified.js';
+import { MembershipNotApplicable } from '../errors/MembershipNotApplicable.js';
 import { shouldLock, computeLockedUntil } from '../policies/lockoutPolicy.js';
 
 import { Role } from './Role.js';
@@ -32,6 +33,9 @@ export class User {
     lockedUntil = null,
     lastLoginAt = null,
     emailVerifiedAt = null,
+    membershipStatus = null,
+    membershipStatusUpdatedAt = null,
+    membershipStatusUpdatedBy = null,
   }) {
     this.id = id;
     this.clubId = clubId;
@@ -45,6 +49,9 @@ export class User {
     this.lockedUntil = lockedUntil;
     this.lastLoginAt = lastLoginAt;
     this.emailVerifiedAt = emailVerifiedAt;
+    this.membershipStatus = membershipStatus;
+    this.membershipStatusUpdatedAt = membershipStatusUpdatedAt;
+    this.membershipStatusUpdatedBy = membershipStatusUpdatedBy;
   }
 
   static normalizeEmail(email) {
@@ -118,5 +125,22 @@ export class User {
     this.failedLoginCount = 0;
     this.lockedUntil = null;
     this.lastLoginAt = now;
+  }
+
+  /**
+   * Membership status is deliberately independent of `status` (account
+   * verification lifecycle) and of role grants -- see constants/membership.js.
+   * Only ever applies to academy players: throws MembershipNotApplicable for
+   * anyone lacking JUGADOR, so an ADMINISTRADOR-only or plain USUARIO account
+   * can never end up with a meaningless membership state. `status = null`
+   * clears it (e.g. a JUGADOR who was never actually enrolled in a plan).
+   */
+  setMembershipStatus(status, updatedByUserId, now) {
+    if (status != null && !this.hasRole(ROLE_CODES.JUGADOR)) {
+      throw new MembershipNotApplicable();
+    }
+    this.membershipStatus = status;
+    this.membershipStatusUpdatedAt = now;
+    this.membershipStatusUpdatedBy = updatedByUserId;
   }
 }

@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { MEMBERSHIP_STATUS } from '@ctcj/shared';
 
 import { createGetSchedule } from '../../../../src/modules/booking/application/useCases/getSchedule.js';
 import { Reservation } from '../../../../src/modules/booking/domain/entities/Reservation.js';
 
-import { createFakeCourtRepository, createFakeReservationRepository } from './fakes.js';
+import {
+  createFakeCourtRepository,
+  createFakeReservationRepository,
+  createFakeMembershipStatusProvider,
+} from './fakes.js';
 
 const CLUB_ID = 'club-1';
 const COURT = {
@@ -20,6 +25,9 @@ function buildDeps() {
     courtRepository: createFakeCourtRepository([COURT]),
     reservationRepository: createFakeReservationRepository(),
     clubId: CLUB_ID,
+    membershipStatusProvider: createFakeMembershipStatusProvider({
+      'user-1': MEMBERSHIP_STATUS.OVERDUE,
+    }),
   };
 }
 
@@ -103,5 +111,58 @@ describe('getSchedule', () => {
       viewer: { userId: 'user-1', isStaff: false },
     });
     expect(result.reservations[0].holderUserId).toBe('user-1');
+    expect('holderMembershipStatus' in result.reservations[0]).toBe(false);
+  });
+
+  describe('holderMembershipStatus (Phase 5, staff-only)', () => {
+    it('staff viewers see the membership status of each reservation holder', async () => {
+      await seedReservation(deps.reservationRepository, {
+        id: 'res-private',
+        periodStart: new Date('2026-08-10T15:00:00Z'),
+        periodEnd: new Date('2026-08-10T16:00:00Z'),
+        holderUserId: 'user-1',
+      });
+
+      const result = await getSchedule({
+        date: '2026-08-10',
+        viewer: { userId: 'staff-1', isStaff: true },
+      });
+      expect(result.reservations[0].holderMembershipStatus).toBe(MEMBERSHIP_STATUS.OVERDUE);
+    });
+
+    it('non-staff viewers (including the owner) never receive the field, even when present', async () => {
+      await seedReservation(deps.reservationRepository, {
+        id: 'res-private',
+        periodStart: new Date('2026-08-10T15:00:00Z'),
+        periodEnd: new Date('2026-08-10T16:00:00Z'),
+        holderUserId: 'user-1',
+      });
+
+      const result = await getSchedule({
+        date: '2026-08-10',
+        viewer: { userId: null, isStaff: false },
+      });
+      expect('holderMembershipStatus' in result.reservations[0]).toBe(false);
+    });
+
+    it('never calls the membership status provider for a non-staff viewer', async () => {
+      let called = false;
+      deps.membershipStatusProvider = {
+        async getStatus() {
+          called = true;
+          return MEMBERSHIP_STATUS.OVERDUE;
+        },
+      };
+      getSchedule = createGetSchedule(deps);
+      await seedReservation(deps.reservationRepository, {
+        id: 'res-private',
+        periodStart: new Date('2026-08-10T15:00:00Z'),
+        periodEnd: new Date('2026-08-10T16:00:00Z'),
+        holderUserId: 'user-1',
+      });
+
+      await getSchedule({ date: '2026-08-10', viewer: { userId: null, isStaff: false } });
+      expect(called).toBe(false);
+    });
   });
 });

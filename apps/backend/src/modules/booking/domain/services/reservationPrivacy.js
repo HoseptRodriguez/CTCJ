@@ -17,8 +17,12 @@ const TYPE_LABELS = {
  * CONFIRMED) -- callers filter for that at the repository query level.
  *
  * @param {{ userId: string|null, isStaff: boolean }} viewer
+ * @param {string|null} holderMembershipStatus -- staff-only field (Phase 5).
+ *   The owner sees their own status via GET /api/identity/me/membership-status
+ *   instead, never through this projection -- stays pure/no-I/O, so the
+ *   caller (getSchedule.js) supplies it.
  */
-export function projectForViewer(reservation, viewer) {
+export function projectForViewer(reservation, viewer, holderMembershipStatus = null) {
   const isOwner = viewer.userId != null && reservation.holderUserId === viewer.userId;
 
   if (viewer.isStaff || isOwner) {
@@ -33,6 +37,10 @@ export function projectForViewer(reservation, viewer) {
       notes: reservation.notes,
       priceCop: reservation.priceCop,
       paymentId: reservation.paymentId,
+      // Staff-only key -- omitted entirely (not even `null`) for the owner's
+      // own view, so the frontend contract stays unambiguous: presence of
+      // this key means "you're staff", not "this player has no status".
+      ...(viewer.isStaff ? { holderMembershipStatus } : {}),
     };
   }
 

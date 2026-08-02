@@ -26,7 +26,7 @@ describe('Ranking section', () => {
     render(<Ranking />);
 
     await user.click(screen.getByRole('tab', { name: 'Dobles' }));
-    await user.click(screen.getByRole('button', { name: 'Categoría 3' }));
+    await user.click(screen.getByRole('button', { name: 'Cuarta categoría' }));
 
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('row')).toHaveLength(0);

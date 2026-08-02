@@ -185,6 +185,23 @@ export function createFakeEmailSender() {
   };
 }
 
+export function createFakeSystemSettingRepository() {
+  const byKey = new Map(); // `${clubId}:${key}` -> { value, updatedAt, updatedBy }
+
+  return {
+    async findByKey(clubId, key) {
+      return byKey.get(`${clubId}:${key}`) ?? null;
+    },
+    async set(clubId, key, value, updatedByUserId) {
+      byKey.set(`${clubId}:${key}`, {
+        value,
+        updatedAt: new Date(),
+        updatedBy: updatedByUserId ?? null,
+      });
+    },
+  };
+}
+
 export function createFakeClock(initial) {
   let current = initial;
   return {
