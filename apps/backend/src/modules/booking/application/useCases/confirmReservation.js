@@ -11,9 +11,9 @@ import { HoldExpired } from '../../domain/errors/HoldExpired.js';
  */
 export function createConfirmReservation({ reservationRepository, clock }) {
   /**
-   * @param {{ reservationId: string, paymentId: string, userId: string, isStaff: boolean }} input
+   * @param {{ reservationId: string, userId: string, isStaff: boolean }} input
    */
-  return async function confirmReservation({ reservationId, paymentId, userId, isStaff }) {
+  return async function confirmReservation({ reservationId, userId, isStaff }) {
     const now = clock.now();
 
     const reservation = await reservationRepository.findById(reservationId);
@@ -22,13 +22,12 @@ export function createConfirmReservation({ reservationRepository, clock }) {
     }
 
     reservation.ensureOwnedBy(userId, isStaff);
-    reservation.confirm(paymentId, now); // in-memory guard: throws InvalidReservationState/HoldExpired
+    reservation.confirm(now); // in-memory guard: throws InvalidReservationState/HoldExpired
 
     const affected = await reservationRepository.transitionStatus({
       id: reservationId,
       fromStatuses: [RESERVATION_STATUS.HOLD],
       toStatus: RESERVATION_STATUS.CONFIRMED,
-      extra: { paymentId },
     });
     if (affected === 0) {
       // The row changed underneath us between the read and this write (most

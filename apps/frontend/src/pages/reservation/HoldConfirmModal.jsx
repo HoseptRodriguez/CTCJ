@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
+import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 
@@ -53,10 +54,7 @@ export function HoldConfirmModal({ slot, onClose, onConfirmed }) {
   async function handleConfirm() {
     setPhase('confirming');
     try {
-      await bookingClient.confirm({
-        reservationId: hold.reservationId,
-        paymentId: crypto.randomUUID(),
-      });
+      await bookingClient.confirm({ reservationId: hold.reservationId });
       onConfirmed();
     } catch (err) {
       setError(describeBookingError(err));
@@ -90,6 +88,9 @@ export function HoldConfirmModal({ slot, onClose, onConfirmed }) {
               Tu horario quedó retenido por unos minutos. El pago se realiza en recepción del club,
               no en línea -- confirma aquí para asegurar tu cancha y paga al llegar.
             </p>
+            <div className="mt-3">
+              <Badge>Pago en línea: próximamente</Badge>
+            </div>
             <div className="mt-6 flex gap-3">
               <Button variant="primary" onClick={handleConfirm} disabled={phase === 'confirming'}>
                 {phase === 'confirming' ? 'Confirmando...' : 'Confirmar reserva'}

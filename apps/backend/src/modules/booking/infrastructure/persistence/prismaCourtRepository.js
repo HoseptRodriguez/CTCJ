@@ -28,5 +28,15 @@ export function createPrismaCourtRepository(prisma) {
       });
       return row ? toCourtSummary(row) : null;
     },
+
+    async setPrice(clubId, courtId, priceCop) {
+      const result = await prisma.court.updateMany({
+        where: { id: courtId, clubId, isActive: true },
+        data: { defaultPriceCop: BigInt(priceCop) },
+      });
+      if (result.count === 0) return null;
+      const row = await prisma.court.findUnique({ where: { id: courtId } });
+      return toCourtSummary(row);
+    },
   };
 }

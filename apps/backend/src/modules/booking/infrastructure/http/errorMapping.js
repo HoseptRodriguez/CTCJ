@@ -10,6 +10,8 @@ const STATUS_BY_CODE = {
   court_not_found: 404,
   slot_not_available: 409,
   max_concurrent_reservations_exceeded: 409,
+  reservation_already_paid: 409,
+  reservation_has_no_price: 409,
 };
 
 export function mapBookingError(err) {

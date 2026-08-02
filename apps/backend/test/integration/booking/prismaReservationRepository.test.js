@@ -103,19 +103,21 @@ describe('prismaReservationRepository (real Postgres)', () => {
 
   it('transitionStatus() succeeds only when the row is currently in fromStatuses', async () => {
     const created = await repo.createHold(buildHold());
-    const paymentId = randomUUID(); // payment_id is a UUID column (no FK yet -- no billing module)
 
+    // `extra` merges arbitrary columns into the conditional update -- notes
+    // stands in for that here (payment_id is a real FK as of Phase 4, no
+    // longer a free-form value this generic mechanism can exercise safely).
     const affected = await repo.transitionStatus({
       id: created.id,
       fromStatuses: ['HOLD'],
       toStatus: 'CONFIRMED',
-      extra: { paymentId },
+      extra: { notes: 'confirmed in test' },
     });
     expect(affected).toBe(1);
 
     const found = await repo.findById(created.id);
     expect(found.status).toBe('CONFIRMED');
-    expect(found.paymentId).toBe(paymentId);
+    expect(found.notes).toBe('confirmed in test');
 
     // Second attempt from the same (now-stale) fromStatuses list must no-op.
     const secondAttempt = await repo.transitionStatus({

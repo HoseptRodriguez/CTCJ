@@ -3,6 +3,8 @@ import { RESERVATION_STATUS, RESERVATION_TYPE, OCCUPYING_STATUSES } from '@ctcj/
 import { InvalidReservationState } from '../errors/InvalidReservationState.js';
 import { HoldExpired } from '../errors/HoldExpired.js';
 import { ReservationNotOwned } from '../errors/ReservationNotOwned.js';
+import { ReservationAlreadyPaid } from '../errors/ReservationAlreadyPaid.js';
+import { ReservationHasNoPrice } from '../errors/ReservationHasNoPrice.js';
 import { HOLD_DURATION_MINUTES } from '../policies/bookingPolicy.js';
 import { isWithoutPenalty, PENALTY_FREE_WINDOW_HOURS } from '../policies/cancellationPolicy.js';
 
@@ -99,8 +101,13 @@ export class Reservation {
    * Only legal from HOLD. Independently re-checks expiry as defense-in-depth
    * -- the scheduled expireHoldsJob is the primary release mechanism, not
    * this check (see infrastructure/jobs/expireHoldsJob.js).
+   *
+   * No payment involved here (Phase 4) -- confirming secures the court the
+   * moment a player books it, matching real club behavior (reserve now, pay
+   * when you arrive). Whether it's paid is a fully separate fact, asserted
+   * by assertPayable() below.
    */
-  confirm(paymentId, now) {
+  confirm(now) {
     if (this.status !== RESERVATION_STATUS.HOLD) {
       throw new InvalidReservationState(this.status, 'confirm');
     }
@@ -108,7 +115,23 @@ export class Reservation {
       throw new HoldExpired();
     }
     this.status = RESERVATION_STATUS.CONFIRMED;
-    this.paymentId = paymentId;
+  }
+
+  /**
+   * In-memory guard for recordPayment (see application/useCases/recordPayment.js).
+   * The repository's conditional update is the authoritative race guard;
+   * this just fails fast and with a specific error before any DB call.
+   */
+  assertPayable() {
+    if (this.status !== RESERVATION_STATUS.CONFIRMED) {
+      throw new InvalidReservationState(this.status, 'recordPayment');
+    }
+    if (this.priceCop == null) {
+      throw new ReservationHasNoPrice();
+    }
+    if (this.paymentId != null) {
+      throw new ReservationAlreadyPaid();
+    }
   }
 
   /**

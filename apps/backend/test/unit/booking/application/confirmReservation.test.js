@@ -49,7 +49,6 @@ describe('confirmReservation', () => {
 
     const result = await confirmReservation({
       reservationId: 'res-1',
-      paymentId: 'payment-1',
       userId: 'user-1',
       isStaff: false,
     });
@@ -57,15 +56,13 @@ describe('confirmReservation', () => {
     expect(result).toEqual({ reservationId: 'res-1', status: 'CONFIRMED' });
     const stored = await deps.reservationRepository.findById('res-1');
     expect(stored.status).toBe('CONFIRMED');
-    expect(stored.paymentId).toBe('payment-1');
   });
 
-  it('allows staff to confirm on behalf of the holder (e.g. cash payment at reception)', async () => {
+  it('allows staff to confirm on behalf of the holder', async () => {
     await seedHold(deps.reservationRepository);
     await expect(
       confirmReservation({
         reservationId: 'res-1',
-        paymentId: 'cash-1',
         userId: 'staff-1',
         isStaff: true,
       }),
@@ -76,7 +73,6 @@ describe('confirmReservation', () => {
     await expect(
       confirmReservation({
         reservationId: 'does-not-exist',
-        paymentId: 'p1',
         userId: 'user-1',
         isStaff: false,
       }),
@@ -88,7 +84,6 @@ describe('confirmReservation', () => {
     await expect(
       confirmReservation({
         reservationId: 'res-1',
-        paymentId: 'p1',
         userId: 'user-2',
         isStaff: false,
       }),
@@ -102,7 +97,6 @@ describe('confirmReservation', () => {
     await expect(
       confirmReservation({
         reservationId: 'res-1',
-        paymentId: 'p1',
         userId: 'user-1',
         isStaff: false,
       }),
@@ -113,7 +107,6 @@ describe('confirmReservation', () => {
     await seedHold(deps.reservationRepository);
     await confirmReservation({
       reservationId: 'res-1',
-      paymentId: 'p1',
       userId: 'user-1',
       isStaff: false,
     });
@@ -121,7 +114,6 @@ describe('confirmReservation', () => {
     await expect(
       confirmReservation({
         reservationId: 'res-1',
-        paymentId: 'p2',
         userId: 'user-1',
         isStaff: false,
       }),

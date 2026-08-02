@@ -40,7 +40,6 @@ export function createBookingController(container) {
   const confirm = asyncHandler(async (req, res) => {
     const result = await container.confirmReservation({
       reservationId: req.body.reservationId,
-      paymentId: req.body.paymentId,
       userId: req.user.id,
       isStaff: isStaff(req.user.roles),
     });
@@ -56,5 +55,23 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
-  return { listCourts, getSchedule, hold, confirm, cancel };
+  const setCourtPrice = asyncHandler(async (req, res) => {
+    const result = await container.setCourtPrice({
+      courtId: req.params.id,
+      priceCop: req.body.priceCop,
+    });
+    res.status(200).json(result);
+  });
+
+  const recordPayment = asyncHandler(async (req, res) => {
+    const result = await container.recordPayment({
+      reservationId: req.params.id,
+      method: req.body.method,
+      notes: req.body.notes,
+      recordedBy: req.user.id,
+    });
+    res.status(201).json(result);
+  });
+
+  return { listCourts, getSchedule, hold, confirm, cancel, setCourtPrice, recordPayment };
 }

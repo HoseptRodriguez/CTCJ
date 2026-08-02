@@ -62,9 +62,9 @@ describe('bookingClient', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('confirm() calls POST /api/booking/confirm with reservationId + paymentId', async () => {
+  it('confirm() calls POST /api/booking/confirm with only reservationId (no paymentId, Phase 4)', async () => {
     mockFetchOnce({ status: 'CONFIRMED' });
-    const payload = { reservationId: VALID_HOLD.courtId, paymentId: VALID_HOLD.courtId };
+    const payload = { reservationId: VALID_HOLD.courtId };
     await bookingClient.confirm(payload);
     const [url, options] = globalThis.fetch.mock.calls[0];
     expect(String(url)).toContain('/api/booking/confirm');
@@ -77,5 +77,35 @@ describe('bookingClient', () => {
     const [url, options] = globalThis.fetch.mock.calls[0];
     expect(String(url)).toContain('/api/booking/res-123/cancel');
     expect(options.method).toBe('POST');
+  });
+
+  it('setCourtPrice() calls PUT /api/booking/courts/:id/price', async () => {
+    mockFetchOnce({ courtId: 'court-1', priceCop: 60000 });
+    await bookingClient.setCourtPrice('court-1', 60000);
+    const [url, options] = globalThis.fetch.mock.calls[0];
+    expect(String(url)).toContain('/api/booking/courts/court-1/price');
+    expect(options.method).toBe('PUT');
+    expect(JSON.parse(options.body)).toEqual({ priceCop: 60000 });
+  });
+
+  it('setCourtPrice() throws before fetch on a non-positive price', () => {
+    globalThis.fetch = vi.fn();
+    expect(() => bookingClient.setCourtPrice('court-1', -5)).toThrow();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('recordPayment() calls POST /api/booking/:id/payment', async () => {
+    mockFetchOnce({ paymentId: 'payment-1', amountCop: 60000, method: 'CASH' });
+    await bookingClient.recordPayment('res-123', { method: 'CASH' });
+    const [url, options] = globalThis.fetch.mock.calls[0];
+    expect(String(url)).toContain('/api/booking/res-123/payment');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual({ method: 'CASH' });
+  });
+
+  it('recordPayment() throws before fetch on an invalid method', () => {
+    globalThis.fetch = vi.fn();
+    expect(() => bookingClient.recordPayment('res-123', { method: 'BITCOIN' })).toThrow();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

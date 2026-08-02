@@ -12,4 +12,9 @@ export class CourtRepository {
   async findActiveById(_clubId, _courtId) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<CourtSummary|null>} null if no active court matches. */
+  async setPrice(_clubId, _courtId, _priceCop) {
+    throw new Error('Not implemented');
+  }
 }

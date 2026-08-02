@@ -1,3 +1,4 @@
+import { ROLE_CODES } from '@ctcj/shared';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -6,6 +7,8 @@ import { Container } from '../components/ui/Container.jsx';
 import { MenuIcon } from '../components/icons/MenuIcon.jsx';
 import { CloseIcon } from '../components/icons/CloseIcon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+
+const STAFF_ROLES = [ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION];
 
 import { MobileMenu } from './MobileMenu.jsx';
 
@@ -19,9 +22,10 @@ export const NAV_LINKS = [
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { status, logout } = useAuth();
+  const { status, user, logout } = useAuth();
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isStaff = user?.roles?.some((role) => STAFF_ROLES.includes(role));
 
   return (
     <header className="sticky top-0 z-header border-b border-neutral-200 bg-canvas/95 backdrop-blur">
@@ -55,6 +59,11 @@ export function Header() {
         <div className="hidden items-center gap-3 lg:flex">
           {status === 'authenticated' ? (
             <>
+              {isStaff ? (
+                <Button to="/staff/pagos" variant="ghost">
+                  Staff
+                </Button>
+              ) : null}
               <Button to="/mi-ctcj" variant="ghost">
                 Mi CTCJ
               </Button>

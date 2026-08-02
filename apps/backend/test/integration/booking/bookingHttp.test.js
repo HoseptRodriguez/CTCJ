@@ -92,11 +92,10 @@ describe('Booking HTTP API (real Postgres)', () => {
     expect(holdRes.body.reservationId).toBeTruthy();
     expect(holdRes.body.holdExpiresAt).toBeTruthy();
 
-    const paymentId = randomUUID();
     const confirmRes = await request(app)
       .post('/api/booking/confirm')
       .set('Authorization', `Bearer ${token}`)
-      .send({ reservationId: holdRes.body.reservationId, paymentId })
+      .send({ reservationId: holdRes.body.reservationId })
       .expect(200);
     expect(confirmRes.body.status).toBe('CONFIRMED');
 
@@ -224,5 +223,211 @@ describe('Booking HTTP API (real Postgres)', () => {
       .send({ courtId, start: start.toISOString(), end: end.toISOString() })
       .expect(400);
     expect(res.body.code).toBe('invalid_time_slot');
+  });
+
+  describe('cobro asistido (Phase 4)', () => {
+    afterEach(async () => {
+      // Courts are seed data, not reset by resetReservations() -- clear the
+      // price explicitly so one test's PUT never leaks into the next.
+      await prisma.court.update({ where: { id: courtId }, data: { defaultPriceCop: null } });
+    });
+
+    it('PUT /courts/:id/price: ADMINISTRADOR can set it, RECEPCION cannot', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+
+      const res = await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+      expect(res.body).toEqual({ courtId, priceCop: 60000 });
+
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ priceCop: 70000 })
+        .expect(403);
+    });
+
+    it('full flow: price -> hold -> confirm (no paymentId) -> pay -> schedule shows paymentId to staff', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+
+      const { start, end } = futureSlot(8);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      expect(holdRes.body.priceCop).toBe(60000); // BigInt survives res.json()
+
+      await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+
+      const payRes = await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'CASH' })
+        .expect(201);
+      expect(payRes.body).toMatchObject({
+        reservationId: holdRes.body.reservationId,
+        amountCop: 60000,
+        method: 'CASH',
+      });
+      expect(payRes.body.paymentId).toBeTruthy();
+
+      const date = start.slice(0, 10);
+      const scheduleRes = await request(app)
+        .get('/api/booking/schedule')
+        .query({ date })
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+      const projected = scheduleRes.body.reservations.find(
+        (r) => r.id === holdRes.body.reservationId,
+      );
+      expect(projected.paymentId).toBe(payRes.body.paymentId);
+    });
+
+    it('rejects a second payment on an already-paid reservation with 409', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+
+      const { start, end } = futureSlot(9);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+
+      await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'CASH' })
+        .expect(201);
+
+      const res = await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'TRANSFER' })
+        .expect(409);
+      expect(res.body.code).toBe('reservation_already_paid');
+    });
+
+    it('rejects payment on a HOLD reservation (not yet confirmed) with 409', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+
+      const { start, end } = futureSlot(10);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+
+      const res = await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'CASH' })
+        .expect(409);
+      expect(res.body.code).toBe('invalid_reservation_state');
+    });
+
+    it('rejects payment when the court has no price set with 409', async () => {
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      const { start, end } = futureSlot(11); // no price set on this court -- afterEach keeps it null
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+
+      const res = await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'CASH' })
+        .expect(409);
+      expect(res.body.code).toBe('reservation_has_no_price');
+    });
+
+    it('rejects payment from a non-staff caller with 403', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+
+      const { start, end } = futureSlot(12);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+
+      await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ method: 'CASH' })
+        .expect(403);
+    });
   });
 });

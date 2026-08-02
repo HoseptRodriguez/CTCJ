@@ -1,4 +1,10 @@
-import { holdSchema, confirmSchema, scheduleQuerySchema } from '@ctcj/shared';
+import {
+  holdSchema,
+  confirmSchema,
+  scheduleQuerySchema,
+  setCourtPriceSchema,
+  recordPaymentSchema,
+} from '@ctcj/shared';
 
 import { request } from './httpClient.js';
 
@@ -21,11 +27,23 @@ export const bookingClient = {
     return request('/api/booking/hold', { method: 'POST', body: payload });
   },
 
-  /** @param {{reservationId: string, paymentId: string}} payload */
+  /** @param {{reservationId: string}} payload -- no paymentId: confirming is a pure state transition (Phase 4). */
   confirm: (payload) => {
     confirmSchema.parse(payload);
     return request('/api/booking/confirm', { method: 'POST', body: payload });
   },
 
   cancel: (reservationId) => request(`/api/booking/${reservationId}/cancel`, { method: 'POST' }),
+
+  /** @param {string} courtId @param {number} priceCop */
+  setCourtPrice: (courtId, priceCop) => {
+    setCourtPriceSchema.parse({ priceCop });
+    return request(`/api/booking/courts/${courtId}/price`, { method: 'PUT', body: { priceCop } });
+  },
+
+  /** @param {string} reservationId @param {{method: string, notes?: string}} payload */
+  recordPayment: (reservationId, payload) => {
+    recordPaymentSchema.parse(payload);
+    return request(`/api/booking/${reservationId}/payment`, { method: 'POST', body: payload });
+  },
 };

@@ -32,22 +32,21 @@ describe('Regla: maquina de estados de la reserva', () => {
   it('confirm() transitions HOLD -> CONFIRMED before expiry', () => {
     const reservation = buildHold();
     const confirmAt = new Date(NOW.getTime() + 60_000);
-    reservation.confirm('payment-1', confirmAt);
+    reservation.confirm(confirmAt);
     expect(reservation.status).toBe('CONFIRMED');
-    expect(reservation.paymentId).toBe('payment-1');
   });
 
   it('confirm() throws HoldExpired past the 5-minute window (defense-in-depth re-check)', () => {
     const reservation = buildHold();
     const confirmAt = new Date(NOW.getTime() + 6 * 60_000);
-    expect(() => reservation.confirm('payment-1', confirmAt)).toThrow(HoldExpired);
+    expect(() => reservation.confirm(confirmAt)).toThrow(HoldExpired);
     expect(reservation.status).toBe('HOLD'); // unchanged
   });
 
   it('confirm() throws InvalidReservationState when not HOLD', () => {
     const reservation = buildHold();
-    reservation.confirm('payment-1', new Date(NOW.getTime() + 60_000));
-    expect(() => reservation.confirm('payment-2', new Date(NOW.getTime() + 120_000))).toThrow(
+    reservation.confirm(new Date(NOW.getTime() + 60_000));
+    expect(() => reservation.confirm(new Date(NOW.getTime() + 120_000))).toThrow(
       InvalidReservationState,
     );
   });
@@ -58,7 +57,7 @@ describe('Regla: maquina de estados de la reserva', () => {
     expect(held.status).toBe('CANCELLED');
 
     const confirmed = buildHold();
-    confirmed.confirm('payment-1', new Date(NOW.getTime() + 60_000));
+    confirmed.confirm(new Date(NOW.getTime() + 60_000));
     expect(() => confirmed.cancel(new Date(NOW.getTime() + 120_000))).not.toThrow();
     expect(confirmed.status).toBe('CANCELLED');
   });

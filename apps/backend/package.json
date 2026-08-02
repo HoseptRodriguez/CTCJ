@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:seed": "node prisma/seed.js",
     "prisma:studio": "prisma studio",
+    "bootstrap:admin": "node scripts/bootstrapAdmin.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.js"

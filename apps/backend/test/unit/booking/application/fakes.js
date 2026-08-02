@@ -1,7 +1,8 @@
-import { OCCUPYING_STATUSES } from '@ctcj/shared';
+import { OCCUPYING_STATUSES, RESERVATION_STATUS } from '@ctcj/shared';
 
 import { Reservation } from '../../../../src/modules/booking/domain/entities/Reservation.js';
 import { SlotNotAvailable } from '../../../../src/modules/booking/application/errors/SlotNotAvailable.js';
+import { PaymentConflict } from '../../../../src/modules/booking/application/errors/PaymentConflict.js';
 
 function periodsOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && bStart < aEnd;
@@ -30,12 +31,23 @@ export function createFakeCourtRepository(courts = []) {
       const court = byId.get(courtId);
       return court && court.isActive !== false ? court : null;
     },
+    async setPrice(_clubId, courtId, priceCop) {
+      const court = byId.get(courtId);
+      if (!court || court.isActive === false) return null;
+      const updated = { ...court, priceCop: BigInt(priceCop) };
+      byId.set(courtId, updated);
+      return updated;
+    },
   };
 }
 
-export function createFakeReservationRepository() {
-  const byId = new Map();
-
+/**
+ * Accepts an optional externally-owned backing Map so a
+ * createFakePaymentRepository built on the same Map can coordinate with it
+ * the way the real Prisma repository coordinates across the `reservations`
+ * and `payments` tables inside one transaction (see recordPayment.test.js).
+ */
+export function createFakeReservationRepository(byId = new Map()) {
   return {
     async createHold(reservation) {
       const conflict = Array.from(byId.values()).some(
@@ -82,6 +94,42 @@ export function createFakeReservationRepository() {
       reservation.status = toStatus;
       Object.assign(reservation, extra);
       return 1;
+    },
+  };
+}
+
+/**
+ * `reservationsById` must be the same Map passed to
+ * createFakeReservationRepository() so the two coordinate the way the real
+ * Prisma repository does inside one $transaction.
+ */
+export function createFakePaymentRepository(reservationsById) {
+  const paymentsById = new Map();
+
+  return {
+    async record({ id, clubId, reservationId, amountCop, method, recordedBy, notes, now }) {
+      const reservation = reservationsById.get(reservationId);
+      const stillPayable =
+        reservation &&
+        reservation.status === RESERVATION_STATUS.CONFIRMED &&
+        reservation.paymentId == null;
+      if (!stillPayable) {
+        throw new PaymentConflict();
+      }
+
+      const payment = {
+        id,
+        clubId,
+        amountCop: BigInt(amountCop),
+        method,
+        recordedBy,
+        notes,
+        recordedAt: now,
+        createdAt: now,
+      };
+      paymentsById.set(id, payment);
+      reservation.paymentId = id;
+      return payment;
     },
   };
 }

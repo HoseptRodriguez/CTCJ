@@ -32,6 +32,7 @@ export function projectForViewer(reservation, viewer) {
       holderUserId: reservation.holderUserId,
       notes: reservation.notes,
       priceCop: reservation.priceCop,
+      paymentId: reservation.paymentId,
     };
   }
 

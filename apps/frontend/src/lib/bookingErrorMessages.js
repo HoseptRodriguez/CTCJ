@@ -8,6 +8,8 @@ const BOOKING_ERROR_MESSAGES = {
   court_not_found: 'No se encontro esa cancha.',
   invalid_reservation_state: 'Esta reserva ya no se puede modificar.',
   max_concurrent_reservations_exceeded: 'Ya tienes el maximo de reservas activas permitidas.',
+  reservation_already_paid: 'Esta reserva ya tiene un pago registrado.',
+  reservation_has_no_price: 'Esta cancha no tiene un precio configurado todavia.',
 };
 
 export function describeBookingError(err) {

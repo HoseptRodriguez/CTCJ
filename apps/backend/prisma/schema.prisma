@@ -34,6 +34,7 @@ model Club {
   users          User[]
   courts         Court[]
   reservations   Reservation[]
+  payments       Payment[]
   systemSettings SystemSetting[]
 
   @@map("clubs")
@@ -77,6 +78,7 @@ model User {
   passwordResets      PasswordReset[]
   reservationsHeld    Reservation[]       @relation("HolderUser")
   reservationsCreated Reservation[]       @relation("CreatedByUser")
+  paymentsRecorded    Payment[]           @relation("PaymentRecordedBy")
 
   @@unique([clubId, email])
   @@map("users")
@@ -257,17 +259,47 @@ model Reservation {
   createdBy       String                   @map("created_by") @db.Uuid
   holdExpiresAt   DateTime?                @map("hold_expires_at")
   priceCop        BigInt?                  @map("price_cop")
-  paymentId       String?                  @map("payment_id") @db.Uuid
+  // Real FK to Payment (Phase 4) -- unique because v1 supports exactly one
+  // full payment per reservation (no partial/split payments). Existing
+  // Phase 2/3 test data had this column holding unconstrained
+  // client-generated UUIDs with no real Payment behind them; the migration
+  // nulls those out before adding this constraint.
+  paymentId       String?                  @unique @map("payment_id") @db.Uuid
   notes           String?
   createdAt       DateTime                 @default(now()) @map("created_at")
   updatedAt       DateTime                 @updatedAt @map("updated_at")
 
-  club          Club  @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  court         Court @relation(fields: [courtId], references: [id], onDelete: Restrict)
-  holderUser    User? @relation("HolderUser", fields: [holderUserId], references: [id])
-  createdByUser User  @relation("CreatedByUser", fields: [createdBy], references: [id])
+  club          Club     @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  court         Court    @relation(fields: [courtId], references: [id], onDelete: Restrict)
+  holderUser    User?    @relation("HolderUser", fields: [holderUserId], references: [id])
+  createdByUser User     @relation("CreatedByUser", fields: [createdBy], references: [id])
+  payment       Payment? @relation(fields: [paymentId], references: [id])
 
   @@map("reservations")
+}
+
+// Immutable manual-payment audit record ("cobro asistido" -- no online
+// gateway integration yet, see docs/adr). One row per fully-paid reservation;
+// amountCop is always a snapshot of Reservation.priceCop at the moment of
+// payment, never client-supplied, so a later court price change can never
+// retroactively alter an already-recorded payment.
+model Payment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId     String   @map("club_id") @db.Uuid
+  amountCop  BigInt   @map("amount_cop")
+  method     String   @db.VarChar(20) // CASH|TRANSFER|CARD_IN_PERSON
+  recordedBy String   @map("recorded_by") @db.Uuid
+  recordedAt DateTime @default(now()) @map("recorded_at")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  club           Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  recordedByUser User         @relation("PaymentRecordedBy", fields: [recordedBy], references: [id], onDelete: Restrict)
+  // Virtual inverse of Reservation.paymentId -- no physical column here,
+  // Reservation owns the single FK so the two tables can't disagree.
+  reservation    Reservation?
+
+  @@map("payments")
 }
 
 model ShedLock {
