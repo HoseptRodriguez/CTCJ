@@ -28,6 +28,12 @@ import { createBookingRoutes } from './modules/booking/infrastructure/http/booki
 import { createIdentityMembershipStatusProvider } from './modules/booking/infrastructure/adapters/membershipStatusProviderAdapter.js';
 import { createIdentitySystemSettingBookingPolicy } from './modules/booking/infrastructure/adapters/bookingPolicySettingsAdapter.js';
 import { createIdentityGuardianshipProvider } from './modules/booking/infrastructure/adapters/guardianshipProviderAdapter.js';
+import { buildBillingContainer } from './modules/billing/infrastructure/compositionRoot.js';
+import { createBillingAdminController } from './modules/billing/infrastructure/http/billingAdminController.js';
+import { createBillingAdminRoutes } from './modules/billing/infrastructure/http/billingAdminRoutes.js';
+import { createMeController as createBillingMeController } from './modules/billing/infrastructure/http/meController.js';
+import { createMeRoutes as createBillingMeRoutes } from './modules/billing/infrastructure/http/meRoutes.js';
+import { createIdentityPlayerEligibilityProvider } from './modules/billing/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -86,6 +92,15 @@ export function createApp() {
   });
   const bookingController = createBookingController(bookingContainer);
   app.use('/api/booking', createBookingRoutes(bookingController));
+
+  const playerEligibilityProvider = createIdentityPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const billingContainer = buildBillingContainer({ playerEligibilityProvider });
+  const billingAdminController = createBillingAdminController(billingContainer);
+  const billingMeController = createBillingMeController(billingContainer);
+  app.use('/api/admin/billing', createBillingAdminRoutes(billingAdminController));
+  app.use('/api/billing/me', createBillingMeRoutes(billingMeController));
 
   // Other module routers are mounted here as each module is implemented.
 

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { billingClient } from '../../api/billingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -13,6 +14,14 @@ vi.mock('../../api/membershipClient.js', () => ({
     setMembershipStatus: vi.fn(),
     getOverduePolicy: vi.fn(),
     setOverduePolicy: vi.fn(),
+  },
+}));
+
+vi.mock('../../api/billingClient.js', () => ({
+  billingClient: {
+    listMemberships: vi.fn(),
+    listPlans: vi.fn(),
+    enrollPlayer: vi.fn(),
   },
 }));
 
@@ -43,6 +52,8 @@ async function searchFor(user, email) {
 describe('MembershipStatusPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    billingClient.listMemberships.mockResolvedValue({ memberships: [] });
+    billingClient.listPlans.mockResolvedValue({ plans: [] });
   });
 
   it('admin: looks up a player and can set a new status', async () => {

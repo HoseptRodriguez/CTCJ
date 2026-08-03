@@ -36,6 +36,7 @@ model Club {
   reservations   Reservation[]
   payments       Payment[]
   systemSettings SystemSetting[]
+  membershipPlans MembershipPlan[]
 
   @@map("clubs")
 }
@@ -94,6 +95,9 @@ model User {
   affiliationRequests     AffiliationRequest[]
   guardianshipsAsGuardian Guardianship[]        @relation("GuardianOfMinor")
   guardianshipsAsMinor    Guardianship[]        @relation("MinorOfGuardian")
+
+  // Billing (Phase 7) -- plan enrollments, see PlayerMembership
+  playerMemberships PlayerMembership[] @relation("PlayerMemberships")
 
   @@unique([clubId, email])
   @@map("users")
@@ -265,6 +269,91 @@ model Guardianship {
   // guardian<>minor self-link CHECK, status/decision-coherence CHECKs, and a
   // partial index for the approved+canBook fast path -- all via raw-SQL migration.
   @@map("guardianships")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (Phase 7) -- membership price plans. Deliberately not part of
+// `identity`: PlayerMembership.status (ACTIVE|SUSPENDED|ENDED) shares two
+// literal values with identity's unrelated User.membershipStatus enum
+// (Phase 5's coarse payment-standing flag) -- keeping this in its own module
+// with its own domain-entity name avoids that collision entirely.
+// ---------------------------------------------------------------------------
+
+model MembershipPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId      String   @map("club_id") @db.Uuid
+  code        String   @db.VarChar(40)
+  name        String   @db.VarChar(120)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  club        Club                  @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  prices      MembershipPlanPrice[]
+  memberships PlayerMembership[]
+
+  @@unique([clubId, code])
+  @@map("membership_plans")
+}
+
+// Prices are effective-dated and append-only -- see docs/03-MODELO-DE-DATOS.md
+// §D2: "Una factura emitida congela el importe calculado. Cambiar un precio
+// hoy nunca altera lo facturado ayer." validTo=NULL means "vigente" (current).
+model MembershipPlanPrice {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId       String    @map("plan_id") @db.Uuid
+  basePriceCop BigInt    @map("base_price_cop")
+  validFrom    DateTime  @map("valid_from") @db.Date
+  validTo      DateTime? @map("valid_to") @db.Date
+  createdBy    String    @map("created_by") @db.Uuid // no FK, audit-only, matches Payment.recordedBy precedent; NOT NULL (always known at insert)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  plan MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (at most one vigente price per plan) + period/price
+  // CHECKs added via raw-SQL migration -- Prisma has no partial-index/CHECK DSL.
+  @@map("membership_plan_prices")
+}
+
+// Domain/Prisma model name PlayerMembership (not "Membership") -- deliberately
+// avoids colliding with identity's User.membershipStatus. Table name stays
+// `memberships`, matching the club's own documented DDL exactly.
+model PlayerMembership {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String    @map("player_id") @db.Uuid // -> users.id (docs say players.id; this codebase has no players table -- JUGADOR is a role on User)
+  planId     String    @map("plan_id") @db.Uuid
+  startDate  DateTime  @map("start_date") @db.Date
+  endDate    DateTime? @map("end_date") @db.Date
+  billingDay Int       @map("billing_day") @db.SmallInt // 1-28, capped to dodge February
+  frequency  String    @default("MONTHLY") @db.VarChar(20)
+  status     String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|SUSPENDED|ENDED
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  player      User                   @relation("PlayerMemberships", fields: [playerId], references: [id], onDelete: Cascade)
+  plan        MembershipPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+  adjustments MembershipAdjustment[]
+
+  // status/billing_day/period CHECKs added via raw-SQL migration.
+  @@map("memberships")
+}
+
+// "beca, descuento, recargo, precio personalizado" -- every exception is
+// individually justified (reason NOT NULL) and authorized.
+model MembershipAdjustment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId   String    @map("membership_id") @db.Uuid
+  adjustmentType String    @map("adjustment_type") @db.VarChar(20) // DISCOUNT_PCT|DISCOUNT_ABS|SCHOLARSHIP|SURCHARGE|CUSTOM_PRICE
+  value          Decimal   @db.Decimal(12, 2)
+  reason         String
+  validFrom      DateTime  @map("valid_from") @db.Date
+  validTo        DateTime? @map("valid_to") @db.Date
+  authorizedBy   String    @map("authorized_by") @db.Uuid // no FK, audit-only, NOT NULL
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  membership PlayerMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  // adjustment_type CHECK + period CHECK added via raw-SQL migration.
+  @@map("membership_adjustments")
 }
 
 model OutboxEvent {

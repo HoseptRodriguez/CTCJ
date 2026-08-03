@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 
 import { affiliationClient } from '../api/affiliationClient.js';
+import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
@@ -15,8 +16,15 @@ import {
   MEMBERSHIP_STATUS_DISPLAY,
   describeMembershipStatus,
 } from '../lib/membershipStatusLabels.js';
+import { describePlayerMembershipStatus } from '../lib/playerMembershipStatusLabels.js';
 
 import { bogotaTodayKey } from './reservation/DatePicker.jsx';
+
+const PLAN_COP_FORMATTER = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  maximumFractionDigits: 0,
+});
 
 const REQUEST_STATUS_LABELS = {
   PENDING: 'En revisión',
@@ -197,6 +205,47 @@ function GuardianshipSection() {
   );
 }
 
+function MyPlanSection() {
+  const [memberships, setMemberships] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    billingClient
+      .getMyMemberships()
+      .then((data) => {
+        if (!cancelled) setMemberships(data.memberships);
+      })
+      .catch(() => {
+        if (!cancelled) setMemberships([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!memberships || memberships.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Mi plan</h3>
+      <ul className="mt-3 space-y-2">
+        {memberships.map((m) => (
+          <li key={m.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="font-semibold text-primary">{m.planName}</span>{' '}
+            {m.currentPriceCop != null ? `· ${PLAN_COP_FORMATTER.format(m.currentPriceCop)}` : ''}
+            {' · '}
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {describePlayerMembershipStatus(m.status)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -361,6 +410,7 @@ export function MyCtcjPage() {
       </div>
 
       {!isJugador ? <AffiliationSection /> : null}
+      {isJugador ? <MyPlanSection /> : null}
       <GuardianshipSection />
     </Section>
   );

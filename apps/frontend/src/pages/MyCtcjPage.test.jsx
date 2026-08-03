@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { affiliationClient } from '../api/affiliationClient.js';
+import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
@@ -35,6 +36,10 @@ vi.mock('../api/guardianshipClient.js', () => ({
   guardianshipClient: { listMine: vi.fn(), requestGuardianship: vi.fn() },
 }));
 
+vi.mock('../api/billingClient.js', () => ({
+  billingClient: { getMyMemberships: vi.fn() },
+}));
+
 vi.mock('../context/AuthContext.jsx', () => ({
   useAuth: vi.fn(),
 }));
@@ -45,6 +50,7 @@ describe('MyCtcjPage', () => {
     bookingClient.getSchedule.mockResolvedValue({ reservations: [] });
     affiliationClient.getMyRequests.mockResolvedValue({ requests: [] });
     guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
+    billingClient.getMyMemberships.mockResolvedValue({ memberships: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -125,5 +131,28 @@ describe('MyCtcjPage', () => {
       }),
     );
     expect(await screen.findByText('hijo@example.com')).toBeInTheDocument();
+  });
+
+  it('a JUGADOR with an active plan sees "Mi plan"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    billingClient.getMyMemberships.mockResolvedValue({
+      memberships: [{ id: 'm1', planName: 'Iniciación', currentPriceCop: 50000, status: 'ACTIVE' }],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mi plan')).toBeInTheDocument();
+    expect(screen.getByText('Iniciación')).toBeInTheDocument();
+  });
+
+  it('does not show "Mi plan" when there are no memberships', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(billingClient.getMyMemberships).toHaveBeenCalled());
+    expect(screen.queryByText('Mi plan')).not.toBeInTheDocument();
   });
 });
