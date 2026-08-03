@@ -12,6 +12,7 @@ const BOOKING_ERROR_MESSAGES = {
   reservation_has_no_price: 'Esta cancha no tiene un precio configurado todavia.',
   membership_overdue_booking_blocked:
     'Tu cuenta tiene un estado de membresía que no permite reservar canchas por ahora. Contacta a recepción.',
+  not_authorized_to_book_for_user: 'No tienes autorización para reservar en nombre de esa cuenta.',
 };
 
 export function describeBookingError(err) {

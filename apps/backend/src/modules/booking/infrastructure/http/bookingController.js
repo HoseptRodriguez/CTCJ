@@ -32,7 +32,8 @@ export function createBookingController(container) {
       courtId: req.body.courtId,
       periodStart: req.body.start,
       periodEnd: req.body.end,
-      holderUserId: req.user.id,
+      holderUserId: req.body.holderUserId ?? req.user.id,
+      createdByUserId: req.user.id,
     });
     res.status(201).json(result);
   });

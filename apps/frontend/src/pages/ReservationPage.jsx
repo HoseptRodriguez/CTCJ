@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { guardianshipClient } from '../api/guardianshipClient.js';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -21,6 +22,28 @@ export function ReservationPage() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [confirmedMessage, setConfirmedMessage] = useState(null);
+  const [bookableMinors, setBookableMinors] = useState([]);
+  const [holderUserId, setHolderUserId] = useState(null); // null = booking for myself
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setBookableMinors([]);
+      return;
+    }
+    let cancelled = false;
+    guardianshipClient
+      .listMine()
+      .then((data) => {
+        if (cancelled) return;
+        setBookableMinors(data.guardianships.filter((g) => g.status === 'APPROVED' && g.canBook));
+      })
+      .catch(() => {
+        // Courtesy feature -- fail silent, everyone can still book for themselves.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
 
   function handleSelectSlot(slot) {
     if (status !== 'authenticated') {
@@ -61,6 +84,24 @@ export function ReservationPage() {
         </p>
       ) : null}
 
+      {bookableMinors.length > 0 ? (
+        <label className="mt-6 flex items-center gap-2 text-sm text-secondary">
+          Reservando para
+          <select
+            value={holderUserId ?? ''}
+            onChange={(e) => setHolderUserId(e.target.value || null)}
+            className="rounded-md border border-neutral-300 bg-canvas px-3 py-1.5 text-sm"
+          >
+            <option value="">Mí</option>
+            {bookableMinors.map((g) => (
+              <option key={g.minorUserId} value={g.minorUserId}>
+                {g.minorEmail}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
       <ul className="mt-6 flex flex-wrap gap-4 text-xs text-secondary">
         {LEGEND_STATUSES.map((s) => (
           <li key={s} className="flex items-center gap-1.5">
@@ -77,6 +118,7 @@ export function ReservationPage() {
       {selectedSlot ? (
         <HoldConfirmModal
           slot={selectedSlot}
+          holderUserId={holderUserId}
           onClose={() => setSelectedSlot(null)}
           onConfirmed={handleConfirmed}
         />

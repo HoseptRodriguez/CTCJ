@@ -17,6 +17,14 @@ const STATUS_BY_CODE = {
   invalid_refresh_token: 401,
   user_not_found: 404,
   membership_not_applicable: 409,
+  already_jugador: 409,
+  affiliation_request_already_pending: 409,
+  affiliation_request_not_found: 404,
+  affiliation_request_not_pending: 409,
+  guardianship_already_exists: 409,
+  guardianship_self_link_forbidden: 403,
+  guardianship_not_found: 404,
+  guardianship_not_pending: 409,
 };
 
 export function mapIdentityError(err) {

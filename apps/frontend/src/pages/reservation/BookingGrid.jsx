@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
-import { useAuth } from '../../context/AuthContext.jsx';
 import { findSlotReservation, reservationSlotStatus } from '../../lib/reservationSlotStatus.js';
 
 import { SlotCell } from './SlotCell.jsx';
@@ -26,7 +25,6 @@ function slotRange(dateKey, localHour) {
 
 /** @param {{ date: string, onSelectSlot: (slot: {courtId: string, courtName: string, start: string, end: string}) => void }} props */
 export function BookingGrid({ date, onSelectSlot }) {
-  const { user } = useAuth();
   const [schedule, setSchedule] = useState(null);
   const [error, setError] = useState(null);
 
@@ -90,7 +88,7 @@ export function BookingGrid({ date, onSelectSlot }) {
                     court.id,
                     startIso,
                   );
-                  const status = reservationSlotStatus(reservation, user?.id ?? null);
+                  const status = reservationSlotStatus(reservation);
                   return (
                     <td key={court.id}>
                       <SlotCell

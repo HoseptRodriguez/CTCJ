@@ -88,4 +88,20 @@ describe('Regla: maquina de estados de la reserva', () => {
     expect(() => reservation.ensureOwnedBy('user-2', false)).toThrow(ReservationNotOwned);
     expect(() => reservation.ensureOwnedBy('user-2', true)).not.toThrow(); // staff bypass
   });
+
+  it('ensureOwnedBy() also allows the original creator when different from the holder (Phase 6)', () => {
+    const reservation = Reservation.createHold({
+      id: 'res-2',
+      clubId: 'club-1',
+      courtId: 'court-1',
+      periodStart: new Date(NOW.getTime() + 2 * 60 * 60_000),
+      periodEnd: new Date(NOW.getTime() + 3 * 60 * 60_000),
+      holderUserId: 'minor-1',
+      createdBy: 'guardian-1',
+      now: NOW,
+    });
+    expect(() => reservation.ensureOwnedBy('minor-1', false)).not.toThrow(); // holder
+    expect(() => reservation.ensureOwnedBy('guardian-1', false)).not.toThrow(); // creator
+    expect(() => reservation.ensureOwnedBy('someone-else', false)).toThrow(ReservationNotOwned);
+  });
 });

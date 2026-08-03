@@ -2,29 +2,26 @@ import { describe, expect, it } from 'vitest';
 
 import { findSlotReservation, reservationSlotStatus } from './reservationSlotStatus.js';
 
-const VIEWER_ID = 'user-1';
-const OTHER_ID = 'user-2';
-
 describe('reservationSlotStatus', () => {
   it('returns available for an empty slot', () => {
-    expect(reservationSlotStatus(null, VIEWER_ID)).toBe('available');
-    expect(reservationSlotStatus(undefined, VIEWER_ID)).toBe('available');
+    expect(reservationSlotStatus(null)).toBe('available');
+    expect(reservationSlotStatus(undefined)).toBe('available');
   });
 
   describe('owner/staff-shaped payload (has reservationType)', () => {
-    it("returns mine for the viewer's own PRIVATE reservation", () => {
-      const reservation = { reservationType: 'PRIVATE', holderUserId: VIEWER_ID };
-      expect(reservationSlotStatus(reservation, VIEWER_ID)).toBe('mine');
+    it('returns mine when the server marks isOwnBooking true', () => {
+      const reservation = { reservationType: 'PRIVATE', isOwnBooking: true };
+      expect(reservationSlotStatus(reservation)).toBe('mine');
     });
 
-    it("returns occupied for someone else's PRIVATE reservation, even when the viewer can see it (staff)", () => {
-      const reservation = { reservationType: 'PRIVATE', holderUserId: OTHER_ID };
-      expect(reservationSlotStatus(reservation, VIEWER_ID)).toBe('occupied');
+    it('returns occupied when the server marks isOwnBooking false, even for staff viewing it', () => {
+      const reservation = { reservationType: 'PRIVATE', isOwnBooking: false };
+      expect(reservationSlotStatus(reservation)).toBe('occupied');
     });
 
-    it('returns occupied for a PRIVATE reservation when there is no logged-in viewer', () => {
-      const reservation = { reservationType: 'PRIVATE', holderUserId: OTHER_ID };
-      expect(reservationSlotStatus(reservation, null)).toBe('occupied');
+    it('returns occupied when isOwnBooking is absent (defensive default)', () => {
+      const reservation = { reservationType: 'PRIVATE' };
+      expect(reservationSlotStatus(reservation)).toBe('occupied');
     });
 
     it.each([
@@ -32,34 +29,33 @@ describe('reservationSlotStatus', () => {
       ['TOURNAMENT', 'tournament'],
       ['MAINTENANCE', 'maintenance'],
       ['BLOCKED', 'blocked'],
-    ])('maps reservationType %s to token %s regardless of holder', (reservationType, token) => {
-      const reservation = { reservationType, holderUserId: OTHER_ID };
-      expect(reservationSlotStatus(reservation, VIEWER_ID)).toBe(token);
-    });
+    ])(
+      'maps reservationType %s to token %s regardless of isOwnBooking',
+      (reservationType, token) => {
+        const reservation = { reservationType, isOwnBooking: false };
+        expect(reservationSlotStatus(reservation)).toBe(token);
+      },
+    );
   });
 
   describe('anonymous/non-owner-shaped payload (only label + occupied)', () => {
     it('maps label "Clase" to class', () => {
-      expect(reservationSlotStatus({ label: 'Clase', occupied: true }, VIEWER_ID)).toBe('class');
+      expect(reservationSlotStatus({ label: 'Clase', occupied: true })).toBe('class');
     });
 
     it('maps label "Torneo" to tournament', () => {
-      expect(reservationSlotStatus({ label: 'Torneo', occupied: true }, VIEWER_ID)).toBe(
-        'tournament',
-      );
+      expect(reservationSlotStatus({ label: 'Torneo', occupied: true })).toBe('tournament');
     });
 
     it('maps label "Ocupada" (a private booking that is not the viewer\'s) to occupied', () => {
-      expect(reservationSlotStatus({ label: 'Ocupada', occupied: true }, VIEWER_ID)).toBe(
-        'occupied',
-      );
+      expect(reservationSlotStatus({ label: 'Ocupada', occupied: true })).toBe('occupied');
     });
 
     it('never reveals "mine" from this shape, even if it happens to be the viewer\'s own booking seen anonymously', () => {
       // Regression guard: the server never actually sends this shape for the
       // viewer's own reservation (it always uses the owner shape for them),
       // but the client function itself must not infer ownership from label text.
-      expect(reservationSlotStatus({ label: 'Ocupada', occupied: true }, null)).toBe('occupied');
+      expect(reservationSlotStatus({ label: 'Ocupada', occupied: true })).toBe('occupied');
     });
   });
 });

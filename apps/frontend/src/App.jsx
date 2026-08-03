@@ -12,6 +12,7 @@ import { ReservationPage } from './pages/ReservationPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
 import { MembershipStatusPage } from './pages/staff/MembershipStatusPage.jsx';
 import { PaymentsQueuePage } from './pages/staff/PaymentsQueuePage.jsx';
+import { RequestsPage } from './pages/staff/RequestsPage.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
@@ -39,6 +40,7 @@ export function App() {
               <Route path="/staff/membresias" element={<MembershipStatusPage />} />
               <Route element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR]} />}>
                 <Route path="/staff/precios" element={<CourtPricingPage />} />
+                <Route path="/staff/solicitudes" element={<RequestsPage />} />
               </Route>
             </Route>
           </Route>

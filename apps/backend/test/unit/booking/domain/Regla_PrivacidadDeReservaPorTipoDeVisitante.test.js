@@ -6,7 +6,11 @@ import { Reservation } from '../../../../src/modules/booking/domain/entities/Res
 const PERIOD_START = new Date('2026-08-10T15:00:00Z');
 const PERIOD_END = new Date(PERIOD_START.getTime() + 60 * 60_000);
 
-function buildReservation({ reservationType = 'PRIVATE', holderUserId = 'user-1' } = {}) {
+function buildReservation({
+  reservationType = 'PRIVATE',
+  holderUserId = 'user-1',
+  createdBy = holderUserId,
+} = {}) {
   return new Reservation({
     id: 'res-1',
     clubId: 'club-1',
@@ -16,7 +20,7 @@ function buildReservation({ reservationType = 'PRIVATE', holderUserId = 'user-1'
     status: 'CONFIRMED',
     reservationType,
     holderUserId,
-    createdBy: holderUserId,
+    createdBy,
     notes: 'private notes',
   });
 }
@@ -61,19 +65,21 @@ describe('Regla 2: privacidad de reserva por tipo de visitante', () => {
     expect(result.label).toBe('Torneo');
   });
 
-  it('the owner sees full detail on their own PRIVATE reservation', () => {
+  it('the owner sees full detail on their own PRIVATE reservation, marked isOwnBooking', () => {
     const reservation = buildReservation({ reservationType: 'PRIVATE' });
     const result = projectForViewer(reservation, OWNER);
     expect(result.holderUserId).toBe('user-1');
     expect(result.notes).toBe('private notes');
     expect(result.status).toBe('CONFIRMED');
+    expect(result.isOwnBooking).toBe(true);
   });
 
-  it('staff sees full detail regardless of reservation type or holder', () => {
+  it("staff sees full detail regardless of reservation type or holder, but isOwnBooking stays false for a stranger's reservation", () => {
     const reservation = buildReservation({ reservationType: 'PRIVATE' });
     const result = projectForViewer(reservation, STAFF);
     expect(result.holderUserId).toBe('user-1');
     expect(result.notes).toBe('private notes');
+    expect(result.isOwnBooking).toBe(false);
   });
 
   it('(Phase 5) staff receives holderMembershipStatus when supplied', () => {
@@ -92,5 +98,29 @@ describe('Regla 2: privacidad de reserva por tipo de visitante', () => {
     const reservation = buildReservation({ reservationType: 'CLASS' });
     const result = projectForViewer(reservation, ANONYMOUS, 'OVERDUE');
     expect('holderMembershipStatus' in result).toBe(false);
+  });
+
+  it('(Phase 6) the original creator sees full detail even when they are not the holder', () => {
+    const reservation = buildReservation({
+      reservationType: 'PRIVATE',
+      holderUserId: 'minor-1',
+      createdBy: 'guardian-1',
+    });
+    const result = projectForViewer(reservation, { userId: 'guardian-1', isStaff: false });
+    expect(result.holderUserId).toBe('minor-1');
+    expect(result.notes).toBe('private notes');
+    expect(result.label).toBeUndefined(); // full projection, not the anonymized shape
+    expect(result.isOwnBooking).toBe(true);
+  });
+
+  it('(Phase 6) an unrelated non-staff viewer still gets the anonymized shape', () => {
+    const reservation = buildReservation({
+      reservationType: 'PRIVATE',
+      holderUserId: 'minor-1',
+      createdBy: 'guardian-1',
+    });
+    const result = projectForViewer(reservation, { userId: 'someone-else', isStaff: false });
+    expect(result.label).toBe('Ocupada');
+    expect(result.holderUserId).toBeUndefined();
   });
 });

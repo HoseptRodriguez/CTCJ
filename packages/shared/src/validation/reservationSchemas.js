@@ -12,6 +12,10 @@ export const holdSchema = z.object({
     .string()
     .datetime({ offset: true })
     .transform((val) => new Date(val)),
+  // Booking on behalf of a linked minor (Phase 6) -- omitted or equal to the
+  // caller's own id means "booking for myself", the default/only case before
+  // this phase. See booking's GuardianshipProvider for the authorization check.
+  holderUserId: z.string().uuid().optional(),
 });
 
 // No paymentId -- confirming a HOLD is a pure state transition, unrelated to

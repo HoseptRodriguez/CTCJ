@@ -13,12 +13,23 @@ import { createGetMembershipStatus } from '../application/useCases/getMembership
 import { createLookupUserByEmail } from '../application/useCases/lookupUserByEmail.js';
 import { createGetSystemSetting } from '../application/useCases/getSystemSetting.js';
 import { createSetSystemSetting } from '../application/useCases/setSystemSetting.js';
+import { createRequestAffiliation } from '../application/useCases/requestAffiliation.js';
+import { createDecideAffiliationRequest } from '../application/useCases/decideAffiliationRequest.js';
+import { createListAffiliationRequests } from '../application/useCases/listAffiliationRequests.js';
+import { createGetMyAffiliationRequests } from '../application/useCases/getMyAffiliationRequests.js';
+import { createRequestGuardianship } from '../application/useCases/requestGuardianship.js';
+import { createDecideGuardianship } from '../application/useCases/decideGuardianship.js';
+import { createListGuardianships } from '../application/useCases/listGuardianships.js';
+import { createListMyGuardianships } from '../application/useCases/listMyGuardianships.js';
+import { createCanBookForMinor } from '../application/useCases/canBookForMinor.js';
 
 import { createPrismaUserRepository } from './persistence/prismaUserRepository.js';
 import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.js';
 import { createPrismaRefreshTokenRepository } from './persistence/prismaRefreshTokenRepository.js';
 import { createPrismaEmailVerificationRepository } from './persistence/prismaEmailVerificationRepository.js';
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
+import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
+import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
@@ -34,6 +45,8 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
   const refreshTokenRepository = createPrismaRefreshTokenRepository(prismaClient);
   const emailVerificationRepository = createPrismaEmailVerificationRepository(prismaClient);
   const systemSettingRepository = createPrismaSystemSettingRepository(prismaClient);
+  const affiliationRequestRepository = createPrismaAffiliationRequestRepository(prismaClient);
+  const guardianshipRepository = createPrismaGuardianshipRepository(prismaClient);
   const passwordHasher = createArgon2PasswordHasher();
   const tokenService = createJwtTokenService({
     accessSecret: config.jwt.accessSecret,
@@ -89,5 +102,25 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getSystemSetting: createGetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
     setSystemSetting: createSetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
+    requestAffiliation: createRequestAffiliation({ userRepository, affiliationRequestRepository }),
+    decideAffiliationRequest: createDecideAffiliationRequest({
+      userRepository,
+      affiliationRequestRepository,
+      clock,
+    }),
+    listAffiliationRequests: createListAffiliationRequests({
+      affiliationRequestRepository,
+      userRepository,
+    }),
+    getMyAffiliationRequests: createGetMyAffiliationRequests({ affiliationRequestRepository }),
+    requestGuardianship: createRequestGuardianship({
+      userRepository,
+      guardianshipRepository,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    decideGuardianship: createDecideGuardianship({ userRepository, guardianshipRepository, clock }),
+    listGuardianships: createListGuardianships({ guardianshipRepository, userRepository }),
+    listMyGuardianships: createListMyGuardianships({ guardianshipRepository, userRepository }),
+    canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
   };
 }

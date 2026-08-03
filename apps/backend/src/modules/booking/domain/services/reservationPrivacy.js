@@ -23,7 +23,13 @@ const TYPE_LABELS = {
  *   caller (getSchedule.js) supplies it.
  */
 export function projectForViewer(reservation, viewer, holderMembershipStatus = null) {
-  const isOwner = viewer.userId != null && reservation.holderUserId === viewer.userId;
+  // A guardian who created a hold for a linked minor (Phase 6) is also
+  // "owner" here -- otherwise their own booking would render back to them as
+  // an anonymized stranger's slot, with no other place in the app to find it
+  // again. Mirrors Reservation.ensureOwnedBy()'s identical creator-or-holder rule.
+  const isOwner =
+    viewer.userId != null &&
+    (reservation.holderUserId === viewer.userId || reservation.createdBy === viewer.userId);
 
   if (viewer.isStaff || isOwner) {
     return {
@@ -37,6 +43,10 @@ export function projectForViewer(reservation, viewer, holderMembershipStatus = n
       notes: reservation.notes,
       priceCop: reservation.priceCop,
       paymentId: reservation.paymentId,
+      // The raw owner check, not "isStaff || isOwner" -- staff viewing a
+      // stranger's reservation must NOT read as "mine" client-side (e.g. the
+      // booking grid's highlight color), only the true holder/creator should.
+      isOwnBooking: isOwner,
       // Staff-only key -- omitted entirely (not even `null`) for the owner's
       // own view, so the frontend contract stays unambiguous: presence of
       // this key means "you're staff", not "this player has no status".

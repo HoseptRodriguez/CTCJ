@@ -7,6 +7,7 @@ import { CourtNotFound } from '../../../../src/modules/booking/application/error
 import { MaxConcurrentReservationsExceeded } from '../../../../src/modules/booking/application/errors/MaxConcurrentReservationsExceeded.js';
 import { SlotNotAvailable } from '../../../../src/modules/booking/application/errors/SlotNotAvailable.js';
 import { MembershipOverdueBookingBlocked } from '../../../../src/modules/booking/application/errors/MembershipOverdueBookingBlocked.js';
+import { NotAuthorizedToBookForUser } from '../../../../src/modules/booking/application/errors/NotAuthorizedToBookForUser.js';
 
 import {
   createFakeCourtRepository,
@@ -14,6 +15,7 @@ import {
   createFakeClock,
   createFakeMembershipStatusProvider,
   createFakeBookingPolicySettings,
+  createFakeGuardianshipProvider,
 } from './fakes.js';
 
 const CLUB_ID = 'club-1';
@@ -41,6 +43,7 @@ function buildDeps() {
     clubId: CLUB_ID,
     membershipStatusProvider: createFakeMembershipStatusProvider(),
     bookingPolicySettings: createFakeBookingPolicySettings(false), // safe/permissive default
+    guardianshipProvider: createFakeGuardianshipProvider(),
   };
 }
 
@@ -168,6 +171,98 @@ describe('createHold', () => {
         async getStatus() {
           called = true;
           return MEMBERSHIP_STATUS.OVERDUE;
+        },
+      };
+      createHold = createCreateHold(deps);
+
+      await createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' });
+      expect(called).toBe(false);
+    });
+  });
+
+  describe('booking on behalf of another user (Phase 6)', () => {
+    it('self-booking (createdByUserId omitted) behaves exactly as before -- regression guard', async () => {
+      const result = await createHold({ ...slot(), courtId: COURT.id, holderUserId: 'user-1' });
+      const stored = await deps.reservationRepository.findById(result.reservationId);
+      expect(stored.holderUserId).toBe('user-1');
+      expect(stored.createdBy).toBe('user-1');
+    });
+
+    it('an authorized guardian can book for the minor, and createdBy differs from holderUserId', async () => {
+      deps.guardianshipProvider = createFakeGuardianshipProvider([['guardian-1', 'minor-1']]);
+      createHold = createCreateHold(deps);
+
+      const result = await createHold({
+        ...slot(),
+        courtId: COURT.id,
+        holderUserId: 'minor-1',
+        createdByUserId: 'guardian-1',
+      });
+
+      const stored = await deps.reservationRepository.findById(result.reservationId);
+      expect(stored.holderUserId).toBe('minor-1');
+      expect(stored.createdBy).toBe('guardian-1');
+    });
+
+    it('an unauthorized caller booking for someone else throws NotAuthorizedToBookForUser', async () => {
+      await expect(
+        createHold({
+          ...slot(),
+          courtId: COURT.id,
+          holderUserId: 'minor-1',
+          createdByUserId: 'guardian-1',
+        }),
+      ).rejects.toThrow(NotAuthorizedToBookForUser);
+    });
+
+    it('the guardianship check runs before the concurrent-count and membership checks', async () => {
+      let guardianshipCalled = false;
+      let membershipCalled = false;
+      deps.guardianshipProvider = {
+        async canBookFor() {
+          guardianshipCalled = true;
+          return false;
+        },
+      };
+      deps.membershipStatusProvider = {
+        async getStatus() {
+          membershipCalled = true;
+          return null;
+        },
+      };
+      createHold = createCreateHold(deps);
+
+      await expect(
+        createHold({
+          ...slot(),
+          courtId: COURT.id,
+          holderUserId: 'minor-1',
+          createdByUserId: 'guardian-1',
+        }),
+      ).rejects.toThrow(NotAuthorizedToBookForUser);
+      expect(guardianshipCalled).toBe(true);
+      expect(membershipCalled).toBe(false);
+    });
+
+    it('the default null-object guardianship provider rejects any cross-user booking', async () => {
+      // buildDeps()'s default createFakeGuardianshipProvider() authorizes nothing,
+      // mirroring the real createNullGuardianshipProvider()'s always-false stance.
+      await expect(
+        createHold({
+          ...slot(),
+          courtId: COURT.id,
+          holderUserId: 'minor-1',
+          createdByUserId: 'guardian-1',
+        }),
+      ).rejects.toThrow(NotAuthorizedToBookForUser);
+    });
+
+    it('never calls the guardianship provider for a self-booking', async () => {
+      let called = false;
+      deps.guardianshipProvider = {
+        async canBookFor() {
+          called = true;
+          return false;
         },
       };
       createHold = createCreateHold(deps);

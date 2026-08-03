@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -16,16 +16,41 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
   timeZone: 'America/Bogota',
 });
 
-/** @param {{ slot: {courtId: string, courtName: string, start: string, end: string}, onClose: () => void, onConfirmed: () => void }} props */
-export function HoldConfirmModal({ slot, onClose, onConfirmed }) {
+/**
+ * @param {{
+ *   slot: {courtId: string, courtName: string, start: string, end: string},
+ *   holderUserId?: string|null,
+ *   onClose: () => void,
+ *   onConfirmed: () => void,
+ * }} props
+ *   `holderUserId` -- booking on behalf of a linked minor (Phase 6); omitted
+ *   or null means "for myself", the caller's own account.
+ */
+export function HoldConfirmModal({ slot, holderUserId, onClose, onConfirmed }) {
   const [phase, setPhase] = useState('holding'); // 'holding' | 'held' | 'confirming' | 'error'
   const [hold, setHold] = useState(null);
   const [error, setError] = useState(null);
+  // React StrictMode double-invokes this effect in dev (mount -> cleanup ->
+  // mount again, see AuthContext.jsx's identical note). A POST isn't
+  // idempotent like the GETs elsewhere in this app: firing it twice holds
+  // the same slot twice, the second attempt gets a 409, and depending on
+  // response-arrival timing the modal could show that error even though the
+  // first request actually succeeded. Keeping the in-flight promise in a ref
+  // (not just a `cancelled` flag) means the second effect invocation attaches
+  // its own .then/.catch to the SAME request instead of firing a new one.
+  const holdPromiseRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    bookingClient
-      .hold({ courtId: slot.courtId, start: slot.start, end: slot.end })
+    if (!holdPromiseRef.current) {
+      holdPromiseRef.current = bookingClient.hold({
+        courtId: slot.courtId,
+        start: slot.start,
+        end: slot.end,
+        ...(holderUserId ? { holderUserId } : {}),
+      });
+    }
+    holdPromiseRef.current
       .then((result) => {
         if (!cancelled) {
           setHold(result);
@@ -42,7 +67,7 @@ export function HoldConfirmModal({ slot, onClose, onConfirmed }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slot.courtId, slot.start, slot.end]);
+  }, [slot.courtId, slot.start, slot.end, holderUserId]);
 
   function handleCancel() {
     if (hold?.reservationId) {

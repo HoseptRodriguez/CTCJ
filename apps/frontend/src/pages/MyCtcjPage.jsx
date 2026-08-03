@@ -1,19 +1,201 @@
 import { useEffect, useState } from 'react';
 import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 
+import { affiliationClient } from '../api/affiliationClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { describeIdentityError } from '../lib/identityErrorMessages.js';
 import {
   MEMBERSHIP_STATUS_DISPLAY,
   describeMembershipStatus,
 } from '../lib/membershipStatusLabels.js';
 
 import { bogotaTodayKey } from './reservation/DatePicker.jsx';
+
+const REQUEST_STATUS_LABELS = {
+  PENDING: 'En revisión',
+  APPROVED: 'Aprobada',
+  REJECTED: 'Rechazada',
+};
+
+function AffiliationSection() {
+  const [requests, setRequests] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return affiliationClient
+      .getMyRequests()
+      .then((data) => setRequests(data.requests))
+      .catch(() => setRequests([]));
+  }
+
+  useEffect(() => {
+    refetch();
+  }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await affiliationClient.submitRequest({ notes: notes.trim() || undefined });
+      setNotes('');
+      await refetch();
+    } catch (err) {
+      setError(describeIdentityError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (requests === null) {
+    return null;
+  }
+
+  const latest = requests[0];
+  const canRequest = !latest || latest.status === 'REJECTED';
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Afiliación a la academia</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Solicita convertirte en Jugador para acceder a los servicios de la academia.
+      </p>
+
+      {latest ? (
+        <p className="mt-3 text-sm text-secondary">
+          Estado de tu última solicitud:{' '}
+          <strong>{REQUEST_STATUS_LABELS[latest.status] ?? latest.status}</strong>
+        </p>
+      ) : null}
+
+      {canRequest ? (
+        <form onSubmit={handleSubmit} className="mt-4">
+          <label className="block text-sm font-semibold text-primary" htmlFor="affiliation-notes">
+            Cuéntanos por qué quieres unirte (opcional)
+          </label>
+          <textarea
+            id="affiliation-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          />
+          <Button type="submit" variant="primary" className="mt-3" disabled={submitting}>
+            {submitting ? 'Enviando...' : 'Solicitar afiliación'}
+          </Button>
+          {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
+function GuardianshipSection() {
+  const [guardianships, setGuardianships] = useState(null);
+  const [minorEmail, setMinorEmail] = useState('');
+  const [canBook, setCanBook] = useState(true);
+  const [canPay, setCanPay] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return guardianshipClient
+      .listMine()
+      .then((data) => setGuardianships(data.guardianships))
+      .catch(() => setGuardianships([]));
+  }
+
+  useEffect(() => {
+    refetch();
+  }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await guardianshipClient.requestGuardianship({
+        minorEmail: minorEmail.trim(),
+        canPay,
+        canBook,
+      });
+      setMinorEmail('');
+      await refetch();
+    } catch (err) {
+      setError(describeIdentityError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (guardianships === null) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Cuentas vinculadas</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Vincúlate como tutor de un menor para reservar canchas en su nombre. La vinculación requiere
+        aprobación de administración.
+      </p>
+
+      {guardianships.length > 0 ? (
+        <ul className="mt-4 space-y-2">
+          {guardianships.map((g) => (
+            <li
+              key={g.id}
+              className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+            >
+              <span className="text-secondary">{g.minorEmail}</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                {REQUEST_STATUS_LABELS[g.status] ?? g.status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="minor-email">
+            Correo del menor
+          </label>
+          <input
+            id="minor-email"
+            type="email"
+            required
+            value={minorEmail}
+            onChange={(e) => setMinorEmail(e.target.value)}
+            placeholder="menor@correo.com"
+            className="mt-1 w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-secondary">
+          <input type="checkbox" checked={canBook} onChange={(e) => setCanBook(e.target.checked)} />
+          Reservar canchas
+        </label>
+        <label className="flex items-center gap-2 text-sm text-secondary">
+          <input type="checkbox" checked={canPay} onChange={(e) => setCanPay(e.target.checked)} />
+          Pagar
+        </label>
+        <Button type="submit" variant="primary" disabled={submitting || !minorEmail}>
+          {submitting ? 'Enviando...' : 'Solicitar vinculación'}
+        </Button>
+      </form>
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+    </div>
+  );
+}
 
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
@@ -177,6 +359,9 @@ export function MyCtcjPage() {
           </ul>
         </div>
       </div>
+
+      {!isJugador ? <AffiliationSection /> : null}
+      <GuardianshipSection />
     </Section>
   );
 }

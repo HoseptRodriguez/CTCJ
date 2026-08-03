@@ -202,6 +202,131 @@ export function createFakeSystemSettingRepository() {
   };
 }
 
+export function createFakeAffiliationRequestRepository() {
+  const byId = new Map();
+  let counter = 0;
+
+  return {
+    async create({ userId, notes }) {
+      counter += 1;
+      const id = `affiliation-request-${counter}`;
+      const record = {
+        id,
+        userId,
+        status: 'PENDING',
+        requestedAt: new Date(),
+        decidedAt: null,
+        decidedBy: null,
+        notes: notes ?? null,
+        decisionNotes: null,
+      };
+      byId.set(id, record);
+      return { ...record };
+    },
+    async findById(id) {
+      const record = byId.get(id);
+      return record ? { ...record } : null;
+    },
+    async findPendingForUser(userId) {
+      for (const record of byId.values()) {
+        if (record.userId === userId && record.status === 'PENDING') return { ...record };
+      }
+      return null;
+    },
+    async listByUser(userId) {
+      return Array.from(byId.values())
+        .filter((r) => r.userId === userId)
+        .map((r) => ({ ...r }));
+    },
+    async listByStatus(status) {
+      return Array.from(byId.values())
+        .filter((r) => r.status === status)
+        .map((r) => ({ ...r }));
+    },
+    async decide(id, status, decidedAt, decidedBy, decisionNotes) {
+      const record = byId.get(id);
+      record.status = status;
+      record.decidedAt = decidedAt;
+      record.decidedBy = decidedBy;
+      record.decisionNotes = decisionNotes;
+      return { ...record };
+    },
+  };
+}
+
+export function createFakeGuardianshipRepository() {
+  const byId = new Map();
+  let counter = 0;
+
+  return {
+    async create({ guardianUserId, minorUserId, canPay, canBook }) {
+      counter += 1;
+      const id = `guardianship-${counter}`;
+      const record = {
+        id,
+        guardianUserId,
+        minorUserId,
+        canPay,
+        canBook,
+        status: 'PENDING',
+        requestedAt: new Date(),
+        decidedAt: null,
+        decidedBy: null,
+        decisionNotes: null,
+      };
+      byId.set(id, record);
+      return { ...record };
+    },
+    async findById(id) {
+      const record = byId.get(id);
+      return record ? { ...record } : null;
+    },
+    async findActiveForPair(guardianUserId, minorUserId) {
+      for (const record of byId.values()) {
+        if (
+          record.guardianUserId === guardianUserId &&
+          record.minorUserId === minorUserId &&
+          (record.status === 'PENDING' || record.status === 'APPROVED')
+        ) {
+          return { ...record };
+        }
+      }
+      return null;
+    },
+    async existsApprovedBookable(guardianUserId, minorUserId) {
+      for (const record of byId.values()) {
+        if (
+          record.guardianUserId === guardianUserId &&
+          record.minorUserId === minorUserId &&
+          record.status === 'APPROVED' &&
+          record.canBook
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    async listByGuardian(guardianUserId) {
+      return Array.from(byId.values())
+        .filter((r) => r.guardianUserId === guardianUserId)
+        .map((r) => ({ ...r }));
+    },
+    async listByStatus(status) {
+      return Array.from(byId.values())
+        .filter((r) => r.status === status)
+        .map((r) => ({ ...r }));
+    },
+    async decide(id, status, decidedAt, decidedBy, decisionNotes) {
+      const record = byId.get(id);
+      record.status = status;
+      record.decidedAt = decidedAt;
+      record.decidedBy = decidedBy;
+      record.decisionNotes = decisionNotes;
+      return { ...record };
+    },
+  };
+}
+
 export function createFakeClock(initial) {
   let current = initial;
   return {

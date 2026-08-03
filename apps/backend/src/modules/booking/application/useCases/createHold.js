@@ -7,6 +7,7 @@ import { Reservation } from '../../domain/entities/Reservation.js';
 import { CourtNotFound } from '../errors/CourtNotFound.js';
 import { MaxConcurrentReservationsExceeded } from '../errors/MaxConcurrentReservationsExceeded.js';
 import { MembershipOverdueBookingBlocked } from '../errors/MembershipOverdueBookingBlocked.js';
+import { NotAuthorizedToBookForUser } from '../errors/NotAuthorizedToBookForUser.js';
 
 /**
  * @param {{
@@ -16,6 +17,7 @@ import { MembershipOverdueBookingBlocked } from '../errors/MembershipOverdueBook
  *   clubId: string,
  *   membershipStatusProvider: import('../ports/MembershipStatusProvider.js').MembershipStatusProvider,
  *   bookingPolicySettings: import('../ports/BookingPolicySettings.js').BookingPolicySettings,
+ *   guardianshipProvider: import('../ports/GuardianshipProvider.js').GuardianshipProvider,
  * }} deps
  */
 export function createCreateHold({
@@ -25,11 +27,19 @@ export function createCreateHold({
   clubId,
   membershipStatusProvider,
   bookingPolicySettings,
+  guardianshipProvider,
 }) {
   /**
-   * @param {{ courtId: string, periodStart: Date, periodEnd: Date, holderUserId: string }} input
+   * @param {{ courtId: string, periodStart: Date, periodEnd: Date, holderUserId: string, createdByUserId?: string }} input
+   *   createdByUserId defaults to holderUserId (booking for yourself) when omitted.
    */
-  return async function createHold({ courtId, periodStart, periodEnd, holderUserId }) {
+  return async function createHold({
+    courtId,
+    periodStart,
+    periodEnd,
+    holderUserId,
+    createdByUserId = holderUserId,
+  }) {
     const now = clock.now();
 
     validateSlot(periodStart, periodEnd, now); // throws InvalidTimeSlot
@@ -37,6 +47,17 @@ export function createCreateHold({
     const court = await courtRepository.findActiveById(clubId, courtId);
     if (!court) {
       throw new CourtNotFound();
+    }
+
+    // Booking on behalf of someone else (Phase 6, e.g. a guardian booking for
+    // a linked minor) requires an approved, canBook-enabled guardianship --
+    // checked only when the two ids differ, so the ordinary self-booking
+    // path never pays for the cross-module lookup.
+    if (createdByUserId !== holderUserId) {
+      const authorized = await guardianshipProvider.canBookFor(createdByUserId, holderUserId);
+      if (!authorized) {
+        throw new NotAuthorizedToBookForUser();
+      }
     }
 
     const concurrentCount = await reservationRepository.countOccupyingByHolder(holderUserId);
@@ -60,7 +81,7 @@ export function createCreateHold({
       periodStart,
       periodEnd,
       holderUserId,
-      createdBy: holderUserId,
+      createdBy: createdByUserId,
       priceCop: court.priceCop,
       now,
     });

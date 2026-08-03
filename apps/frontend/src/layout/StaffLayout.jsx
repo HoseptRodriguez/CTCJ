@@ -40,6 +40,14 @@ export function StaffLayout() {
                   Precios
                 </Link>
               ) : null}
+              {isAdmin ? (
+                <Link
+                  to="/staff/solicitudes"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Solicitudes
+                </Link>
+              ) : null}
             </nav>
           </div>
           <div className="flex items-center gap-3">

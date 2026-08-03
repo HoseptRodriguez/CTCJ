@@ -90,6 +90,11 @@ model User {
   reservationsCreated Reservation[]       @relation("CreatedByUser")
   paymentsRecorded    Payment[]           @relation("PaymentRecordedBy")
 
+  // Affiliation & guardianship (Phase 6)
+  affiliationRequests     AffiliationRequest[]
+  guardianshipsAsGuardian Guardianship[]        @relation("GuardianOfMinor")
+  guardianshipsAsMinor    Guardianship[]        @relation("MinorOfGuardian")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -214,6 +219,52 @@ model SystemSetting {
 
   @@unique([clubId, key])
   @@map("system_settings")
+}
+
+// Phase 6: USUARIO -> JUGADOR is admin-approved, not automatic (per the
+// club's own docs). Approval here only grants the JUGADOR role -- no
+// plan/category assignment system exists yet.
+model AffiliationRequest {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  status        String    @default("PENDING") @db.VarChar(20) // PENDING|APPROVED|REJECTED
+  requestedAt   DateTime  @default(now()) @map("requested_at")
+  decidedAt     DateTime? @map("decided_at")
+  decidedBy     String?   @map("decided_by") @db.Uuid // no FK, audit-only -- matches membershipStatusUpdatedBy precedent
+  notes         String? // requester's own free-text note
+  decisionNotes String?   @map("decision_notes") // admin's note on approve/reject
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (one PENDING request per user) + status/decision-coherence
+  // CHECKs added via raw-SQL migration -- Prisma has no partial-index/CHECK DSL.
+  @@map("affiliation_requests")
+}
+
+// Phase 6: family/guardian linkage, admin-approved (same shape as affiliation).
+// Deliberately narrow vs. the club's full documented model: only canPay/canBook
+// are tracked (canPay has no runtime effect yet -- no online payment flow
+// exists to gate), no valid_from/valid_to/legal_basis, no age automation --
+// see the Phase 6 plan for why those are explicitly deferred.
+model Guardianship {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  guardianUserId String    @map("guardian_user_id") @db.Uuid
+  minorUserId    String    @map("minor_user_id") @db.Uuid
+  canPay         Boolean   @default(false) @map("can_pay") // captured for a future online-payment flow -- no runtime effect yet
+  canBook        Boolean   @default(false) @map("can_book")
+  status         String    @default("PENDING") @db.VarChar(20) // PENDING|APPROVED|REJECTED
+  requestedAt    DateTime  @default(now()) @map("requested_at")
+  decidedAt      DateTime? @map("decided_at")
+  decidedBy      String?   @map("decided_by") @db.Uuid
+  decisionNotes  String?   @map("decision_notes")
+
+  guardian User @relation("GuardianOfMinor", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  minor    User @relation("MinorOfGuardian", fields: [minorUserId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (one PENDING-or-APPROVED row per guardian+minor pair),
+  // guardian<>minor self-link CHECK, status/decision-coherence CHECKs, and a
+  // partial index for the approved+canBook fast path -- all via raw-SQL migration.
+  @@map("guardianships")
 }
 
 model OutboxEvent {

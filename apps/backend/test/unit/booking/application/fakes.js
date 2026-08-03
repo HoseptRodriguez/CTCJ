@@ -155,6 +155,15 @@ export function createFakeBookingPolicySettings(enabled = false) {
   };
 }
 
+/** @param {Array<[string, string]>} authorizedPairs [creatorUserId, holderUserId] pairs that should be allowed */
+export function createFakeGuardianshipProvider(authorizedPairs = []) {
+  return {
+    async canBookFor(creatorUserId, holderUserId) {
+      return authorizedPairs.some(([c, h]) => c === creatorUserId && h === holderUserId);
+    },
+  };
+}
+
 export function createFakeClock(initial) {
   let current = initial;
   return {

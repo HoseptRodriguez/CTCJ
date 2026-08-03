@@ -23,3 +23,12 @@ export function createStaticBookingPolicySettings(enabled = false) {
     },
   };
 }
+
+/** Never authorizes booking-for-others -- safe default, matches the others' fail-closed-to-self-only stance. */
+export function createNullGuardianshipProvider() {
+  return {
+    async canBookFor() {
+      return false;
+    },
+  };
+}

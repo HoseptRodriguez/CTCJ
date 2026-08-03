@@ -52,6 +52,17 @@ function futureSlot(hoursFromNow = 3) {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+// Club-local (America/Bogota, fixed UTC-5) calendar date for a given instant
+// -- matches booking's own resolveClubDayRangeUtc(), where local midnight is
+// 05:00 UTC. `isoString.slice(0, 10)` (the UTC date) is wrong here: a slot at
+// e.g. 01:00 UTC is still the *previous* Bogota day, not the same one --
+// this only shows up when a test happens to run close enough to UTC midnight
+// for a futureSlot() offset to cross that boundary.
+function bogotaDateKey(isoString) {
+  const bogotaMs = new Date(isoString).getTime() - 5 * 60 * 60_000;
+  return new Date(bogotaMs).toISOString().slice(0, 10);
+}
+
 describe('Booking HTTP API (real Postgres)', () => {
   let app;
   let courtId;
@@ -160,7 +171,7 @@ describe('Booking HTTP API (real Postgres)', () => {
     const staffToken = await login(app, staff.email, staff.password);
 
     const { start, end } = futureSlot(7);
-    const date = start.slice(0, 10);
+    const date = bogotaDateKey(start);
 
     const holdRes = await request(app)
       .post('/api/booking/hold')
@@ -171,12 +182,18 @@ describe('Booking HTTP API (real Postgres)', () => {
     // Directly promote the PRIVATE hold to CLASS via Prisma to exercise the
     // institutional-label branch without needing a staff-console endpoint
     // (out of scope this phase -- see the Phase 2 plan).
+    const classStart = new Date(new Date(start).getTime() + 2 * 60 * 60_000);
+    const classEnd = new Date(new Date(end).getTime() + 2 * 60 * 60_000);
+    // The +2h offset can itself cross the club-local midnight boundary
+    // independently of `date` (e.g. start is just before 05:00 UTC on one
+    // Bogota day, classStart lands just after it, on the next) -- query
+    // whichever club-local day the class reservation actually falls on too.
+    const classDate = bogotaDateKey(classStart.toISOString());
     const classReservationId = randomUUID();
     await prisma.$executeRaw`
       INSERT INTO reservations (id, club_id, court_id, period, status, reservation_type, created_by, updated_at)
       VALUES (${classReservationId}::uuid, ${TEST_CLUB_ID}::uuid, ${courtId}::uuid,
-              tstzrange(${new Date(new Date(start).getTime() + 2 * 60 * 60_000)}::timestamptz,
-                        ${new Date(new Date(end).getTime() + 2 * 60 * 60_000)}::timestamptz, '[)'),
+              tstzrange(${classStart}::timestamptz, ${classEnd}::timestamptz, '[)'),
               'CONFIRMED', 'CLASS', ${owner.id}::uuid, now())
     `;
 
@@ -187,9 +204,14 @@ describe('Booking HTTP API (real Postgres)', () => {
     const anonPrivate = anonymousRes.body.reservations.find(
       (r) => r.courtId === courtId && r.label === 'Ocupada',
     );
-    const anonClass = anonymousRes.body.reservations.find((r) => r.label === 'Clase');
     expect(anonPrivate).toBeTruthy();
     expect(anonPrivate.holderUserId).toBeUndefined();
+
+    const anonymousClassRes =
+      classDate === date
+        ? anonymousRes
+        : await request(app).get('/api/booking/schedule').query({ date: classDate }).expect(200);
+    const anonClass = anonymousClassRes.body.reservations.find((r) => r.label === 'Clase');
     expect(anonClass).toBeTruthy();
 
     const ownerRes = await request(app)
@@ -199,6 +221,7 @@ describe('Booking HTTP API (real Postgres)', () => {
       .expect(200);
     const ownerView = ownerRes.body.reservations.find((r) => r.id === holdRes.body.reservationId);
     expect(ownerView.holderUserId).toBe(owner.id);
+    expect(ownerView.isOwnBooking).toBe(true);
 
     const staffRes = await request(app)
       .get('/api/booking/schedule')
@@ -207,6 +230,10 @@ describe('Booking HTTP API (real Postgres)', () => {
       .expect(200);
     const staffView = staffRes.body.reservations.find((r) => r.id === holdRes.body.reservationId);
     expect(staffView.holderUserId).toBe(owner.id);
+    // Staff sees full detail via their role privilege, but this isn't *their*
+    // booking -- isOwnBooking must stay false, or the staff console's own
+    // grid would highlight every reservation as "mine".
+    expect(staffView.isOwnBooking).toBe(false);
   });
 
   it('rejects an invalid slot (not exactly 60 minutes) with 400', async () => {
@@ -292,7 +319,7 @@ describe('Booking HTTP API (real Postgres)', () => {
       });
       expect(payRes.body.paymentId).toBeTruthy();
 
-      const date = start.slice(0, 10);
+      const date = bogotaDateKey(start);
       const scheduleRes = await request(app)
         .get('/api/booking/schedule')
         .query({ date })
@@ -544,7 +571,7 @@ describe('Booking HTTP API (real Postgres)', () => {
         .send({ courtId, start, end })
         .expect(201);
 
-      const date = start.slice(0, 10);
+      const date = bogotaDateKey(start);
       const staffRes = await request(app)
         .get('/api/booking/schedule')
         .query({ date })
@@ -557,6 +584,100 @@ describe('Booking HTTP API (real Postgres)', () => {
       const anonView = anonRes.body.reservations.find((r) => r.courtId === courtId);
       expect(anonView).toBeTruthy();
       expect(anonView.holderMembershipStatus).toBeUndefined();
+    });
+  });
+
+  describe('guardian booking for a linked minor (Phase 6)', () => {
+    async function approveGuardianship(adminToken, guardianToken, minorEmail, canBook = true) {
+      const requestRes = await request(app)
+        .post('/api/identity/me/guardianships')
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .send({ minorEmail, canPay: false, canBook })
+        .expect(201);
+      await request(app)
+        .put(`/api/admin/guardianships/${requestRes.body.id}/decision`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ decision: 'APPROVED' })
+        .expect(200);
+    }
+
+    it('end-to-end: an approved+canBook guardian can hold, and createdBy differs from holderUserId', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const guardian = await seedVerifiedUser();
+      const minor = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const guardianToken = await login(app, guardian.email, guardian.password);
+
+      await approveGuardianship(adminToken, guardianToken, minor.email);
+
+      const { start, end } = futureSlot(17);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .send({ courtId, start, end, holderUserId: minor.id })
+        .expect(201);
+      expect(holdRes.body.reservationId).toBeTruthy();
+
+      const date = bogotaDateKey(start);
+      const staffOrOwnerRes = await request(app)
+        .get('/api/booking/schedule')
+        .query({ date })
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .expect(200);
+      const view = staffOrOwnerRes.body.reservations.find(
+        (r) => r.id === holdRes.body.reservationId,
+      );
+      // The guardian (creator, not holder) still sees full detail, not the
+      // anonymized shape -- otherwise they could never find their own booking again.
+      expect(view.holderUserId).toBe(minor.id);
+      expect(view.label).toBeUndefined();
+      // And the client can tell it's theirs (BookingGrid's "mine" highlight)
+      // without comparing holderUserId to their own id, which would be false here.
+      expect(view.isOwnBooking).toBe(true);
+    });
+
+    it('without an approved guardianship, booking for someone else is rejected with 403', async () => {
+      const guardian = await seedVerifiedUser();
+      const minor = await seedVerifiedUser();
+      const guardianToken = await login(app, guardian.email, guardian.password);
+
+      const { start, end } = futureSlot(18);
+      const res = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .send({ courtId, start, end, holderUserId: minor.id })
+        .expect(403);
+      expect(res.body.code).toBe('not_authorized_to_book_for_user');
+    });
+
+    it('the guardian can confirm and cancel the reservation they created for the minor', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const guardian = await seedVerifiedUser();
+      const minor = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const guardianToken = await login(app, guardian.email, guardian.password);
+
+      await approveGuardianship(adminToken, guardianToken, minor.email);
+
+      const { start, end } = futureSlot(19);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .send({ courtId, start, end, holderUserId: minor.id })
+        .expect(201);
+
+      const confirmRes = await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+      expect(confirmRes.body.status).toBe('CONFIRMED');
+
+      const cancelRes = await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/cancel`)
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .expect(200);
+      expect(cancelRes.body.status).toBe('CANCELLED');
     });
   });
 });

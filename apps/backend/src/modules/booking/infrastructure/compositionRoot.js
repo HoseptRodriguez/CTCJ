@@ -17,22 +17,25 @@ import { createPrismaPaymentRepository } from './persistence/prismaPaymentReposi
 import {
   createNullMembershipStatusProvider,
   createStaticBookingPolicySettings,
+  createNullGuardianshipProvider,
 } from './adapters/nullAdapters.js';
 
 /**
  * Wires concrete infrastructure adapters to application use cases. Mirrors
  * identity's compositionRoot.js exactly for consistency.
  *
- * `membershipStatusProvider`/`bookingPolicySettings` are optional, cross-
- * module dependencies (Phase 5) -- app.js supplies the real ones, wired to
- * identity's application layer. Left unset (e.g. in a standalone/test call),
- * they default to null-object adapters that never block a booking, matching
- * the policy's own documented safe/permissive default.
+ * `membershipStatusProvider`/`bookingPolicySettings`/`guardianshipProvider`
+ * are optional, cross-module dependencies (Phase 5/6) -- app.js supplies the
+ * real ones, wired to identity's application layer. Left unset (e.g. in a
+ * standalone/test call), they default to null-object adapters that never
+ * block a booking (or never authorize booking-for-others), matching each
+ * policy's own documented safe/permissive default.
  */
 export function buildBookingContainer({
   prismaClient = prisma,
   membershipStatusProvider = createNullMembershipStatusProvider(),
   bookingPolicySettings = createStaticBookingPolicySettings(false),
+  guardianshipProvider = createNullGuardianshipProvider(),
 } = {}) {
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
@@ -54,6 +57,7 @@ export function buildBookingContainer({
       clubId: DEFAULT_CLUB_ID,
       membershipStatusProvider,
       bookingPolicySettings,
+      guardianshipProvider,
     }),
     confirmReservation: createConfirmReservation({ reservationRepository, clock }),
     cancelReservation: createCancelReservation({ reservationRepository, clock }),

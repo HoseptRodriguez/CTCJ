@@ -89,10 +89,15 @@ export class Reservation {
     );
   }
 
-  /** No-op for staff. Throws ReservationNotOwned unless the caller is the holder. */
+  /**
+   * No-op for staff. Otherwise throws ReservationNotOwned unless the caller
+   * is either the current holder or the original creator -- whoever created
+   * a hold (e.g. a guardian booking for a linked minor, Phase 6) can always
+   * manage it, whether or not they're the named holder.
+   */
   ensureOwnedBy(userId, isStaff) {
     if (isStaff) return;
-    if (!this.isHeldBy(userId)) {
+    if (!this.isHeldBy(userId) && this.createdBy !== userId) {
       throw new ReservationNotOwned();
     }
   }
