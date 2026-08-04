@@ -37,7 +37,7 @@ vi.mock('../api/guardianshipClient.js', () => ({
 }));
 
 vi.mock('../api/billingClient.js', () => ({
-  billingClient: { getMyMemberships: vi.fn() },
+  billingClient: { getMyMemberships: vi.fn(), getMyInvoices: vi.fn() },
 }));
 
 vi.mock('../context/AuthContext.jsx', () => ({
@@ -51,6 +51,7 @@ describe('MyCtcjPage', () => {
     affiliationClient.getMyRequests.mockResolvedValue({ requests: [] });
     guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
     billingClient.getMyMemberships.mockResolvedValue({ memberships: [] });
+    billingClient.getMyInvoices.mockResolvedValue({ invoices: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -154,5 +155,31 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(billingClient.getMyMemberships).toHaveBeenCalled());
     expect(screen.queryByText('Mi plan')).not.toBeInTheDocument();
+  });
+
+  it('shows the player their own invoices, read-only, under "Mi plan"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    billingClient.getMyMemberships.mockResolvedValue({
+      memberships: [{ id: 'm1', planName: 'Iniciación', currentPriceCop: 50000, status: 'ACTIVE' }],
+    });
+    billingClient.getMyInvoices.mockResolvedValue({
+      invoices: [
+        {
+          id: 'inv1',
+          membershipId: 'm1',
+          status: 'PENDING',
+          amountCop: 50000,
+          dueDate: '2026-03-05',
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mi plan')).toBeInTheDocument();
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /registrar pago/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /anular/i })).not.toBeInTheDocument();
   });
 });

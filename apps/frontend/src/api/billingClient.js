@@ -4,6 +4,9 @@ import {
   enrollPlayerSchema,
   setPlayerMembershipStatusSchema,
   addAdjustmentSchema,
+  generateInvoiceSchema,
+  recordInvoicePaymentSchema,
+  cancelInvoiceSchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -61,4 +64,41 @@ export const billingClient = {
 
   /** @returns {Promise<{memberships: Array}>} the caller's own memberships */
   getMyMemberships: () => request('/api/billing/me/memberships'),
+
+  /** @param {string} membershipId @param {{ periodStart, periodEnd, dueDate }} payload YYYY-MM-DD dates */
+  generateInvoice: (membershipId, payload) => {
+    generateInvoiceSchema.parse(payload);
+    return request(`/api/admin/billing/memberships/${membershipId}/invoices`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** @param {string} membershipId @returns {Promise<{invoices: Array}>} */
+  listInvoices: (membershipId) =>
+    request(`/api/admin/billing/memberships/${membershipId}/invoices`),
+
+  /** @param {string} invoiceId @returns {Promise<object>} the invoice with its lines */
+  getInvoice: (invoiceId) => request(`/api/admin/billing/invoices/${invoiceId}`),
+
+  /** @param {string} invoiceId @param {{ method: string, notes?: string }} payload */
+  recordInvoicePayment: (invoiceId, payload) => {
+    recordInvoicePaymentSchema.parse(payload);
+    return request(`/api/admin/billing/invoices/${invoiceId}/payment`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** @param {string} invoiceId @param {{ reason: string }} payload */
+  cancelInvoice: (invoiceId, payload) => {
+    cancelInvoiceSchema.parse(payload);
+    return request(`/api/admin/billing/invoices/${invoiceId}/cancel`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** @returns {Promise<{invoices: Array}>} the caller's own invoices */
+  getMyInvoices: () => request('/api/billing/me/invoices'),
 };

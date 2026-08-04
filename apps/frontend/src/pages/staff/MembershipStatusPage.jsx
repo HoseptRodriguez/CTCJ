@@ -13,12 +13,15 @@ import {
   describeMembershipStatus,
 } from '../../lib/membershipStatusLabels.js';
 import { describePlayerMembershipStatus } from '../../lib/playerMembershipStatusLabels.js';
+import { describeInvoiceStatus } from '../../lib/invoiceStatusLabels.js';
 
 const COP_FORMATTER = new Intl.NumberFormat('es-CO', {
   style: 'currency',
   currency: 'COP',
   maximumFractionDigits: 0,
 });
+
+const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
 
 const STATUS_OPTIONS = [null, ...Object.values(MEMBERSHIP_STATUS)];
 
@@ -324,7 +327,256 @@ function EnrollForm({ playerId, canEdit, onEnrolled }) {
   );
 }
 
-function PlayerPlanCard({ user, canEdit }) {
+function GenerateInvoiceForm({ membershipId, onGenerated }) {
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await billingClient.generateInvoice(membershipId, { periodStart, periodEnd, dueDate });
+      setPeriodStart('');
+      setPeriodEnd('');
+      setDueDate('');
+      await onGenerated();
+    } catch (err) {
+      setError(describeBillingError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 flex flex-wrap items-end gap-2">
+      <div>
+        <label className="sr-only" htmlFor={`invoice-period-start-${membershipId}`}>
+          Inicio del período
+        </label>
+        <input
+          id={`invoice-period-start-${membershipId}`}
+          type="date"
+          required
+          value={periodStart}
+          onChange={(e) => setPeriodStart(e.target.value)}
+          className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="sr-only" htmlFor={`invoice-period-end-${membershipId}`}>
+          Fin del período
+        </label>
+        <input
+          id={`invoice-period-end-${membershipId}`}
+          type="date"
+          required
+          value={periodEnd}
+          onChange={(e) => setPeriodEnd(e.target.value)}
+          className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="sr-only" htmlFor={`invoice-due-date-${membershipId}`}>
+          Fecha límite de pago
+        </label>
+        <input
+          id={`invoice-due-date-${membershipId}`}
+          type="date"
+          required
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <Button type="submit" variant="primary" disabled={submitting}>
+        {submitting ? 'Generando...' : 'Generar factura'}
+      </Button>
+      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
+    </form>
+  );
+}
+
+function RecordPaymentForm({ invoiceId, onRecorded }) {
+  const [method, setMethod] = useState('CASH');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await billingClient.recordInvoicePayment(invoiceId, {
+        method,
+        notes: notes.trim() || undefined,
+      });
+      await onRecorded();
+    } catch (err) {
+      setError(describeBillingError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-2 flex flex-wrap items-end gap-2">
+      <div>
+        <label className="sr-only" htmlFor={`payment-method-${invoiceId}`}>
+          Método de pago
+        </label>
+        <select
+          id={`payment-method-${invoiceId}`}
+          value={method}
+          onChange={(e) => setMethod(e.target.value)}
+          className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        >
+          <option value="CASH">Efectivo</option>
+          <option value="TRANSFER">Transferencia</option>
+          <option value="CARD_IN_PERSON">Tarjeta en el club</option>
+        </select>
+      </div>
+      <div>
+        <label className="sr-only" htmlFor={`payment-notes-${invoiceId}`}>
+          Notas (opcional)
+        </label>
+        <input
+          id={`payment-notes-${invoiceId}`}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notas (opcional)"
+          className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <Button type="submit" variant="primary" disabled={submitting}>
+        {submitting ? 'Registrando...' : 'Registrar pago'}
+      </Button>
+      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
+    </form>
+  );
+}
+
+function CancelInvoiceForm({ invoiceId, onCancelled }) {
+  const [reason, setReason] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await billingClient.cancelInvoice(invoiceId, { reason });
+      setShowForm(false);
+      setReason('');
+      await onCancelled();
+    } catch (err) {
+      setError(describeBillingError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!showForm) {
+    return (
+      <Button variant="ghost" onClick={() => setShowForm(true)}>
+        Anular
+      </Button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-2 flex flex-wrap items-end gap-2">
+      <div>
+        <label className="sr-only" htmlFor={`cancel-reason-${invoiceId}`}>
+          Motivo de anulación
+        </label>
+        <input
+          id={`cancel-reason-${invoiceId}`}
+          required
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Motivo de anulación"
+          className="w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <Button type="submit" variant="danger" disabled={submitting}>
+        {submitting ? 'Anulando...' : 'Confirmar anulación'}
+      </Button>
+      <Button variant="ghost" onClick={() => setShowForm(false)}>
+        Cancelar
+      </Button>
+      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
+    </form>
+  );
+}
+
+function InvoicesSection({ membershipId, canEdit, canRecordPayment }) {
+  const [invoices, setInvoices] = useState(null);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return billingClient
+      .listInvoices(membershipId)
+      .then((data) => setInvoices(data.invoices))
+      .catch((err) => setError(describeBillingError(err)));
+  }
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipId]);
+
+  return (
+    <div className="mt-3 border-t border-neutral-200 pt-3">
+      <h4 className="text-sm font-semibold text-primary">Facturas</h4>
+
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+      {!error && invoices === null ? (
+        <p className="mt-2 text-sm text-secondary">Cargando...</p>
+      ) : null}
+      {invoices?.length === 0 ? (
+        <p className="mt-2 text-sm text-secondary">Sin facturas generadas todavía.</p>
+      ) : null}
+
+      {invoices?.length > 0 ? (
+        <ul className="mt-2 space-y-2">
+          {invoices.map((invoice) => (
+            <li key={invoice.id} className="rounded-md bg-raised px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <span className="font-semibold text-primary">
+                    {COP_FORMATTER.format(invoice.amountCop)}
+                  </span>{' '}
+                  · vence {DATE_FORMATTER.format(new Date(invoice.dueDate))}
+                  {' · '}
+                  <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                    {describeInvoiceStatus(invoice.status)}
+                  </span>
+                </span>
+                {invoice.status === 'PENDING' && canEdit ? (
+                  <CancelInvoiceForm invoiceId={invoice.id} onCancelled={refetch} />
+                ) : null}
+              </div>
+              {invoice.status === 'PENDING' && canRecordPayment ? (
+                <RecordPaymentForm invoiceId={invoice.id} onRecorded={refetch} />
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {canEdit ? <GenerateInvoiceForm membershipId={membershipId} onGenerated={refetch} /> : null}
+    </div>
+  );
+}
+
+function PlayerPlanCard({ user, canEdit, canRecordPayment }) {
   const [memberships, setMemberships] = useState(null);
   const [error, setError] = useState(null);
 
@@ -363,6 +615,11 @@ function PlayerPlanCard({ user, canEdit }) {
               <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
                 {describePlayerMembershipStatus(m.status)}
               </span>
+              <InvoicesSection
+                membershipId={m.id}
+                canEdit={canEdit}
+                canRecordPayment={canRecordPayment}
+              />
             </li>
           ))}
         </ul>
@@ -378,6 +635,7 @@ function PlayerPlanCard({ user, canEdit }) {
 export function MembershipStatusPage() {
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes(ROLE_CODES.ADMINISTRADOR);
+  const canRecordPayment = isAdmin || user?.roles?.includes(ROLE_CODES.RECEPCION);
   const [foundUser, setFoundUser] = useState(null);
 
   return (
@@ -405,7 +663,12 @@ export function MembershipStatusPage() {
       ) : null}
 
       {foundUser ? (
-        <PlayerPlanCard key={`plan-${foundUser.id}`} user={foundUser} canEdit={isAdmin} />
+        <PlayerPlanCard
+          key={`plan-${foundUser.id}`}
+          user={foundUser}
+          canEdit={isAdmin}
+          canRecordPayment={canRecordPayment}
+        />
       ) : null}
 
       {isAdmin ? <OverduePolicyCard /> : null}

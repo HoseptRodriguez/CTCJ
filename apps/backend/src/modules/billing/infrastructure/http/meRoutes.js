@@ -7,6 +7,7 @@ export function createMeRoutes(controller) {
   const router = Router();
 
   router.get('/memberships', requireAuth, controller.getMyPlayerMemberships);
+  router.get('/invoices', requireAuth, controller.getMyInvoices);
 
   return router;
 }

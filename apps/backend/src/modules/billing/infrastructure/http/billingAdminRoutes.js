@@ -6,6 +6,9 @@ import {
   setPlayerMembershipStatusSchema,
   addAdjustmentSchema,
   listMembershipsQuerySchema,
+  generateInvoiceSchema,
+  recordInvoicePaymentSchema,
+  cancelInvoiceSchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -70,6 +73,35 @@ export function createBillingAdminRoutes(controller) {
     requireAuth,
     requireRole(STAFF_ROLES),
     controller.listAdjustments,
+  );
+
+  router.post(
+    '/memberships/:id/invoices',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(generateInvoiceSchema),
+    controller.generateInvoice,
+  );
+  router.get(
+    '/memberships/:id/invoices',
+    requireAuth,
+    requireRole(STAFF_ROLES),
+    controller.listInvoicesByMembership,
+  );
+  router.get('/invoices/:id', requireAuth, requireRole(STAFF_ROLES), controller.getInvoice);
+  router.post(
+    '/invoices/:id/payment',
+    requireAuth,
+    requireRole(STAFF_ROLES),
+    validateBody(recordInvoicePaymentSchema),
+    controller.recordInvoicePayment,
+  );
+  router.post(
+    '/invoices/:id/cancel',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(cancelInvoiceSchema),
+    controller.cancelInvoice,
   );
 
   return router;

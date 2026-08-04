@@ -13,5 +13,10 @@ export function createMeController(container) {
     res.status(200).json({ memberships });
   });
 
-  return { getMyPlayerMemberships };
+  const getMyInvoices = asyncHandler(async (req, res) => {
+    const invoices = await container.getMyInvoices({ playerId: req.user.id });
+    res.status(200).json({ invoices });
+  });
+
+  return { getMyPlayerMemberships, getMyInvoices };
 }

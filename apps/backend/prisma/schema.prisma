@@ -332,6 +332,7 @@ model PlayerMembership {
   player      User                   @relation("PlayerMemberships", fields: [playerId], references: [id], onDelete: Cascade)
   plan        MembershipPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
   adjustments MembershipAdjustment[]
+  invoices    Invoice[]
 
   // status/billing_day/period CHECKs added via raw-SQL migration.
   @@map("memberships")
@@ -354,6 +355,70 @@ model MembershipAdjustment {
 
   // adjustment_type CHECK + period CHECK added via raw-SQL migration.
   @@map("membership_adjustments")
+}
+
+// Phase 8: invoice generation ("cobro asistido" -- staff manually generates,
+// no cutoff job/reminder cascade/gateway yet, see the Phase 8 plan). An
+// issued invoice freezes plan price + active adjustments into InvoiceLines;
+// see docs/03-MODELO-DE-DATOS.md §D2's invariant, already quoted above
+// MembershipPlanPrice -- changing a price later never alters an issued
+// invoice's amount/lines.
+//
+// Payment data lives as inline columns here, not a separate table (unlike
+// booking's Payment): an invoice's payment has no independent reachability
+// in this phase's scope (no cross-invoice "all payments" screen), so a
+// value-object-shaped child table would only cost joins everywhere it's
+// read. onDelete: Restrict (not Cascade, unlike MembershipAdjustment) --
+// this is a financial/audit record that must never silently disappear if a
+// membership row is ever deleted. No club_id column -- matches
+// MembershipAdjustment's own precedent of relying on transitive reachability
+// through membership_id rather than duplicating the tenant key.
+model Invoice {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String    @map("membership_id") @db.Uuid
+  status       String    @default("PENDING") @db.VarChar(20) // PENDING|PAID|CANCELLED
+  amountCop    BigInt    @map("amount_cop") // frozen total, floored at 0
+  periodStart  DateTime  @map("period_start") @db.Date
+  periodEnd    DateTime  @map("period_end") @db.Date
+  dueDate      DateTime  @map("due_date") @db.Date
+  issuedAt     DateTime  @map("issued_at")
+  generatedBy  String?   @map("generated_by") @db.Uuid // no FK, audit-only; nullable so a future scheduled job can use a system sentinel without a migration
+
+  paidAmountCop BigInt?   @map("paid_amount_cop")
+  paidMethod    String?   @map("paid_method") @db.VarChar(20) // CASH|TRANSFER|CARD_IN_PERSON, reuses PAYMENT_METHOD
+  paidBy        String?   @map("paid_by") @db.Uuid // no FK, audit-only
+  paidAt        DateTime? @map("paid_at")
+  paidNotes     String?   @map("paid_notes")
+
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelledBy  String?   @map("cancelled_by") @db.Uuid // no FK, audit-only
+  cancelReason String?   @map("cancel_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  membership PlayerMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  lines      InvoiceLine[]
+
+  // One invoice per membership+period. The underlying unique index is
+  // hand-named invoices_membership_period_unique in the raw-SQL migration
+  // (already created there) -- this @@unique only teaches the generated
+  // client the membershipId_periodStart compound-key selector; it doesn't
+  // create a second index. Status/amount/period/coherence CHECKs are also
+  // migration-only -- Prisma has no CHECK DSL.
+  @@unique([membershipId, periodStart])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoiceId   String   @map("invoice_id") @db.Uuid
+  description String
+  amountCop   BigInt   @map("amount_cop") // signed: negative for discounts/scholarships, positive for base price/surcharges
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_lines")
 }
 
 model OutboxEvent {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,6 +22,10 @@ vi.mock('../../api/billingClient.js', () => ({
     listMemberships: vi.fn(),
     listPlans: vi.fn(),
     enrollPlayer: vi.fn(),
+    listInvoices: vi.fn(),
+    generateInvoice: vi.fn(),
+    recordInvoicePayment: vi.fn(),
+    cancelInvoice: vi.fn(),
   },
 }));
 
@@ -54,6 +58,7 @@ describe('MembershipStatusPage', () => {
     vi.clearAllMocks();
     billingClient.listMemberships.mockResolvedValue({ memberships: [] });
     billingClient.listPlans.mockResolvedValue({ plans: [] });
+    billingClient.listInvoices.mockResolvedValue({ invoices: [] });
   });
 
   it('admin: looks up a player and can set a new status', async () => {
@@ -126,5 +131,94 @@ describe('MembershipStatusPage', () => {
     expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
     expect(screen.queryByText('Bloqueo de reservas por mora')).not.toBeInTheDocument();
     expect(membershipClient.getOverduePolicy).not.toHaveBeenCalled();
+  });
+
+  const MEMBERSHIP = {
+    id: 'membership-1',
+    planName: 'Iniciación',
+    currentPriceCop: 100000,
+    status: 'ACTIVE',
+  };
+
+  it('admin: generates an invoice for an enrolled membership', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.generateInvoice.mockResolvedValue({ id: 'invoice-1' });
+
+    const user = userEvent.setup();
+    renderAsAdmin();
+    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
+
+    await searchFor(user, PLAYER.email);
+    expect(await screen.findByText('Sin facturas generadas todavía.')).toBeInTheDocument();
+
+    // Date inputs have sr-only labels with per-membership ids; query via the form instead.
+    const form = screen.getByText('Generar factura').closest('form');
+    const dateInputs = form.querySelectorAll('input[type="date"]');
+    await user.type(dateInputs[0], '2026-03-01');
+    await user.type(dateInputs[1], '2026-04-01');
+    await user.type(dateInputs[2], '2026-03-05');
+    await user.click(screen.getByRole('button', { name: 'Generar factura' }));
+
+    await waitFor(() =>
+      expect(billingClient.generateInvoice).toHaveBeenCalledWith('membership-1', {
+        periodStart: '2026-03-01',
+        periodEnd: '2026-04-01',
+        dueDate: '2026-03-05',
+      }),
+    );
+  });
+
+  it('admin: records a payment and can cancel a PENDING invoice', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.listInvoices.mockResolvedValue({
+      invoices: [{ id: 'invoice-1', status: 'PENDING', amountCop: 100000, dueDate: '2026-03-05' }],
+    });
+    billingClient.recordInvoicePayment.mockResolvedValue({ id: 'invoice-1', status: 'PAID' });
+    billingClient.cancelInvoice.mockResolvedValue({ id: 'invoice-1', status: 'CANCELLED' });
+
+    const user = userEvent.setup();
+    renderAsAdmin();
+    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
+
+    await searchFor(user, PLAYER.email);
+    const facturas = (await screen.findByText('Facturas')).closest('div');
+    expect(within(facturas).getByText('Pendiente')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
+    await waitFor(() =>
+      expect(billingClient.recordInvoicePayment).toHaveBeenCalledWith('invoice-1', {
+        method: 'CASH',
+        notes: undefined,
+      }),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Anular' }));
+    await user.type(screen.getByPlaceholderText('Motivo de anulación'), 'error de digitación');
+    await user.click(screen.getByRole('button', { name: 'Confirmar anulación' }));
+
+    await waitFor(() =>
+      expect(billingClient.cancelInvoice).toHaveBeenCalledWith('invoice-1', {
+        reason: 'error de digitación',
+      }),
+    );
+  });
+
+  it('RECEPCION sees "Registrar pago" but not "Generar factura" or "Anular"', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.listInvoices.mockResolvedValue({
+      invoices: [{ id: 'invoice-1', status: 'PENDING', amountCop: 100000, dueDate: '2026-03-05' }],
+    });
+    useAuth.mockReturnValue({ user: { id: 'staff-1', roles: ['RECEPCION'] } });
+
+    const user = userEvent.setup();
+    render(<MembershipStatusPage />);
+    await searchFor(user, PLAYER.email);
+
+    expect(await screen.findByRole('button', { name: 'Registrar pago' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generar factura' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Anular' })).not.toBeInTheDocument();
   });
 });

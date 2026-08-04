@@ -10,6 +10,11 @@ const STATUS_BY_CODE = {
   invalid_membership_status_transition: 409,
   invalid_price_valid_from: 409,
   negative_price: 400,
+  membership_not_active: 409,
+  plan_price_not_set: 409,
+  invoice_already_exists: 409,
+  invoice_not_found: 404,
+  invalid_invoice_state: 409,
 };
 
 export function mapBillingError(err) {

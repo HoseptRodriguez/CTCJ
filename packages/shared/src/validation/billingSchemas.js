@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ADJUSTMENT_TYPE, PLAYER_MEMBERSHIP_STATUS } from '../constants/billing.js';
+import { PAYMENT_METHOD } from '../constants/payments.js';
 
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format');
 
@@ -37,4 +38,19 @@ export const addAdjustmentSchema = z.object({
 
 export const listMembershipsQuerySchema = z.object({
   playerId: z.string().uuid(),
+});
+
+export const generateInvoiceSchema = z.object({
+  periodStart: dateOnly,
+  periodEnd: dateOnly,
+  dueDate: dateOnly,
+});
+
+export const recordInvoicePaymentSchema = z.object({
+  method: z.nativeEnum(PAYMENT_METHOD),
+  notes: z.string().max(500).optional(),
+});
+
+export const cancelInvoiceSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
 });

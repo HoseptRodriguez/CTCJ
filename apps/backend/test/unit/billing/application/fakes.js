@@ -1,9 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
 import { PlayerMembership } from '../../../../src/modules/billing/domain/entities/PlayerMembership.js';
+import { Invoice } from '../../../../src/modules/billing/domain/entities/Invoice.js';
 
 function cloneMembership(membership) {
   return new PlayerMembership({ ...membership });
+}
+
+function cloneInvoice(invoice) {
+  const clone = new Invoice({ ...invoice });
+  clone.lines = invoice.lines;
+  return clone;
 }
 
 export function createFakePlanRepository(plans = []) {
@@ -133,4 +140,61 @@ export function createFakePlayerEligibilityProvider(eligiblePlayerIds = new Set(
       return eligiblePlayerIds.has(userId);
     },
   };
+}
+
+export function createFakeInvoiceRepository() {
+  const byId = new Map();
+
+  return {
+    async create(
+      { membershipId, amountCop, periodStart, periodEnd, dueDate, issuedAt, generatedBy },
+      lines,
+    ) {
+      const id = randomUUID();
+      const invoice = new Invoice({
+        id,
+        membershipId,
+        amountCop,
+        periodStart,
+        periodEnd,
+        dueDate,
+        issuedAt,
+        generatedBy,
+      });
+      invoice.lines = lines.map((line) => ({ id: randomUUID(), ...line }));
+      byId.set(id, invoice);
+      return cloneInvoice(invoice);
+    },
+    async findById(id) {
+      const invoice = byId.get(id);
+      return invoice ? cloneInvoice(invoice) : null;
+    },
+    async findByMembershipAndPeriod(membershipId, periodStart) {
+      for (const invoice of byId.values()) {
+        if (
+          invoice.membershipId === membershipId &&
+          invoice.periodStart.getTime() === periodStart.getTime()
+        ) {
+          return cloneInvoice(invoice);
+        }
+      }
+      return null;
+    },
+    async listByMembership(membershipId) {
+      return Array.from(byId.values())
+        .filter((invoice) => invoice.membershipId === membershipId)
+        .map(cloneInvoice);
+    },
+    async update(invoice) {
+      const stored = byId.get(invoice.id);
+      const merged = cloneInvoice(invoice);
+      merged.lines = stored?.lines;
+      byId.set(invoice.id, merged);
+      return cloneInvoice(merged);
+    },
+  };
+}
+
+export function createFakeClock(now = new Date('2026-03-05T12:00:00.000Z')) {
+  return { now: () => now };
 }

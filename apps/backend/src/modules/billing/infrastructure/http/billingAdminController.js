@@ -79,6 +79,46 @@ export function createBillingAdminController(container) {
     res.status(200).json({ adjustments });
   });
 
+  const generateInvoice = asyncHandler(async (req, res) => {
+    const invoice = await container.generateInvoice({
+      membershipId: req.params.id,
+      periodStart: new Date(req.body.periodStart),
+      periodEnd: new Date(req.body.periodEnd),
+      dueDate: new Date(req.body.dueDate),
+      generatedByUserId: req.user.id,
+    });
+    res.status(201).json(invoice);
+  });
+
+  const listInvoicesByMembership = asyncHandler(async (req, res) => {
+    const invoices = await container.listInvoicesByMembership({ membershipId: req.params.id });
+    res.status(200).json({ invoices });
+  });
+
+  const getInvoice = asyncHandler(async (req, res) => {
+    const invoice = await container.getInvoice({ invoiceId: req.params.id });
+    res.status(200).json(invoice);
+  });
+
+  const recordInvoicePayment = asyncHandler(async (req, res) => {
+    const invoice = await container.recordInvoicePayment({
+      invoiceId: req.params.id,
+      method: req.body.method,
+      notes: req.body.notes,
+      recordedByUserId: req.user.id,
+    });
+    res.status(200).json(invoice);
+  });
+
+  const cancelInvoice = asyncHandler(async (req, res) => {
+    const invoice = await container.cancelInvoice({
+      invoiceId: req.params.id,
+      cancelledByUserId: req.user.id,
+      reason: req.body.reason,
+    });
+    res.status(200).json(invoice);
+  });
+
   return {
     listPlans,
     createPlan,
@@ -89,5 +129,10 @@ export function createBillingAdminController(container) {
     setPlayerMembershipStatus,
     addAdjustment,
     listAdjustments,
+    generateInvoice,
+    listInvoicesByMembership,
+    getInvoice,
+    recordInvoicePayment,
+    cancelInvoice,
   };
 }

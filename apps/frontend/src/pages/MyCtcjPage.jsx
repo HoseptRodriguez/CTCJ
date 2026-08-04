@@ -17,6 +17,7 @@ import {
   describeMembershipStatus,
 } from '../lib/membershipStatusLabels.js';
 import { describePlayerMembershipStatus } from '../lib/playerMembershipStatusLabels.js';
+import { describeInvoiceStatus } from '../lib/invoiceStatusLabels.js';
 
 import { bogotaTodayKey } from './reservation/DatePicker.jsx';
 
@@ -25,6 +26,8 @@ const PLAN_COP_FORMATTER = new Intl.NumberFormat('es-CO', {
   currency: 'COP',
   maximumFractionDigits: 0,
 });
+
+const INVOICE_DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
 
 const REQUEST_STATUS_LABELS = {
   PENDING: 'En revisión',
@@ -207,6 +210,7 @@ function GuardianshipSection() {
 
 function MyPlanSection() {
   const [memberships, setMemberships] = useState(null);
+  const [invoices, setInvoices] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +221,14 @@ function MyPlanSection() {
       })
       .catch(() => {
         if (!cancelled) setMemberships([]);
+      });
+    billingClient
+      .getMyInvoices()
+      .then((data) => {
+        if (!cancelled) setInvoices(data.invoices);
+      })
+      .catch(() => {
+        if (!cancelled) setInvoices([]);
       });
     return () => {
       cancelled = true;
@@ -231,16 +243,33 @@ function MyPlanSection() {
     <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
       <h3 className="font-display text-lg font-semibold text-primary">Mi plan</h3>
       <ul className="mt-3 space-y-2">
-        {memberships.map((m) => (
-          <li key={m.id} className="rounded-md bg-raised px-4 py-2 text-sm">
-            <span className="font-semibold text-primary">{m.planName}</span>{' '}
-            {m.currentPriceCop != null ? `· ${PLAN_COP_FORMATTER.format(m.currentPriceCop)}` : ''}
-            {' · '}
-            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
-              {describePlayerMembershipStatus(m.status)}
-            </span>
-          </li>
-        ))}
+        {memberships.map((m) => {
+          const myInvoices = invoices?.filter((i) => i.membershipId === m.id) ?? [];
+          return (
+            <li key={m.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+              <span className="font-semibold text-primary">{m.planName}</span>{' '}
+              {m.currentPriceCop != null ? `· ${PLAN_COP_FORMATTER.format(m.currentPriceCop)}` : ''}
+              {' · '}
+              <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                {describePlayerMembershipStatus(m.status)}
+              </span>
+              {myInvoices.length > 0 ? (
+                <ul className="mt-2 space-y-1 border-t border-neutral-200 pt-2">
+                  {myInvoices.map((invoice) => (
+                    <li key={invoice.id} className="text-secondary">
+                      {PLAN_COP_FORMATTER.format(invoice.amountCop)} · vence{' '}
+                      {INVOICE_DATE_FORMATTER.format(new Date(invoice.dueDate))}
+                      {' · '}
+                      <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        {describeInvoiceStatus(invoice.status)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -267,7 +296,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
 // hidden and not claimed as one click away.
 const UPCOMING_FEATURES = [
   'Historial de partidos y estadísticas',
-  'Pagos y estado de cuenta',
+  'Pago en línea de tus facturas',
   'Seguimiento de entrenamiento con tu equipo multidisciplinario',
   'Camino a tu Master en el ranking interno',
 ];

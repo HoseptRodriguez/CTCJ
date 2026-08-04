@@ -10,10 +10,18 @@ import { createAddAdjustment } from '../application/useCases/addAdjustment.js';
 import { createListPlayerMemberships } from '../application/useCases/listPlayerMemberships.js';
 import { createListAdjustments } from '../application/useCases/listAdjustments.js';
 import { createGetMyPlayerMemberships } from '../application/useCases/getMyPlayerMemberships.js';
+import { createGenerateInvoice } from '../application/useCases/generateInvoice.js';
+import { createGetInvoice } from '../application/useCases/getInvoice.js';
+import { createListInvoicesByMembership } from '../application/useCases/listInvoicesByMembership.js';
+import { createRecordInvoicePayment } from '../application/useCases/recordInvoicePayment.js';
+import { createCancelInvoice } from '../application/useCases/cancelInvoice.js';
+import { createGetMyInvoices } from '../application/useCases/getMyInvoices.js';
+import { systemClock } from '../application/ports/Clock.js';
 
 import { createPrismaPlanRepository } from './persistence/prismaPlanRepository.js';
 import { createPrismaMembershipRepository } from './persistence/prismaMembershipRepository.js';
 import { createPrismaAdjustmentRepository } from './persistence/prismaAdjustmentRepository.js';
+import { createPrismaInvoiceRepository } from './persistence/prismaInvoiceRepository.js';
 import { createNullPlayerEligibilityProvider } from './adapters/nullAdapters.js';
 
 /**
@@ -33,6 +41,8 @@ export function buildBillingContainer({
   const planRepository = createPrismaPlanRepository(prismaClient);
   const membershipRepository = createPrismaMembershipRepository(prismaClient);
   const adjustmentRepository = createPrismaAdjustmentRepository(prismaClient);
+  const invoiceRepository = createPrismaInvoiceRepository(prismaClient);
+  const clock = systemClock;
 
   return {
     createPlan: createCreatePlan({ planRepository, clubId: DEFAULT_CLUB_ID }),
@@ -49,5 +59,17 @@ export function buildBillingContainer({
     listPlayerMemberships: createListPlayerMemberships({ membershipRepository, planRepository }),
     listAdjustments: createListAdjustments({ adjustmentRepository, membershipRepository }),
     getMyPlayerMemberships: createGetMyPlayerMemberships({ membershipRepository, planRepository }),
+    generateInvoice: createGenerateInvoice({
+      membershipRepository,
+      planRepository,
+      adjustmentRepository,
+      invoiceRepository,
+      clock,
+    }),
+    getInvoice: createGetInvoice({ invoiceRepository }),
+    listInvoicesByMembership: createListInvoicesByMembership({ invoiceRepository }),
+    recordInvoicePayment: createRecordInvoicePayment({ invoiceRepository, clock }),
+    cancelInvoice: createCancelInvoice({ invoiceRepository, clock }),
+    getMyInvoices: createGetMyInvoices({ membershipRepository, invoiceRepository }),
   };
 }
