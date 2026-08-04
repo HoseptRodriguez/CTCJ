@@ -7,6 +7,7 @@ import {
   generateInvoiceSchema,
   recordInvoicePaymentSchema,
   cancelInvoiceSchema,
+  listInvoicesQuerySchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -101,4 +102,20 @@ export const billingClient = {
 
   /** @returns {Promise<{invoices: Array}>} the caller's own invoices */
   getMyInvoices: () => request('/api/billing/me/invoices'),
+
+  /**
+   * Club-wide listing for the financial dashboard (Phase 9) -- distinct from
+   * listInvoices(membershipId) above, which is scoped to one membership.
+   * @param {{ status?: 'PENDING'|'PAID'|'CANCELLED', from?: string, to?: string }} params
+   * @returns {Promise<{invoices: Array, totalCop: number, count: number}>}
+   */
+  listInvoicesClubWide: (params) => {
+    listInvoicesQuerySchema.parse(params);
+    // request() puts every entry verbatim into the query string, including
+    // literal "undefined" for an unset key -- strip those before sending.
+    const definedParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined),
+    );
+    return request('/api/admin/billing/invoices', { params: definedParams });
+  },
 };

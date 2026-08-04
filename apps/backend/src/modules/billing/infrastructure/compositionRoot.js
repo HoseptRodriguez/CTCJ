@@ -16,27 +16,33 @@ import { createListInvoicesByMembership } from '../application/useCases/listInvo
 import { createRecordInvoicePayment } from '../application/useCases/recordInvoicePayment.js';
 import { createCancelInvoice } from '../application/useCases/cancelInvoice.js';
 import { createGetMyInvoices } from '../application/useCases/getMyInvoices.js';
+import { createListInvoices } from '../application/useCases/listInvoices.js';
 import { systemClock } from '../application/ports/Clock.js';
 
 import { createPrismaPlanRepository } from './persistence/prismaPlanRepository.js';
 import { createPrismaMembershipRepository } from './persistence/prismaMembershipRepository.js';
 import { createPrismaAdjustmentRepository } from './persistence/prismaAdjustmentRepository.js';
 import { createPrismaInvoiceRepository } from './persistence/prismaInvoiceRepository.js';
-import { createNullPlayerEligibilityProvider } from './adapters/nullAdapters.js';
+import {
+  createNullPlayerEligibilityProvider,
+  createNullPlayerDirectoryProvider,
+} from './adapters/nullAdapters.js';
 
 /**
  * Wires concrete infrastructure adapters to application use cases. Mirrors
  * identity's/booking's compositionRoot.js exactly for consistency.
  *
- * `playerEligibilityProvider` is an optional, cross-module dependency
- * (Phase 7) -- app.js supplies the real one, wired to identity's
- * application layer. Left unset (e.g. in a standalone/test call), it
- * defaults to a null-object adapter that never treats anyone as eligible,
- * matching the port's own documented fail-closed default.
+ * `playerEligibilityProvider` (Phase 7) and `playerDirectoryProvider`
+ * (Phase 9) are optional, cross-module dependencies -- app.js supplies the
+ * real ones, wired to identity's application layer. Left unset (e.g. in a
+ * standalone/test call), they default to null-object adapters matching
+ * each port's own documented safe default (fail-closed for eligibility,
+ * fail-open/empty-map for directory lookups -- see nullAdapters.js).
  */
 export function buildBillingContainer({
   prismaClient = prisma,
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
+  playerDirectoryProvider = createNullPlayerDirectoryProvider(),
 } = {}) {
   const planRepository = createPrismaPlanRepository(prismaClient);
   const membershipRepository = createPrismaMembershipRepository(prismaClient);
@@ -71,5 +77,6 @@ export function buildBillingContainer({
     recordInvoicePayment: createRecordInvoicePayment({ invoiceRepository, clock }),
     cancelInvoice: createCancelInvoice({ invoiceRepository, clock }),
     getMyInvoices: createGetMyInvoices({ membershipRepository, invoiceRepository }),
+    listInvoices: createListInvoices({ invoiceRepository, playerDirectoryProvider, clock }),
   };
 }

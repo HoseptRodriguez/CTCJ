@@ -10,6 +10,7 @@ import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
+import { FinancePage } from './pages/staff/FinancePage.jsx';
 import { MembershipStatusPage } from './pages/staff/MembershipStatusPage.jsx';
 import { PaymentsQueuePage } from './pages/staff/PaymentsQueuePage.jsx';
 import { PlansPage } from './pages/staff/PlansPage.jsx';
@@ -43,6 +44,7 @@ export function App() {
                 <Route path="/staff/precios" element={<CourtPricingPage />} />
                 <Route path="/staff/solicitudes" element={<RequestsPage />} />
                 <Route path="/staff/planes" element={<PlansPage />} />
+                <Route path="/staff/finanzas" element={<FinancePage />} />
               </Route>
             </Route>
           </Route>

@@ -34,6 +34,7 @@ import { createBillingAdminRoutes } from './modules/billing/infrastructure/http/
 import { createMeController as createBillingMeController } from './modules/billing/infrastructure/http/meController.js';
 import { createMeRoutes as createBillingMeRoutes } from './modules/billing/infrastructure/http/meRoutes.js';
 import { createIdentityPlayerEligibilityProvider } from './modules/billing/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider } from './modules/billing/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -96,7 +97,13 @@ export function createApp() {
   const playerEligibilityProvider = createIdentityPlayerEligibilityProvider({
     checkIsJugador: identityContainer.checkIsJugador,
   });
-  const billingContainer = buildBillingContainer({ playerEligibilityProvider });
+  const playerDirectoryProvider = createIdentityPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  const billingContainer = buildBillingContainer({
+    playerEligibilityProvider,
+    playerDirectoryProvider,
+  });
   const billingAdminController = createBillingAdminController(billingContainer);
   const billingMeController = createBillingMeController(billingContainer);
   app.use('/api/admin/billing', createBillingAdminRoutes(billingAdminController));

@@ -131,6 +131,20 @@ export function createFakePaymentRepository(reservationsById) {
       reservation.paymentId = id;
       return payment;
     },
+
+    async listByDateRange(from, to) {
+      return Array.from(paymentsById.values())
+        .filter((p) => p.recordedAt >= from && p.recordedAt < to)
+        .sort((a, b) => b.recordedAt - a.recordedAt);
+    },
+
+    async getTotals(from, to) {
+      const inRange = Array.from(paymentsById.values()).filter(
+        (p) => p.recordedAt >= from && p.recordedAt < to,
+      );
+      const totalCop = inRange.reduce((sum, p) => sum + p.amountCop, 0n);
+      return { totalCop, count: inRange.length };
+    },
   };
 }
 

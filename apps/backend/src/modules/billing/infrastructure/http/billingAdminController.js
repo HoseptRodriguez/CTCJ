@@ -119,6 +119,15 @@ export function createBillingAdminController(container) {
     res.status(200).json(invoice);
   });
 
+  const listInvoices = asyncHandler(async (req, res) => {
+    const result = await container.listInvoices({
+      status: req.query.status,
+      paidFrom: req.query.from,
+      paidTo: req.query.to,
+    });
+    res.status(200).json(result);
+  });
+
   return {
     listPlans,
     createPlan,
@@ -134,5 +143,6 @@ export function createBillingAdminController(container) {
     getInvoice,
     recordInvoicePayment,
     cancelInvoice,
+    listInvoices,
   };
 }

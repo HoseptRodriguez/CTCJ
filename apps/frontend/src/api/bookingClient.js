@@ -4,6 +4,7 @@ import {
   scheduleQuerySchema,
   setCourtPriceSchema,
   recordPaymentSchema,
+  listPaymentsQuerySchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -45,5 +46,11 @@ export const bookingClient = {
   recordPayment: (reservationId, payload) => {
     recordPaymentSchema.parse(payload);
     return request(`/api/booking/${reservationId}/payment`, { method: 'POST', body: payload });
+  },
+
+  /** @param {{from: string, to: string}} params YYYY-MM-DD, inclusive */
+  listPayments: (params) => {
+    listPaymentsQuerySchema.parse(params);
+    return request('/api/booking/payments', { params });
   },
 };

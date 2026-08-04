@@ -10,6 +10,7 @@ function cloneMembership(membership) {
 function cloneInvoice(invoice) {
   const clone = new Invoice({ ...invoice });
   clone.lines = invoice.lines;
+  clone.playerId = invoice.playerId;
   return clone;
 }
 
@@ -147,7 +148,9 @@ export function createFakeInvoiceRepository() {
 
   return {
     async create(
-      { membershipId, amountCop, periodStart, periodEnd, dueDate, issuedAt, generatedBy },
+      // playerId is test-only convenience -- the real repository derives it
+      // via a join to PlayerMembership at listAll() time, not at create() time.
+      { membershipId, amountCop, periodStart, periodEnd, dueDate, issuedAt, generatedBy, playerId },
       lines,
     ) {
       const id = randomUUID();
@@ -162,6 +165,7 @@ export function createFakeInvoiceRepository() {
         generatedBy,
       });
       invoice.lines = lines.map((line) => ({ id: randomUUID(), ...line }));
+      invoice.playerId = playerId;
       byId.set(id, invoice);
       return cloneInvoice(invoice);
     },
@@ -189,8 +193,42 @@ export function createFakeInvoiceRepository() {
       const stored = byId.get(invoice.id);
       const merged = cloneInvoice(invoice);
       merged.lines = stored?.lines;
+      merged.playerId = stored?.playerId;
       byId.set(invoice.id, merged);
       return cloneInvoice(merged);
+    },
+    async listAll({ status, paidFrom, paidTo } = {}) {
+      return Array.from(byId.values())
+        .filter((invoice) => !status || invoice.status === status)
+        .filter(
+          (invoice) =>
+            !(paidFrom && paidTo) ||
+            (invoice.paidAt && invoice.paidAt >= paidFrom && invoice.paidAt < paidTo),
+        )
+        .map(cloneInvoice);
+    },
+    async getTotals({ status, paidFrom, paidTo } = {}) {
+      const matching = Array.from(byId.values())
+        .filter((invoice) => !status || invoice.status === status)
+        .filter(
+          (invoice) =>
+            !(paidFrom && paidTo) ||
+            (invoice.paidAt && invoice.paidAt >= paidFrom && invoice.paidAt < paidTo),
+        );
+      const totalCop = matching.reduce((sum, invoice) => sum + invoice.amountCop, 0n);
+      return { totalCop, count: matching.length };
+    },
+  };
+}
+
+export function createFakePlayerDirectoryProvider(summariesById = new Map()) {
+  return {
+    async getPlayerSummaries(userIds) {
+      const result = new Map();
+      for (const id of userIds) {
+        if (summariesById.has(id)) result.set(id, summariesById.get(id));
+      }
+      return result;
     },
   };
 }

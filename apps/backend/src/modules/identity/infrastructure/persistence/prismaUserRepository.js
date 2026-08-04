@@ -63,6 +63,15 @@ export function createPrismaUserRepository(prisma) {
       return toDomainUser(row, await getActiveRoleCodes(row.id));
     },
 
+    async findByIds(ids) {
+      if (ids.length === 0) return [];
+      const rows = await prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      });
+      return rows;
+    },
+
     async existsByEmail(clubId, email) {
       const count = await prisma.user.count({ where: { clubId, email } });
       return count > 0;

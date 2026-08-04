@@ -74,6 +74,14 @@ export function createBookingController(container) {
     res.status(201).json(result);
   });
 
+  const listPayments = asyncHandler(async (req, res) => {
+    const result = await container.listPaymentsByDateRange({
+      from: req.query.from,
+      to: req.query.to,
+    });
+    res.status(200).json(result);
+  });
+
   const getOverduePolicy = asyncHandler(async (req, res) => {
     const result = await container.getOverdueBookingPolicy();
     res.status(200).json(result);
@@ -95,6 +103,7 @@ export function createBookingController(container) {
     cancel,
     setCourtPrice,
     recordPayment,
+    listPayments,
     getOverduePolicy,
     setOverduePolicy,
   };

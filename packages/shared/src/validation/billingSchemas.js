@@ -54,3 +54,9 @@ export const recordInvoicePaymentSchema = z.object({
 export const cancelInvoiceSchema = z.object({
   reason: z.string().trim().min(1).max(500),
 });
+
+export const listInvoicesQuerySchema = z.object({
+  status: z.enum(['PENDING', 'PAID', 'CANCELLED']).optional(),
+  from: dateOnly.optional(),
+  to: dateOnly.optional(),
+});

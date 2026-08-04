@@ -310,4 +310,90 @@ describe('Invoice HTTP API (real Postgres)', () => {
   it('unauthenticated requests get 401', async () => {
     await request(app).get('/api/billing/me/invoices').expect(401);
   });
+
+  describe('GET /api/admin/billing/invoices (club-wide, Phase 9)', () => {
+    it('cartera: PENDING invoices are enriched with player name and isOverdue is computed correctly', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+
+      const planId = await seedPricedPlan(app, adminToken);
+      const membershipId = await enrollPlayer(app, adminToken, { playerId: player.id, planId });
+
+      await request(app)
+        .post(`/api/admin/billing/memberships/${membershipId}/invoices`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ periodStart: '2026-01-01', periodEnd: '2026-02-01', dueDate: '2026-01-05' }) // past due
+        .expect(201);
+      await request(app)
+        .post(`/api/admin/billing/memberships/${membershipId}/invoices`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ periodStart: '2026-12-01', periodEnd: '2027-01-01', dueDate: '2099-01-01' }) // far future
+        .expect(201);
+
+      const res = await request(app)
+        .get('/api/admin/billing/invoices')
+        .query({ status: 'PENDING' })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.invoices).toHaveLength(2);
+      const overdue = res.body.invoices.find((i) => i.dueDate.startsWith('2026-01-05'));
+      const notYetDue = res.body.invoices.find((i) => i.dueDate.startsWith('2099-01-01'));
+      expect(overdue.isOverdue).toBe(true);
+      expect(overdue.playerFirstName).toBe('Test');
+      expect(overdue.playerEmail).toBe(player.email);
+      expect(notYetDue.isOverdue).toBe(false);
+    });
+
+    it('revenue: PAID invoices filtered by paid date range, with a matching total', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+
+      const planId = await seedPricedPlan(app, adminToken);
+      const membershipId = await enrollPlayer(app, adminToken, { playerId: player.id, planId });
+
+      const invoiceId = (
+        await request(app)
+          .post(`/api/admin/billing/memberships/${membershipId}/invoices`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ periodStart: '2026-03-01', periodEnd: '2026-04-01', dueDate: '2026-03-05' })
+          .expect(201)
+      ).body.id;
+      await request(app)
+        .post(`/api/admin/billing/invoices/${invoiceId}/payment`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ method: 'CASH' })
+        .expect(200);
+
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await request(app)
+        .get('/api/admin/billing/invoices')
+        .query({ status: 'PAID', from: today, to: today })
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.invoices).toHaveLength(1);
+      expect(res.body.totalCop).toBe(100000);
+      expect(res.body.count).toBe(1);
+    });
+
+    it('is gated to STAFF_ROLES', async () => {
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .get('/api/admin/billing/invoices')
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+      await request(app)
+        .get('/api/admin/billing/invoices')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(403);
+      await request(app).get('/api/admin/billing/invoices').expect(401);
+    });
+  });
 });

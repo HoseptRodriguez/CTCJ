@@ -100,5 +100,33 @@ export function createPrismaInvoiceRepository(prisma) {
       });
       return toDomain(record, record.lines);
     },
+
+    async listAll({ status, paidFrom, paidTo } = {}) {
+      const records = await prisma.invoice.findMany({
+        where: {
+          ...(status && { status }),
+          ...(paidFrom && paidTo && { paidAt: { gte: paidFrom, lt: paidTo } }),
+        },
+        include: { membership: { select: { playerId: true } } },
+        orderBy: status === 'PENDING' ? { dueDate: 'asc' } : { paidAt: 'desc' },
+      });
+      return records.map((record) => {
+        const invoice = toDomain(record);
+        invoice.playerId = record.membership.playerId;
+        return invoice;
+      });
+    },
+
+    async getTotals({ status, paidFrom, paidTo } = {}) {
+      const result = await prisma.invoice.aggregate({
+        where: {
+          ...(status && { status }),
+          ...(paidFrom && paidTo && { paidAt: { gte: paidFrom, lt: paidTo } }),
+        },
+        _sum: { amountCop: true },
+        _count: true,
+      });
+      return { totalCop: result._sum.amountCop ?? 0n, count: result._count };
+    },
   };
 }

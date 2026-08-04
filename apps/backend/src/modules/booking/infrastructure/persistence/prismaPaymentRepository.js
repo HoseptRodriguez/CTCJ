@@ -36,5 +36,21 @@ export function createPrismaPaymentRepository(prisma) {
         return payment;
       });
     },
+
+    async listByDateRange(from, to) {
+      return prisma.payment.findMany({
+        where: { recordedAt: { gte: from, lt: to } },
+        orderBy: { recordedAt: 'desc' },
+      });
+    },
+
+    async getTotals(from, to) {
+      const result = await prisma.payment.aggregate({
+        where: { recordedAt: { gte: from, lt: to } },
+        _sum: { amountCop: true },
+        _count: true,
+      });
+      return { totalCop: result._sum.amountCop ?? 0n, count: result._count };
+    },
   };
 }

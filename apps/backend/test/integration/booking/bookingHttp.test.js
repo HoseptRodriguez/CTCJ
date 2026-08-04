@@ -458,6 +458,86 @@ describe('Booking HTTP API (real Postgres)', () => {
     });
   });
 
+  describe('financial reporting (Phase 9)', () => {
+    afterEach(async () => {
+      await prisma.court.update({ where: { id: courtId }, data: { defaultPriceCop: null } });
+    });
+
+    async function payForAReservation(hoursFromNow, adminToken, staffToken, playerToken) {
+      await request(app)
+        .put(`/api/booking/courts/${courtId}/price`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ priceCop: 60000 })
+        .expect(200);
+
+      const { start, end } = futureSlot(hoursFromNow);
+      const holdRes = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      await request(app)
+        .post('/api/booking/confirm')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ reservationId: holdRes.body.reservationId })
+        .expect(200);
+      await request(app)
+        .post(`/api/booking/${holdRes.body.reservationId}/payment`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ method: 'CASH' })
+        .expect(201);
+    }
+
+    it('GET /payments totals only what was recorded today, STAFF_ROLES only', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await payForAReservation(13, adminToken, staffToken, playerToken);
+      await payForAReservation(14, adminToken, staffToken, playerToken);
+
+      const today = bogotaDateKey(new Date().toISOString());
+      const res = await request(app)
+        .get('/api/booking/payments')
+        .query({ from: today, to: today })
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+
+      expect(res.body.count).toBe(2);
+      expect(res.body.totalCop).toBe(120000);
+      expect(res.body.payments).toHaveLength(2);
+
+      await request(app).get('/api/booking/payments').query({ from: today, to: today }).expect(401);
+      await request(app)
+        .get('/api/booking/payments')
+        .query({ from: today, to: today })
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(403);
+    });
+
+    it('GET /payments excludes payments outside the requested range', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser();
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await payForAReservation(15, adminToken, staffToken, playerToken);
+
+      const res = await request(app)
+        .get('/api/booking/payments')
+        .query({ from: '2020-01-01', to: '2020-01-01' })
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+
+      expect(res.body).toEqual({ payments: [], totalCop: 0, count: 0 });
+    });
+  });
+
   describe('membership overdue booking block (Phase 5)', () => {
     afterEach(async () => {
       // The overdue-policy toggle is a club-wide SystemSetting, not reset by

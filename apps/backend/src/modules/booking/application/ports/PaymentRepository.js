@@ -14,4 +14,14 @@ export class PaymentRepository {
   async record(_payment) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<PaymentRecord[]>} rows with recordedAt in [from, to), newest first */
+  async listByDateRange(_from, _to) {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<{ totalCop: bigint, count: number }>} totals over recordedAt in [from, to) */
+  async getTotals(_from, _to) {
+    throw new Error('Not implemented');
+  }
 }

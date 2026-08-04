@@ -36,3 +36,8 @@ export const recordPaymentSchema = z.object({
   method: z.nativeEnum(PAYMENT_METHOD),
   notes: z.string().max(500).optional(),
 });
+
+export const listPaymentsQuerySchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format'),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format'),
+});

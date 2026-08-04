@@ -15,6 +15,17 @@ export function createFakeUserRepository() {
       }
       return null;
     },
+    async findByIds(ids) {
+      return ids
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((user) => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        }));
+    },
     async existsByEmail(_clubId, email) {
       for (const user of byId.values()) {
         if (user.email === email) return true;

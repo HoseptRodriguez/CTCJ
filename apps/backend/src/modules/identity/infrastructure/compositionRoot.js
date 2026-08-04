@@ -23,6 +23,7 @@ import { createListGuardianships } from '../application/useCases/listGuardianshi
 import { createListMyGuardianships } from '../application/useCases/listMyGuardianships.js';
 import { createCanBookForMinor } from '../application/useCases/canBookForMinor.js';
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
+import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 
 import { createPrismaUserRepository } from './persistence/prismaUserRepository.js';
 import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.js';
@@ -124,5 +125,6 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
     listMyGuardianships: createListMyGuardianships({ guardianshipRepository, userRepository }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),
+    getUserSummaries: createGetUserSummaries({ userRepository }),
   };
 }

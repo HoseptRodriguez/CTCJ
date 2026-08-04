@@ -17,6 +17,17 @@ export class UserRepository {
     throw new Error('Not implemented');
   }
 
+  /**
+   * Batch lookup for display purposes only -- returns lightweight summary
+   * rows, not full domain User entities (no role codes resolved), since
+   * callers like getUserSummaries.js only need name/email. Unknown ids are
+   * silently omitted, not an error.
+   * @returns {Promise<{id: string, firstName: string, lastName: string, email: string}[]>}
+   */
+  async findByIds(_ids) {
+    throw new Error('Not implemented');
+  }
+
   /** @returns {Promise<boolean>} */
   async existsByEmail(_clubId, _email) {
     throw new Error('Not implemented');

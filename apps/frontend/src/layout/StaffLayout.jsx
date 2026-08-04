@@ -56,6 +56,14 @@ export function StaffLayout() {
                   Planes
                 </Link>
               ) : null}
+              {isAdmin ? (
+                <Link
+                  to="/staff/finanzas"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Finanzas
+                </Link>
+              ) : null}
             </nav>
           </div>
           <div className="flex items-center gap-3">
