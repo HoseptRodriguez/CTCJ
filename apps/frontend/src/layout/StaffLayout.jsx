@@ -10,28 +10,47 @@ import { useAuth } from '../context/AuthContext.jsx';
 export function StaffLayout() {
   const { user, logout } = useAuth();
   const isAdmin = user?.roles?.includes(ROLE_CODES.ADMINISTRADOR);
+  const isRecepcion = user?.roles?.includes(ROLE_CODES.RECEPCION);
+  const isEntrenador = user?.roles?.includes(ROLE_CODES.ENTRENADOR);
+  const canSeePagos = isAdmin || isRecepcion;
+  const canSeeNotas = isAdmin || isEntrenador;
 
   return (
     <div className="flex min-h-screen flex-col bg-sunken">
       <header className="border-b border-neutral-200 bg-canvas">
         <Container className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/staff/pagos" className="font-display text-lg font-semibold text-primary">
+            <Link
+              to={canSeePagos ? '/staff/pagos' : '/staff/notas'}
+              className="font-display text-lg font-semibold text-primary"
+            >
               Ciudad Jardín · Staff
             </Link>
             <nav className="flex items-center gap-4" aria-label="Staff">
-              <Link
-                to="/staff/pagos"
-                className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
-              >
-                Pagos
-              </Link>
-              <Link
-                to="/staff/membresias"
-                className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
-              >
-                Membresías
-              </Link>
+              {canSeePagos ? (
+                <Link
+                  to="/staff/pagos"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Pagos
+                </Link>
+              ) : null}
+              {canSeePagos ? (
+                <Link
+                  to="/staff/membresias"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Membresías
+                </Link>
+              ) : null}
+              {canSeeNotas ? (
+                <Link
+                  to="/staff/notas"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Notas
+                </Link>
+              ) : null}
               {isAdmin ? (
                 <Link
                   to="/staff/precios"

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { coachingClient } from '../api/coachingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -40,6 +41,10 @@ vi.mock('../api/billingClient.js', () => ({
   billingClient: { getMyMemberships: vi.fn(), getMyInvoices: vi.fn() },
 }));
 
+vi.mock('../api/coachingClient.js', () => ({
+  coachingClient: { getMyNotes: vi.fn() },
+}));
+
 vi.mock('../context/AuthContext.jsx', () => ({
   useAuth: vi.fn(),
 }));
@@ -52,6 +57,7 @@ describe('MyCtcjPage', () => {
     guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
     billingClient.getMyMemberships.mockResolvedValue({ memberships: [] });
     billingClient.getMyInvoices.mockResolvedValue({ invoices: [] });
+    coachingClient.getMyNotes.mockResolvedValue({ notes: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -181,5 +187,45 @@ describe('MyCtcjPage', () => {
     expect(screen.getByText('Pendiente')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /registrar pago/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /anular/i })).not.toBeInTheDocument();
+  });
+
+  it('a JUGADOR with notes sees "Mis notas", read-only', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    coachingClient.getMyNotes.mockResolvedValue({
+      notes: [
+        {
+          id: 'note-1',
+          noteType: 'RECOMMENDATION',
+          content: 'Sigue trabajando el saque.',
+          createdAt: '2026-03-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mis notas')).toBeInTheDocument();
+    expect(screen.getByText('Sigue trabajando el saque.')).toBeInTheDocument();
+  });
+
+  it('does not show "Mis notas" when there are none', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(coachingClient.getMyNotes).toHaveBeenCalled());
+    expect(screen.queryByText('Mis notas')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Mis notas" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(coachingClient.getMyNotes).not.toHaveBeenCalled();
   });
 });

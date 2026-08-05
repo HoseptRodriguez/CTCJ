@@ -11,3 +11,4 @@ export * from './validation/membershipSchemas.js';
 export * from './validation/affiliationSchemas.js';
 export * from './validation/guardianshipSchemas.js';
 export * from './validation/billingSchemas.js';
+export * from './validation/coachingSchemas.js';

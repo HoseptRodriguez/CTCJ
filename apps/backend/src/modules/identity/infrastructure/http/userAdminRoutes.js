@@ -12,7 +12,10 @@ export function createUserAdminRoutes(controller) {
   router.get(
     '/lookup',
     requireAuth,
-    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    // Phase 10: coaches need this too, to look up a player before writing a
+    // note about them. Returns only public-ish identity fields -- no
+    // financial/clinical data -- so widening it here is safe.
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION, ROLE_CODES.ENTRENADOR]),
     validateQuery(lookupUserQuerySchema),
     controller.lookup,
   );

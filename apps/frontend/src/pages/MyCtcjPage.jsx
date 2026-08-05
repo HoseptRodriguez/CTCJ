@@ -4,6 +4,7 @@ import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { coachingClient } from '../api/coachingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
@@ -33,6 +34,13 @@ const REQUEST_STATUS_LABELS = {
   PENDING: 'En revisión',
   APPROVED: 'Aprobada',
   REJECTED: 'Rechazada',
+};
+
+const NOTE_TYPE_LABELS = {
+  TRAINING: 'Entrenamiento',
+  TECHNICAL: 'Técnica',
+  TACTICAL: 'Táctica',
+  RECOMMENDATION: 'Recomendación',
 };
 
 function AffiliationSection() {
@@ -275,6 +283,49 @@ function MyPlanSection() {
   );
 }
 
+function MyNotesSection() {
+  const [notes, setNotes] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    coachingClient
+      .getMyNotes()
+      .then((data) => {
+        if (!cancelled) setNotes(data.notes);
+      })
+      .catch(() => {
+        if (!cancelled) setNotes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!notes || notes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Mis notas</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Notas de entrenamiento y recomendaciones que tu entrenador ha compartido contigo.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {notes.map((note) => (
+          <li key={note.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {NOTE_TYPE_LABELS[note.noteType] ?? note.noteType} ·{' '}
+              {INVOICE_DATE_FORMATTER.format(new Date(note.createdAt))}
+            </span>
+            <p className="mt-1 text-secondary">{note.content}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -297,7 +348,6 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
 const UPCOMING_FEATURES = [
   'Historial de partidos y estadísticas',
   'Pago en línea de tus facturas',
-  'Seguimiento de entrenamiento con tu equipo multidisciplinario',
   'Camino a tu Master en el ranking interno',
 ];
 
@@ -440,6 +490,7 @@ export function MyCtcjPage() {
 
       {!isJugador ? <AffiliationSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
+      {isJugador ? <MyNotesSection /> : null}
       <GuardianshipSection />
     </Section>
   );

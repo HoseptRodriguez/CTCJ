@@ -99,6 +99,9 @@ model User {
   // Billing (Phase 7) -- plan enrollments, see PlayerMembership
   playerMemberships PlayerMembership[] @relation("PlayerMemberships")
 
+  // Coaching (Phase 10) -- notes written about this user as a player
+  coachNotes CoachNote[] @relation("CoachNoteSubject")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -419,6 +422,36 @@ model InvoiceLine {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("invoice_lines")
+}
+
+// ---------------------------------------------------------------------------
+// Coaching (Phase 10) -- ENTRENADOR-authored notes about a player. Append-only
+// staff-authored record; no update/delete this phase -- the note history
+// itself IS "track player progress," no separate metrics table. Any
+// ENTRENADOR can write about any JUGADOR this phase (user-confirmed, no
+// coach-to-player roster/assignment concept yet).
+// ---------------------------------------------------------------------------
+
+// player_id is RESTRICT (not Cascade, unlike e.g. membership_adjustments'
+// cascade-with-parent shape) -- mirrors Invoice's Phase 8 precedent: a
+// player's note history must never silently disappear. coach_id has no FK,
+// audit-only -- matches authorized_by/recorded_by/generated_by precedent
+// used everywhere else in this codebase.
+model CoachNote {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String   @map("player_id") @db.Uuid
+  coachId    String   @map("coach_id") @db.Uuid // no FK, audit-only
+  noteType   String   @map("note_type") @db.VarChar(20) // TRAINING|TECHNICAL|TACTICAL|RECOMMENDATION
+  visibility String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  content    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  player User @relation("CoachNoteSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // note_type CHECK + visibility CHECK + index added via raw-SQL migration --
+  // this codebase never declares @@index in schema.prisma, only in the
+  // hand-written migration.
+  @@map("coach_notes")
 }
 
 model OutboxEvent {

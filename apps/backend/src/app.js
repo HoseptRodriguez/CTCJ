@@ -35,6 +35,12 @@ import { createMeController as createBillingMeController } from './modules/billi
 import { createMeRoutes as createBillingMeRoutes } from './modules/billing/infrastructure/http/meRoutes.js';
 import { createIdentityPlayerEligibilityProvider } from './modules/billing/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider } from './modules/billing/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { buildCoachingContainer } from './modules/coaching/infrastructure/compositionRoot.js';
+import { createCoachingAdminController } from './modules/coaching/infrastructure/http/coachingAdminController.js';
+import { createCoachingAdminRoutes } from './modules/coaching/infrastructure/http/coachingAdminRoutes.js';
+import { createMeController as createCoachingMeController } from './modules/coaching/infrastructure/http/meController.js';
+import { createMeRoutes as createCoachingMeRoutes } from './modules/coaching/infrastructure/http/meRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createCoachingPlayerEligibilityProvider } from './modules/coaching/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -108,6 +114,17 @@ export function createApp() {
   const billingMeController = createBillingMeController(billingContainer);
   app.use('/api/admin/billing', createBillingAdminRoutes(billingAdminController));
   app.use('/api/billing/me', createBillingMeRoutes(billingMeController));
+
+  const coachingPlayerEligibilityProvider = createCoachingPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const coachingContainer = buildCoachingContainer({
+    playerEligibilityProvider: coachingPlayerEligibilityProvider,
+  });
+  const coachingAdminController = createCoachingAdminController(coachingContainer);
+  const coachingMeController = createCoachingMeController(coachingContainer);
+  app.use('/api/admin/coaching', createCoachingAdminRoutes(coachingAdminController));
+  app.use('/api/coaching/me', createCoachingMeRoutes(coachingMeController));
 
   // Other module routers are mounted here as each module is implemented.
 
