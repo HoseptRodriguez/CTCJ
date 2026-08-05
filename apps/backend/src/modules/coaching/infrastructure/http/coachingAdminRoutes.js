@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createNoteSchema, ROLE_CODES } from '@ctcj/shared';
+import { createNoteSchema, recordPerformanceSnapshotSchema, ROLE_CODES } from '@ctcj/shared';
 
 import { requireAuth } from '../../../identity/infrastructure/http/middleware/requireAuth.js';
 import { requireRole } from '../../../identity/infrastructure/http/middleware/requireRole.js';
@@ -24,6 +24,20 @@ export function createCoachingAdminRoutes(controller) {
     requireAuth,
     requireRole(COACH_STAFF_ROLES),
     controller.listPlayerNotes,
+  );
+
+  router.post(
+    '/players/:id/performance',
+    requireAuth,
+    requireRole(COACH_STAFF_ROLES),
+    validateBody(recordPerformanceSnapshotSchema),
+    controller.recordPerformanceSnapshot,
+  );
+  router.get(
+    '/players/:id/performance',
+    requireAuth,
+    requireRole(COACH_STAFF_ROLES),
+    controller.listPlayerPerformance,
   );
 
   return router;

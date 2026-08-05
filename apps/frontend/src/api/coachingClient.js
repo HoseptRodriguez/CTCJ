@@ -1,4 +1,4 @@
-import { createNoteSchema } from '@ctcj/shared';
+import { createNoteSchema, recordPerformanceSnapshotSchema } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
 
@@ -17,4 +17,20 @@ export const coachingClient = {
 
   /** @returns {Promise<{notes: Array}>} the caller's own PLAYER_VISIBLE notes */
   getMyNotes: () => request('/api/coaching/me/notes'),
+
+  /** @param {string} playerId @param {Record<string, number>} ratings partial map, e.g. { SERVE: 6 } */
+  recordPerformanceSnapshot: (playerId, ratings) => {
+    recordPerformanceSnapshotSchema.parse({ ratings });
+    return request(`/api/admin/coaching/players/${playerId}/performance`, {
+      method: 'POST',
+      body: { ratings },
+    });
+  },
+
+  /** @param {string} playerId @returns {Promise<{ratings: Array, summary: object}>} staff-facing full history + derived summary */
+  listPlayerPerformance: (playerId) =>
+    request(`/api/admin/coaching/players/${playerId}/performance`),
+
+  /** @returns {Promise<{ratings: Array, summary: object}>} the caller's own full history + derived summary */
+  getMyPerformance: () => request('/api/coaching/me/performance'),
 };

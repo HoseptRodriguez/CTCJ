@@ -12,7 +12,14 @@ vi.mock('../../api/membershipClient.js', () => ({
 }));
 
 vi.mock('../../api/coachingClient.js', () => ({
-  coachingClient: { createNote: vi.fn(), listPlayerNotes: vi.fn(), getMyNotes: vi.fn() },
+  coachingClient: {
+    createNote: vi.fn(),
+    listPlayerNotes: vi.fn(),
+    getMyNotes: vi.fn(),
+    recordPerformanceSnapshot: vi.fn(),
+    listPlayerPerformance: vi.fn(),
+    getMyPerformance: vi.fn(),
+  },
 }));
 
 const PLAYER = {
@@ -34,6 +41,10 @@ describe('CoachNotesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     coachingClient.listPlayerNotes.mockResolvedValue({ notes: [] });
+    coachingClient.listPlayerPerformance.mockResolvedValue({
+      ratings: [],
+      summary: { ratedAreas: [], latestByArea: {}, progressByArea: {} },
+    });
   });
 
   it('shows the note form and list only for a JUGADOR target', async () => {
@@ -104,5 +115,53 @@ describe('CoachNotesPage', () => {
     // Type + visibility render as one self-contained text node ("Táctica · Privada"),
     // distinct from the same words appearing separately as <option>s in the form below.
     expect(screen.getByText(/Táctica\s*·\s*Privada/)).toBeInTheDocument();
+  });
+
+  it('switches to the Rendimiento tab and shows the empty state with no ratings yet', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+
+    const user = userEvent.setup();
+    render(<CoachNotesPage />);
+    await searchFor(user, PLAYER.email);
+    await screen.findByRole('button', { name: 'Agregar nota' });
+
+    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
+
+    expect(await screen.findByText('Sin evaluaciones registradas todavía.')).toBeInTheDocument();
+    expect(coachingClient.listPlayerPerformance).toHaveBeenCalledWith('user-1');
+  });
+
+  it('records a partial performance snapshot with only the filled-in areas', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    coachingClient.recordPerformanceSnapshot.mockResolvedValue({ ratings: [] });
+
+    const user = userEvent.setup();
+    render(<CoachNotesPage />);
+    await searchFor(user, PLAYER.email);
+    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
+    await screen.findByText('Sin evaluaciones registradas todavía.');
+
+    await user.type(screen.getByLabelText('Saque'), '7');
+    await user.click(screen.getByRole('button', { name: 'Registrar evaluación' }));
+
+    await waitFor(() =>
+      expect(coachingClient.recordPerformanceSnapshot).toHaveBeenCalledWith('user-1', { SERVE: 7 }),
+    );
+  });
+
+  it('renders charts when performance ratings exist', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    coachingClient.listPlayerPerformance.mockResolvedValue({
+      ratings: [{ id: 'r1', area: 'SERVE', rating: 7, recordedAt: '2026-03-01T00:00:00.000Z' }],
+      summary: { ratedAreas: ['SERVE'], latestByArea: { SERVE: 7 }, progressByArea: {} },
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(<CoachNotesPage />);
+    await searchFor(user, PLAYER.email);
+    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
+
+    await waitFor(() => expect(coachingClient.listPlayerPerformance).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelectorAll('svg').length).toBeGreaterThan(0));
   });
 });

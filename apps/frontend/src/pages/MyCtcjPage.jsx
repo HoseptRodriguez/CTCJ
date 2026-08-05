@@ -9,6 +9,7 @@ import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { PerformanceRadarChart } from '../components/ui/PerformanceRadarChart.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -19,6 +20,7 @@ import {
 } from '../lib/membershipStatusLabels.js';
 import { describePlayerMembershipStatus } from '../lib/playerMembershipStatusLabels.js';
 import { describeInvoiceStatus } from '../lib/invoiceStatusLabels.js';
+import { describeArea, describeRatingBand } from '../lib/performanceRatingLabels.js';
 
 import { bogotaTodayKey } from './reservation/DatePicker.jsx';
 
@@ -326,6 +328,64 @@ function MyNotesSection() {
   );
 }
 
+function MyPerformanceSection() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    coachingClient
+      .getMyPerformance()
+      .then((d) => {
+        if (!cancelled) setData(d);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setData({
+            ratings: [],
+            summary: { ratedAreas: [], latestByArea: {}, progressByArea: {} },
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Mi rendimiento</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Evaluaciones de tu entrenador sobre tus habilidades técnicas.
+      </p>
+
+      {data.ratings.length === 0 ? (
+        <p className="mt-3 text-sm text-secondary">Aún no tienes evaluaciones registradas.</p>
+      ) : (
+        <div className="mt-4 grid gap-6 lg:grid-cols-2">
+          <PerformanceRadarChart latestByArea={data.summary.latestByArea} />
+          <ul className="space-y-2">
+            {data.summary.ratedAreas.map((area) => (
+              <li
+                key={area}
+                className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+              >
+                <span className="text-secondary">{describeArea(area)}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                  {describeRatingBand(data.summary.latestByArea[area])}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -491,6 +551,7 @@ export function MyCtcjPage() {
       {!isJugador ? <AffiliationSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}
+      {isJugador ? <MyPerformanceSection /> : null}
       <GuardianshipSection />
     </Section>
   );

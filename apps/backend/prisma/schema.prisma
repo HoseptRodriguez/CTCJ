@@ -102,6 +102,9 @@ model User {
   // Coaching (Phase 10) -- notes written about this user as a player
   coachNotes CoachNote[] @relation("CoachNoteSubject")
 
+  // Coaching (Phase 11) -- skill ratings recorded about this user as a player
+  performanceRatings PerformanceRating[] @relation("PerformanceRatingSubject")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -452,6 +455,31 @@ model CoachNote {
   // this codebase never declares @@index in schema.prisma, only in the
   // hand-written migration.
   @@map("coach_notes")
+}
+
+// Append-only staff-authored skill assessment (Phase 11), one row per
+// (player, area, point in time) -- a time series, not a mutable "current
+// rating" (matches coach_notes' shape: the rating history itself IS "track
+// progress/technical evolution," no separate metrics/session table).
+// Extends the coaching module rather than a new bounded context -- same
+// actor, same subject, same purpose as coach_notes. player_id FK is
+// RESTRICT, not Cascade, matching coach_notes' precedent: a player's
+// rating history must never silently disappear. coach_id has no FK,
+// audit-only -- matches authorized_by/recorded_by/generated_by/
+// coach_notes.coach_id precedent.
+model PerformanceRating {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String   @map("player_id") @db.Uuid
+  coachId    String   @map("coach_id") @db.Uuid // no FK, audit-only
+  area       String   @map("area") @db.VarChar(20) // FOREHAND|BACKHAND|SERVE|RETURN|VOLLEY|OVERHEAD
+  rating     Int      @db.SmallInt // 1-10
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  player User @relation("PerformanceRatingSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // area CHECK + rating range CHECK + index added via raw-SQL migration --
+  // this codebase never declares @@index in schema.prisma.
+  @@map("performance_ratings")
 }
 
 model OutboxEvent {

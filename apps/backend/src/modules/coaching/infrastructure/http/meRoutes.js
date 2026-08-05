@@ -7,6 +7,7 @@ export function createMeRoutes(controller) {
   const router = Router();
 
   router.get('/notes', requireAuth, controller.getMyNotes);
+  router.get('/performance', requireAuth, controller.getMyPerformance);
 
   return router;
 }

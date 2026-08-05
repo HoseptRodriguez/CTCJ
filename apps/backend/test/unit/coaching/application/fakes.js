@@ -31,3 +31,36 @@ export function createFakePlayerEligibilityProvider(eligiblePlayerIds = new Set(
     },
   };
 }
+
+export function createFakePerformanceRatingRepository() {
+  const rows = [];
+
+  return {
+    async createBatch({ playerId, coachId, ratings }) {
+      // One shared timestamp per batch, mirroring the real repository's
+      // transaction-time-stable CURRENT_TIMESTAMP behavior.
+      const recordedAt = new Date();
+      const created = Object.entries(ratings).map(([area, rating]) => ({
+        id: randomUUID(),
+        playerId,
+        coachId,
+        area,
+        rating,
+        recordedAt,
+      }));
+      rows.push(...created);
+      return created;
+    },
+    async listByPlayer(playerId) {
+      return rows
+        .filter((row) => row.playerId === playerId)
+        .sort((a, b) => b.recordedAt - a.recordedAt);
+    },
+    // Test-only: seed a row with a controlled timestamp, for ordering/progress
+    // tests where relying on real wall-clock gaps between createBatch() calls
+    // would be flaky.
+    _seed(row) {
+      rows.push({ id: randomUUID(), ...row });
+    },
+  };
+}

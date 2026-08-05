@@ -24,5 +24,24 @@ export function createCoachingAdminController(container) {
     res.status(200).json({ notes });
   });
 
-  return { createNote, listPlayerNotes };
+  const recordPerformanceSnapshot = asyncHandler(async (req, res) => {
+    const ratings = await container.recordPerformanceSnapshot({
+      playerId: req.params.id,
+      ratings: req.body.ratings,
+      coachUserId: req.user.id,
+    });
+    res.status(201).json({ ratings });
+  });
+
+  const listPlayerPerformance = asyncHandler(async (req, res) => {
+    const result = await container.listPlayerPerformance({ playerId: req.params.id });
+    res.status(200).json(result);
+  });
+
+  return {
+    createNote,
+    listPlayerNotes,
+    recordPerformanceSnapshot,
+    listPlayerPerformance,
+  };
 }

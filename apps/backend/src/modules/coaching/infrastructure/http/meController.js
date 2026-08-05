@@ -13,5 +13,10 @@ export function createMeController(container) {
     res.status(200).json({ notes });
   });
 
-  return { getMyNotes };
+  const getMyPerformance = asyncHandler(async (req, res) => {
+    const result = await container.getMyPerformance({ playerId: req.user.id });
+    res.status(200).json(result);
+  });
+
+  return { getMyNotes, getMyPerformance };
 }

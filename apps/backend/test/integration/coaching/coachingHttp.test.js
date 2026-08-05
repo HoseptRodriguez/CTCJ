@@ -171,4 +171,87 @@ describe('Coaching HTTP API (real Postgres)', () => {
       .expect(200);
     expect(res.body.id).toBe(player.id);
   });
+
+  describe('performance ratings (Phase 11)', () => {
+    it('ADMINISTRADOR and ENTRENADOR can record a partial snapshot and list it; RECEPCION gets 403', async () => {
+      const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const coachToken = await login(app, coach.email, coach.password);
+      const staffToken = await login(app, staff.email, staff.password);
+
+      const recordRes = await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { SERVE: 6, VOLLEY: 7 } })
+        .expect(201);
+      expect(recordRes.body.ratings).toHaveLength(2);
+      expect(recordRes.body.ratings[0].coachId).toBe(coach.id);
+      // both rows share one recordedAt (one transaction, not two round-trips)
+      expect(recordRes.body.ratings[0].recordedAt).toBe(recordRes.body.ratings[1].recordedAt);
+
+      const listRes = await request(app)
+        .get(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .expect(200);
+      expect(listRes.body.ratings).toHaveLength(2);
+      expect(listRes.body.summary.latestByArea).toEqual({ SERVE: 6, VOLLEY: 7 });
+
+      await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .send({ ratings: { SERVE: 6 } })
+        .expect(403);
+      await request(app)
+        .get(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(403);
+    });
+
+    it('rejects recording performance for a non-JUGADOR target with 409', async () => {
+      const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
+      const notAPlayer = await seedVerifiedUser();
+      const coachToken = await login(app, coach.email, coach.password);
+
+      const res = await request(app)
+        .post(`/api/admin/coaching/players/${notAPlayer.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { SERVE: 6 } })
+        .expect(409);
+      expect(res.body.code).toBe('player_not_eligible');
+    });
+
+    it('GET /api/coaching/me/performance is self-service only, scoped to req.user.id', async () => {
+      const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const otherPlayer = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const coachToken = await login(app, coach.email, coach.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { FOREHAND: 8 } })
+        .expect(201);
+      await request(app)
+        .post(`/api/admin/coaching/players/${otherPlayer.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { FOREHAND: 3 } })
+        .expect(201);
+
+      const res = await request(app)
+        .get('/api/coaching/me/performance')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(200);
+      expect(res.body.ratings).toHaveLength(1);
+      expect(res.body.summary.latestByArea).toEqual({ FOREHAND: 8 });
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      await request(app).post(`/api/admin/coaching/players/${player.id}/performance`).expect(401);
+      await request(app).get(`/api/admin/coaching/players/${player.id}/performance`).expect(401);
+      await request(app).get('/api/coaching/me/performance').expect(401);
+    });
+  });
 });

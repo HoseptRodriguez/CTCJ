@@ -42,7 +42,7 @@ vi.mock('../api/billingClient.js', () => ({
 }));
 
 vi.mock('../api/coachingClient.js', () => ({
-  coachingClient: { getMyNotes: vi.fn() },
+  coachingClient: { getMyNotes: vi.fn(), getMyPerformance: vi.fn() },
 }));
 
 vi.mock('../context/AuthContext.jsx', () => ({
@@ -58,6 +58,10 @@ describe('MyCtcjPage', () => {
     billingClient.getMyMemberships.mockResolvedValue({ memberships: [] });
     billingClient.getMyInvoices.mockResolvedValue({ invoices: [] });
     coachingClient.getMyNotes.mockResolvedValue({ notes: [] });
+    coachingClient.getMyPerformance.mockResolvedValue({
+      ratings: [],
+      summary: { ratedAreas: [], latestByArea: {}, progressByArea: {} },
+    });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -227,5 +231,46 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(coachingClient.getMyNotes).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with no ratings sees the "Mi rendimiento" empty state', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    expect(await screen.findByText('Mi rendimiento')).toBeInTheDocument();
+    expect(screen.getByText('Aún no tienes evaluaciones registradas.')).toBeInTheDocument();
+  });
+
+  it('a JUGADOR with ratings sees qualitative bands, not bare numbers', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    coachingClient.getMyPerformance.mockResolvedValue({
+      ratings: [{ id: 'r1', area: 'SERVE', rating: 8, recordedAt: '2026-03-01T00:00:00.000Z' }],
+      summary: { ratedAreas: ['SERVE'], latestByArea: { SERVE: 8 }, progressByArea: {} },
+    });
+
+    renderPage();
+
+    const areaLabel = await screen.findByText('Saque');
+    expect(areaLabel).toBeInTheDocument();
+    const bandLabel = screen.getByText('Muy bueno');
+    expect(bandLabel).toBeInTheDocument();
+    // The band list item itself must show the qualitative label, not the raw
+    // "8" -- the chart's own axis ticks legitimately render numbers and are
+    // out of scope for this assertion.
+    expect(bandLabel.closest('li')).toHaveTextContent('Saque');
+    expect(bandLabel.closest('li')).not.toHaveTextContent('8');
+  });
+
+  it('a plain USUARIO never sees "Mi rendimiento" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(coachingClient.getMyPerformance).not.toHaveBeenCalled();
   });
 });
