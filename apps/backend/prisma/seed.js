@@ -60,7 +60,6 @@ const ROLE_PERMISSION_GRANTS = {
     'booking:reservation:create',
     'booking:reservation:read_own',
     'billing:payment:read_own',
-    'competition:result:submit',
   ],
   PADRE_TUTOR: [
     'booking:reservation:create',

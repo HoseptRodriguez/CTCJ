@@ -10,6 +10,7 @@ import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { CoachNotesPage } from './pages/staff/CoachNotesPage.jsx';
+import { CompetitionPage } from './pages/staff/CompetitionPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
 import { FinancePage } from './pages/staff/FinancePage.jsx';
 import { MembershipStatusPage } from './pages/staff/MembershipStatusPage.jsx';
@@ -56,6 +57,7 @@ export function App() {
           >
             <Route element={<StaffLayout />}>
               <Route path="/staff" element={<StaffHome />} />
+              <Route path="/staff/competicion" element={<CompetitionPage />} />
               <Route
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
               >

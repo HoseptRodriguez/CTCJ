@@ -51,6 +51,12 @@ export function StaffLayout() {
                   Notas
                 </Link>
               ) : null}
+              <Link
+                to="/staff/competicion"
+                className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+              >
+                Competición
+              </Link>
               {isAdmin ? (
                 <Link
                   to="/staff/precios"

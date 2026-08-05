@@ -37,6 +37,7 @@ model Club {
   payments       Payment[]
   systemSettings SystemSetting[]
   membershipPlans MembershipPlan[]
+  competitionSeasons CompetitionSeason[]
 
   @@map("clubs")
 }
@@ -104,6 +105,9 @@ model User {
 
   // Coaching (Phase 11) -- skill ratings recorded about this user as a player
   performanceRatings PerformanceRating[] @relation("PerformanceRatingSubject")
+
+  // Competition (Phase 12) -- match results this user participated in
+  competitionMatchParticipations CompetitionMatchParticipant[] @relation("CompetitionMatchParticipant")
 
   @@unique([clubId, email])
   @@map("users")
@@ -480,6 +484,90 @@ model PerformanceRating {
   // area CHECK + rating range CHECK + index added via raw-SQL migration --
   // this codebase never declares @@index in schema.prisma.
   @@map("performance_ratings")
+}
+
+// ---------------------------------------------------------------------------
+// Competition (Internal Rankings, Phase 12) -- staff-recorded match results
+// + standings computed live from them at read time (never stored). Mirrors
+// booking's "cobro asistido": staff-only recording, no player self-report/
+// dispute flow. Tournament brackets/draws are a separate future phase -- this
+// is only a ranking ladder built from match results.
+//
+// CompetitionSeason is club-wide config (like MembershipPlan), so it carries
+// club_id directly. CompetitionMatch is a dependent record about specific
+// players (like coach_notes/performance_ratings), so it does NOT duplicate
+// club_id -- it reaches the club only via season_id -> competition_seasons.
+// club_id, matching coach_notes'/performance_ratings' precedent of reaching
+// the club only via player_id -> users.club_id.
+// ---------------------------------------------------------------------------
+
+model CompetitionSeason {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId       String    @map("club_id") @db.Uuid
+  name         String    @db.VarChar(60)
+  year         Int       @db.SmallInt
+  seasonNumber Int       @map("season_number") @db.SmallInt // 1|2 -- two seasons/year
+  status       String    @default("OPEN") @db.VarChar(10) // OPEN|CLOSED
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  createdBy    String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt    DateTime  @default(now()) @map("created_at")
+  closedAt     DateTime? @map("closed_at")
+  closedBy     String?   @map("closed_by") @db.Uuid // no FK, audit-only
+
+  club    Club               @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  matches CompetitionMatch[]
+
+  // one-OPEN-season-per-club partial unique index + status/closed coherence
+  // CHECK added via raw-SQL migration.
+  @@unique([clubId, year, seasonNumber])
+  @@map("competition_seasons")
+}
+
+// A match result, recorded by staff after the fact -- never edited, only
+// voided (a compensating action, matching Invoice.cancel()'s precedent, not
+// a mutation). Participant-count-per-side (1 for singles, 2 for doubles) is
+// a cross-row invariant Postgres CHECK constraints can't express -- enforced
+// at the domain layer (CompetitionMatch.record()) instead, with the match
+// and its participant rows inserted inside one transaction.
+model CompetitionMatch {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seasonId   String    @map("season_id") @db.Uuid
+  category   String    @db.VarChar(20) // SEGUNDA|TERCERA|CUARTA|QUINTA -- no PRIMERA
+  modality   String    @db.VarChar(10) // SINGLES|DOBLES
+  status     String    @default("RECORDED") @db.VarChar(10) // RECORDED|VOID
+  winnerSide String    @map("winner_side") @db.VarChar(1) // A|B
+  setsWonA   Int       @map("sets_won_a") @db.SmallInt
+  setsWonB   Int       @map("sets_won_b") @db.SmallInt
+  playedAt   DateTime  @map("played_at") @db.Date
+  notes      String?
+  recordedBy String    @map("recorded_by") @db.Uuid // no FK, audit-only
+  createdAt  DateTime  @default(now()) @map("created_at")
+  voidedAt   DateTime? @map("voided_at")
+  voidedBy   String?   @map("voided_by") @db.Uuid // no FK, audit-only
+  voidReason String?   @map("void_reason")
+
+  season       CompetitionSeason             @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  participants CompetitionMatchParticipant[]
+
+  // winner/sets coherence CHECK + void coherence CHECK + composite index
+  // added via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("competition_matches")
+}
+
+model CompetitionMatchParticipant {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matchId  String @map("match_id") @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+  side     String @db.VarChar(1) // A|B
+
+  match  CompetitionMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player User             @relation("CompetitionMatchParticipant", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // side CHECK + player index added via raw-SQL migration.
+  @@unique([matchId, playerId]) // no player appears twice in a match
+  @@map("competition_match_participants")
 }
 
 model OutboxEvent {

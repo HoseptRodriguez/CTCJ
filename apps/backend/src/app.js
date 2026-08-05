@@ -41,6 +41,11 @@ import { createCoachingAdminRoutes } from './modules/coaching/infrastructure/htt
 import { createMeController as createCoachingMeController } from './modules/coaching/infrastructure/http/meController.js';
 import { createMeRoutes as createCoachingMeRoutes } from './modules/coaching/infrastructure/http/meRoutes.js';
 import { createIdentityPlayerEligibilityProvider as createCoachingPlayerEligibilityProvider } from './modules/coaching/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { buildCompetitionContainer } from './modules/competition/infrastructure/compositionRoot.js';
+import { createCompetitionController } from './modules/competition/infrastructure/http/competitionController.js';
+import { createCompetitionRoutes } from './modules/competition/infrastructure/http/competitionRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createCompetitionPlayerEligibilityProvider } from './modules/competition/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createCompetitionPlayerDirectoryProvider } from './modules/competition/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -125,6 +130,19 @@ export function createApp() {
   const coachingMeController = createCoachingMeController(coachingContainer);
   app.use('/api/admin/coaching', createCoachingAdminRoutes(coachingAdminController));
   app.use('/api/coaching/me', createCoachingMeRoutes(coachingMeController));
+
+  const competitionPlayerEligibilityProvider = createCompetitionPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const competitionPlayerDirectoryProvider = createCompetitionPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  const competitionContainer = buildCompetitionContainer({
+    playerEligibilityProvider: competitionPlayerEligibilityProvider,
+    playerDirectoryProvider: competitionPlayerDirectoryProvider,
+  });
+  const competitionController = createCompetitionController(competitionContainer);
+  app.use('/api/competition', createCompetitionRoutes(competitionController));
 
   // Other module routers are mounted here as each module is implemented.
 
