@@ -2,6 +2,9 @@ import {
   scheduleAppointmentSchema,
   cancelAppointmentSchema,
   createClinicalNoteSchema,
+  createRecoveryPlanSchema,
+  discontinueRecoveryPlanSchema,
+  createMedicalHistoryEntrySchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -58,4 +61,55 @@ export const clinicalClient = {
 
   /** @returns {Promise<{notes: Array}>} the caller's own PLAYER_VISIBLE notes */
   getMyNotes: () => request('/api/clinical/me/notes'),
+
+  // Phase 15 (Physiotherapy) -- Fisioterapeuta-only, no Psychology equivalent.
+
+  /** @param {string} playerId @param {{title, goal?, visibility}} payload */
+  createRecoveryPlan: (playerId, payload) => {
+    createRecoveryPlanSchema.parse(payload);
+    return request(`/api/admin/clinical/players/${playerId}/recovery-plans`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** @param {string} playerId @returns {Promise<{plans: Array}>} */
+  listRecoveryPlans: (playerId) =>
+    request(`/api/admin/clinical/players/${playerId}/recovery-plans`),
+
+  /** @param {string} planId */
+  completeRecoveryPlan: (planId) =>
+    request(`/api/admin/clinical/recovery-plans/${planId}/complete`, { method: 'POST' }),
+
+  /** @param {string} planId @param {string} reason */
+  discontinueRecoveryPlan: (planId, reason) => {
+    discontinueRecoveryPlanSchema.parse({ reason });
+    return request(`/api/admin/clinical/recovery-plans/${planId}/discontinue`, {
+      method: 'POST',
+      body: { reason },
+    });
+  },
+
+  /** @param {string} playerId @param {{condition, description?, visibility, occurredAt?}} payload */
+  createMedicalHistoryEntry: (playerId, payload) => {
+    createMedicalHistoryEntrySchema.parse(payload);
+    return request(`/api/admin/clinical/players/${playerId}/medical-history`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** @param {string} playerId @returns {Promise<{entries: Array}>} */
+  listMedicalHistory: (playerId) =>
+    request(`/api/admin/clinical/players/${playerId}/medical-history`),
+
+  /** @param {string} entryId */
+  resolveMedicalHistoryEntry: (entryId) =>
+    request(`/api/admin/clinical/medical-history/${entryId}/resolve`, { method: 'POST' }),
+
+  /** @returns {Promise<{plans: Array}>} the caller's own PLAYER_VISIBLE recovery plans */
+  getMyRecoveryPlans: () => request('/api/clinical/me/recovery-plans'),
+
+  /** @returns {Promise<{entries: Array}>} the caller's own PLAYER_VISIBLE medical history */
+  getMyMedicalHistory: () => request('/api/clinical/me/medical-history'),
 };

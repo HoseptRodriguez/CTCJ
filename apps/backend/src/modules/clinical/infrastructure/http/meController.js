@@ -18,5 +18,15 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
-  return { getMyAppointments, getMyNotes };
+  const getMyRecoveryPlans = asyncHandler(async (req, res) => {
+    const result = await container.getMyRecoveryPlans({ playerId: req.user.id });
+    res.status(200).json(result);
+  });
+
+  const getMyMedicalHistory = asyncHandler(async (req, res) => {
+    const result = await container.getMyMedicalHistory({ playerId: req.user.id });
+    res.status(200).json(result);
+  });
+
+  return { getMyAppointments, getMyNotes, getMyRecoveryPlans, getMyMedicalHistory };
 }

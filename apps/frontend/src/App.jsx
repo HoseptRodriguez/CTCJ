@@ -65,6 +65,7 @@ export function App() {
                   ROLE_CODES.ENTRENADOR,
                   ROLE_CODES.PSICOLOGO,
                   ROLE_CODES.NEUROPSICOLOGO,
+                  ROLE_CODES.FISIOTERAPEUTA,
                 ]}
               />
             }
@@ -92,6 +93,7 @@ export function App() {
                       ROLE_CODES.RECEPCION,
                       ROLE_CODES.PSICOLOGO,
                       ROLE_CODES.NEUROPSICOLOGO,
+                      ROLE_CODES.FISIOTERAPEUTA,
                     ]}
                   />
                 }

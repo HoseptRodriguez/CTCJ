@@ -1,6 +1,7 @@
 /**
- * @typedef {{ id: string, playerId: string, practitionerId: string, appointmentId: string|null,
- *   noteType: string, visibility: string, content: string, createdAt: Date }} ClinicalNoteRow
+ * @typedef {{ id: string, playerId: string, practitionerId: string, discipline: string,
+ *   appointmentId: string|null, noteType: string, visibility: string, content: string,
+ *   createdAt: Date }} ClinicalNoteRow
  */
 export class NoteRepository {
   /** @returns {Promise<ClinicalNoteRow>} */
@@ -8,8 +9,12 @@ export class NoteRepository {
     throw new Error('Not implemented');
   }
 
-  /** @returns {Promise<ClinicalNoteRow[]>} every note for this player, regardless of visibility, newest first */
-  async listByPlayer(_playerId) {
+  /** @param {string} playerId @param {{ discipline: string }} filter
+   * @returns {Promise<ClinicalNoteRow[]>} every note for this player within
+   * the given discipline, regardless of visibility, newest first --
+   * discipline-siloed: a Psicologo never sees Physiotherapy notes and
+   * vice versa. */
+  async listByPlayer(_playerId, _filter) {
     throw new Error('Not implemented');
   }
 

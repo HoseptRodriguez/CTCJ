@@ -7,6 +7,11 @@ const STATUS_BY_CODE = {
   practitioner_not_eligible: 409,
   practitioner_time_conflict: 409,
   invalid_appointment_state: 409,
+  recovery_plan_not_found: 404,
+  invalid_recovery_plan_state: 409,
+  medical_history_entry_not_found: 404,
+  invalid_medical_history_entry_state: 409,
+  discipline_mismatch: 409,
 };
 
 export function mapClinicalError(err) {

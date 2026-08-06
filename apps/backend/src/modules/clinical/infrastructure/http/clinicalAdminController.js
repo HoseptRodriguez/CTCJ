@@ -65,8 +65,75 @@ export function createClinicalAdminController(container) {
   });
 
   const listPlayerNotes = asyncHandler(async (req, res) => {
-    const result = await container.listPlayerNotes({ playerId: req.params.id });
+    const result = await container.listPlayerNotes({
+      playerId: req.params.id,
+      practitionerUserId: req.user.id,
+    });
     res.status(200).json(result);
+  });
+
+  const createRecoveryPlan = asyncHandler(async (req, res) => {
+    const plan = await container.createRecoveryPlan({
+      playerId: req.params.id,
+      title: req.body.title,
+      goal: req.body.goal,
+      visibility: req.body.visibility,
+      practitionerUserId: req.user.id,
+    });
+    res.status(201).json(plan);
+  });
+
+  const listRecoveryPlans = asyncHandler(async (req, res) => {
+    const result = await container.listRecoveryPlans({
+      playerId: req.params.id,
+      practitionerUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
+  const completeRecoveryPlan = asyncHandler(async (req, res) => {
+    const plan = await container.completeRecoveryPlan({
+      planId: req.params.id,
+      resolvedByUserId: req.user.id,
+    });
+    res.status(200).json(plan);
+  });
+
+  const discontinueRecoveryPlan = asyncHandler(async (req, res) => {
+    const plan = await container.discontinueRecoveryPlan({
+      planId: req.params.id,
+      reason: req.body.reason,
+      resolvedByUserId: req.user.id,
+    });
+    res.status(200).json(plan);
+  });
+
+  const createMedicalHistoryEntry = asyncHandler(async (req, res) => {
+    const entry = await container.createMedicalHistoryEntry({
+      playerId: req.params.id,
+      condition: req.body.condition,
+      description: req.body.description,
+      visibility: req.body.visibility,
+      occurredAt: req.body.occurredAt,
+      practitionerUserId: req.user.id,
+    });
+    res.status(201).json(entry);
+  });
+
+  const listMedicalHistory = asyncHandler(async (req, res) => {
+    const result = await container.listMedicalHistory({
+      playerId: req.params.id,
+      practitionerUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
+  const resolveMedicalHistoryEntry = asyncHandler(async (req, res) => {
+    const entry = await container.resolveMedicalHistoryEntry({
+      entryId: req.params.id,
+      resolvedByUserId: req.user.id,
+    });
+    res.status(200).json(entry);
   });
 
   return {
@@ -77,5 +144,12 @@ export function createClinicalAdminController(container) {
     listAppointments,
     createNote,
     listPlayerNotes,
+    createRecoveryPlan,
+    listRecoveryPlans,
+    completeRecoveryPlan,
+    discontinueRecoveryPlan,
+    createMedicalHistoryEntry,
+    listMedicalHistory,
+    resolveMedicalHistoryEntry,
   };
 }

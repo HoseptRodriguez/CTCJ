@@ -20,6 +20,7 @@ export class ClinicalAppointment {
     clubId,
     playerId,
     practitionerId,
+    discipline,
     periodStart,
     periodEnd,
     status = APPOINTMENT_STATUS.SCHEDULED,
@@ -35,6 +36,7 @@ export class ClinicalAppointment {
     this.clubId = clubId;
     this.playerId = playerId;
     this.practitionerId = practitionerId;
+    this.discipline = discipline;
     this.periodStart = periodStart;
     this.periodEnd = periodEnd;
     this.status = status;
@@ -52,6 +54,7 @@ export class ClinicalAppointment {
     clubId,
     playerId,
     practitionerId,
+    discipline,
     periodStart,
     periodEnd,
     scheduledBy,
@@ -62,6 +65,7 @@ export class ClinicalAppointment {
       clubId,
       playerId,
       practitionerId,
+      discipline,
       periodStart,
       periodEnd,
       status: APPOINTMENT_STATUS.SCHEDULED,

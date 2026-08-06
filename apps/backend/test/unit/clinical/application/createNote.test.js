@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createCreateNote } from '../../../../src/modules/clinical/application/useCases/createNote.js';
 import { PlayerNotEligible } from '../../../../src/modules/clinical/application/errors/PlayerNotEligible.js';
+import { PractitionerNotEligible } from '../../../../src/modules/clinical/application/errors/PractitionerNotEligible.js';
 
-import { createFakeNoteRepository, createFakePlayerEligibilityProvider } from './fakes.js';
+import {
+  createFakeNoteRepository,
+  createFakePlayerEligibilityProvider,
+  createFakePractitionerEligibilityProvider,
+} from './fakes.js';
 
 describe('createNote', () => {
   let noteRepository;
@@ -14,6 +19,12 @@ describe('createNote', () => {
     createNote = createCreateNote({
       noteRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
+        new Map([
+          ['psych-1', 'PSYCHOLOGY'],
+          ['physio-1', 'PHYSIOTHERAPY'],
+        ]),
+      ),
     });
   });
 
@@ -82,5 +93,37 @@ describe('createNote', () => {
       practitionerUserId: 'psych-1',
     });
     expect(note.appointmentId).toBeNull();
+  });
+
+  it("tags the note with the authoring practitioner's discipline", async () => {
+    const psychNote = await createNote({
+      playerId: 'player-1',
+      noteType: 'GENERAL',
+      visibility: 'PRIVATE',
+      content: 'x',
+      practitionerUserId: 'psych-1',
+    });
+    expect(psychNote.discipline).toBe('PSYCHOLOGY');
+
+    const physioNote = await createNote({
+      playerId: 'player-1',
+      noteType: 'GENERAL',
+      visibility: 'PRIVATE',
+      content: 'x',
+      practitionerUserId: 'physio-1',
+    });
+    expect(physioNote.discipline).toBe('PHYSIOTHERAPY');
+  });
+
+  it('throws PractitionerNotEligible when the author holds no clinical practitioner role', async () => {
+    await expect(
+      createNote({
+        playerId: 'player-1',
+        noteType: 'GENERAL',
+        visibility: 'PRIVATE',
+        content: 'x',
+        practitionerUserId: 'not-a-practitioner',
+      }),
+    ).rejects.toThrow(PractitionerNotEligible);
   });
 });

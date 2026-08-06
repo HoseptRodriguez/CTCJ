@@ -3,6 +3,7 @@ function toRow(record) {
     id: record.id,
     playerId: record.playerId,
     practitionerId: record.practitionerId,
+    discipline: record.discipline,
     appointmentId: record.appointmentId,
     noteType: record.noteType,
     visibility: record.visibility,
@@ -17,16 +18,32 @@ function toRow(record) {
  */
 export function createPrismaNoteRepository(prisma) {
   return {
-    async create({ playerId, practitionerId, appointmentId, noteType, visibility, content }) {
+    async create({
+      playerId,
+      practitionerId,
+      discipline,
+      appointmentId,
+      noteType,
+      visibility,
+      content,
+    }) {
       const record = await prisma.clinicalNote.create({
-        data: { playerId, practitionerId, appointmentId, noteType, visibility, content },
+        data: {
+          playerId,
+          practitionerId,
+          discipline,
+          appointmentId,
+          noteType,
+          visibility,
+          content,
+        },
       });
       return toRow(record);
     },
 
-    async listByPlayer(playerId) {
+    async listByPlayer(playerId, { discipline } = {}) {
       const records = await prisma.clinicalNote.findMany({
-        where: { playerId },
+        where: { playerId, ...(discipline && { discipline }) },
         orderBy: { createdAt: 'desc' },
       });
       return records.map(toRow);

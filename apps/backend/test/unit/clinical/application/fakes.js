@@ -61,12 +61,21 @@ export function createFakeNoteRepository() {
   const byId = new Map();
 
   return {
-    async create({ playerId, practitionerId, appointmentId, noteType, visibility, content }) {
+    async create({
+      playerId,
+      practitionerId,
+      discipline,
+      appointmentId,
+      noteType,
+      visibility,
+      content,
+    }) {
       const id = randomUUID();
       const note = {
         id,
         playerId,
         practitionerId,
+        discipline,
         appointmentId: appointmentId ?? null,
         noteType,
         visibility,
@@ -76,9 +85,10 @@ export function createFakeNoteRepository() {
       byId.set(id, note);
       return note;
     },
-    async listByPlayer(playerId) {
+    async listByPlayer(playerId, { discipline } = {}) {
       return [...byId.values()]
         .filter((n) => n.playerId === playerId)
+        .filter((n) => !discipline || n.discipline === discipline)
         .sort((a, b) => b.createdAt - a.createdAt);
     },
     async listVisibleByPlayer(playerId) {
@@ -98,11 +108,68 @@ export function createFakePlayerEligibilityProvider(eligiblePlayerIds = new Set(
   };
 }
 
-/** @param {Set<string>} eligiblePractitionerIds */
-export function createFakePractitionerEligibilityProvider(eligiblePractitionerIds = new Set()) {
+/** @param {Map<string, 'PSYCHOLOGY'|'PHYSIOTHERAPY'>} disciplineByPractitionerId */
+export function createFakePractitionerEligibilityProvider(disciplineByPractitionerId = new Map()) {
   return {
-    async isEligiblePractitioner(userId) {
-      return eligiblePractitionerIds.has(userId);
+    async getPractitionerEligibility(userId) {
+      const discipline = disciplineByPractitionerId.get(userId) ?? null;
+      return { eligible: discipline !== null, discipline };
+    },
+  };
+}
+
+export function createFakeRecoveryPlanRepository() {
+  const byId = new Map();
+
+  return {
+    async create(plan) {
+      byId.set(plan.id, plan);
+      return plan;
+    },
+    async findById(id) {
+      return byId.get(id) ?? null;
+    },
+    async update(plan) {
+      byId.set(plan.id, plan);
+      return plan;
+    },
+    async listByPlayer(playerId) {
+      return [...byId.values()]
+        .filter((p) => p.playerId === playerId)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    },
+    async listVisibleByPlayer(playerId) {
+      return [...byId.values()]
+        .filter((p) => p.playerId === playerId && p.visibility === 'PLAYER_VISIBLE')
+        .sort((a, b) => b.createdAt - a.createdAt);
+    },
+  };
+}
+
+export function createFakeMedicalHistoryRepository() {
+  const byId = new Map();
+
+  return {
+    async create(entry) {
+      byId.set(entry.id, entry);
+      return entry;
+    },
+    async findById(id) {
+      return byId.get(id) ?? null;
+    },
+    async update(entry) {
+      byId.set(entry.id, entry);
+      return entry;
+    },
+    async listByPlayer(playerId) {
+      return [...byId.values()]
+        .filter((e) => e.playerId === playerId)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    },
+    async listVisibleByPlayer(playerId) {
+      return [...byId.values()]
+        .filter((e) => e.playerId === playerId && e.visibility === 'PLAYER_VISIBLE')
+        .sort((a, b) => b.createdAt - a.createdAt);
     },
   };
 }

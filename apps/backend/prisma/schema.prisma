@@ -118,6 +118,10 @@ model User {
   clinicalAppointments ClinicalAppointment[] @relation("ClinicalAppointmentSubject")
   clinicalNotes        ClinicalNote[]        @relation("ClinicalNoteSubject")
 
+  // Physiotherapy (Phase 15) -- recovery plans and medical history where this user is the patient
+  recoveryPlans         RecoveryPlan[]         @relation("RecoveryPlanSubject")
+  medicalHistoryEntries MedicalHistoryEntry[]  @relation("MedicalHistorySubject")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -687,10 +691,17 @@ model TournamentMatch {
 // Clinical (Phase 14) -- Psychology slice. Module name matches the
 // pre-registered clinical-domain-isolated dependency-cruiser rule (stricter
 // than every other module: no other module may import modules/clinical/domain
-// at all). Physiotherapy is a separate future phase, likely also under this
-// module. ClinicalAppointment carries zero clinical content by design --
-// scheduling logistics only. ClinicalNote is append-only, mirrors
-// coach_notes exactly.
+// at all). Physiotherapy (Phase 15) lives in this same module -- shares
+// ClinicalAppointment/ClinicalNote with Psychology (both are "a
+// practitioner books time with / writes about a player"), disambiguated by
+// a discipline column (PSYCHOLOGY|PHYSIOTHERAPY) derived server-side from
+// the practitioner's role, never client-supplied. Note/plan/history content
+// is siloed by discipline: a PSICOLOGO/NEUROPSICOLOGO never sees
+// PHYSIOTHERAPY content and vice versa -- only bare scheduling logistics
+// (ClinicalAppointment, no clinical content) are visible across the whole
+// practitioner team. RecoveryPlan and MedicalHistoryEntry are
+// Physiotherapy-only concepts (no PSYCHOLOGY equivalent), so they carry no
+// discipline column -- gated entirely by practitioner role instead.
 // ---------------------------------------------------------------------------
 
 model ClinicalAppointment {
@@ -698,6 +709,7 @@ model ClinicalAppointment {
   clubId         String    @map("club_id") @db.Uuid
   playerId       String    @map("player_id") @db.Uuid
   practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  discipline     String    @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side at scheduling time
   // Added via raw-SQL migration (Prisma has no native range-type support),
   // reusing Reservation's exact pattern -- see the
   // 20260731180029_init_identity_booking migration's "reservations: range
@@ -729,6 +741,7 @@ model ClinicalNote {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   playerId       String   @map("player_id") @db.Uuid
   practitionerId String   @map("practitioner_id") @db.Uuid // no FK, audit-only
+  discipline     String   @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side from the authoring practitioner
   appointmentId  String?  @map("appointment_id") @db.Uuid // optional cross-reference
   noteType       String   @map("note_type") @db.VarChar(20) // FOLLOW_UP|RECOMMENDATION|SESSION_NOTE|GENERAL
   visibility     String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
@@ -741,6 +754,47 @@ model ClinicalNote {
   // note_type CHECK + visibility CHECK + player index added via raw-SQL
   // migration, matching coach_notes' exact precedent.
   @@map("clinical_notes")
+}
+
+// RecoveryPlan and MedicalHistoryEntry -- Physiotherapy-only concepts (the
+// client's doc lists these under Physiotherapy, not Psychology), always
+// authored by FISIOTERAPEUTA, gated purely by practitioner role (no
+// discipline column needed since there is only one discipline that can
+// ever write them).
+model RecoveryPlan {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId          String    @map("player_id") @db.Uuid
+  practitionerId    String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  title             String
+  goal              String?   @db.Text
+  status            String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|COMPLETED|DISCONTINUED
+  visibility        String    @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  createdAt         DateTime  @default(now()) @map("created_at")
+  resolvedAt        DateTime? @map("resolved_at") // set when COMPLETED or DISCONTINUED
+  resolvedBy        String?   @map("resolved_by") @db.Uuid
+  discontinueReason String?   @map("discontinue_reason")
+
+  player User @relation("RecoveryPlanSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("recovery_plans")
+}
+
+model MedicalHistoryEntry {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  condition      String
+  description    String?   @db.Text
+  status         String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|RESOLVED
+  visibility     String    @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  occurredAt     DateTime? @map("occurred_at") // nullable -- not every condition has a known onset date
+  createdAt      DateTime  @default(now()) @map("created_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  resolvedBy     String?   @map("resolved_by") @db.Uuid
+
+  player User @relation("MedicalHistorySubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("medical_history_entries")
 }
 
 model OutboxEvent {

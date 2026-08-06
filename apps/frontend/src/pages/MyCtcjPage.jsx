@@ -65,6 +65,16 @@ const APPOINTMENT_DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', {
   timeStyle: 'short',
 });
 
+const RECOVERY_PLAN_STATUS_LABELS = {
+  ACTIVE: 'Activo',
+  COMPLETED: 'Completado',
+  DISCONTINUED: 'Interrumpido',
+};
+const MEDICAL_HISTORY_STATUS_LABELS = {
+  ACTIVE: 'Activo',
+  RESOLVED: 'Resuelto',
+};
+
 function AffiliationSection() {
   const [requests, setRequests] = useState(null);
   const [notes, setNotes] = useState('');
@@ -374,7 +384,7 @@ function MyAppointmentsSection() {
     <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
       <h3 className="font-display text-lg font-semibold text-primary">Mis citas</h3>
       <p className="mt-1 text-sm text-secondary">
-        Citas de psicología/neuropsicología agendadas para ti.
+        Citas de psicología, neuropsicología y fisioterapia agendadas para ti.
       </p>
       <ul className="mt-3 space-y-2">
         {appointments.map((appointment) => (
@@ -418,9 +428,11 @@ function MyClinicalNotesSection() {
 
   return (
     <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
-      <h3 className="font-display text-lg font-semibold text-primary">Notas de psicología</h3>
+      <h3 className="font-display text-lg font-semibold text-primary">
+        Notas de psicología y fisioterapia
+      </h3>
       <p className="mt-1 text-sm text-secondary">
-        Notas de seguimiento y recomendaciones que tu psicólogo/a ha compartido contigo.
+        Notas de seguimiento y recomendaciones que tu equipo clínico ha compartido contigo.
       </p>
       <ul className="mt-3 space-y-2">
         {notes.map((note) => (
@@ -430,6 +442,94 @@ function MyClinicalNotesSection() {
               {INVOICE_DATE_FORMATTER.format(new Date(note.createdAt))}
             </span>
             <p className="mt-1 text-secondary">{note.content}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MyRecoveryPlansSection() {
+  const [plans, setPlans] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    clinicalClient
+      .getMyRecoveryPlans()
+      .then((data) => {
+        if (!cancelled) setPlans(data.plans);
+      })
+      .catch(() => {
+        if (!cancelled) setPlans([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!plans || plans.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">
+        Mis planes de recuperación
+      </h3>
+      <p className="mt-1 text-sm text-secondary">
+        Planes de fisioterapia que tu fisioterapeuta ha compartido contigo.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {plans.map((plan) => (
+          <li key={plan.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="font-semibold text-primary">{plan.title}</span>{' '}
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {RECOVERY_PLAN_STATUS_LABELS[plan.status] ?? plan.status}
+            </span>
+            {plan.goal ? <p className="mt-1 text-secondary">{plan.goal}</p> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MyMedicalHistorySection() {
+  const [entries, setEntries] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    clinicalClient
+      .getMyMedicalHistory()
+      .then((data) => {
+        if (!cancelled) setEntries(data.entries);
+      })
+      .catch(() => {
+        if (!cancelled) setEntries([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!entries || entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Mi historial médico</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Historial médico que tu fisioterapeuta ha compartido contigo.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {entries.map((entry) => (
+          <li key={entry.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="font-semibold text-primary">{entry.condition}</span>{' '}
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {MEDICAL_HISTORY_STATUS_LABELS[entry.status] ?? entry.status}
+            </span>
+            {entry.description ? <p className="mt-1 text-secondary">{entry.description}</p> : null}
           </li>
         ))}
       </ul>
@@ -663,6 +763,8 @@ export function MyCtcjPage() {
       {isJugador ? <MyPerformanceSection /> : null}
       {isJugador ? <MyAppointmentsSection /> : null}
       {isJugador ? <MyClinicalNotesSection /> : null}
+      {isJugador ? <MyRecoveryPlansSection /> : null}
+      {isJugador ? <MyMedicalHistorySection /> : null}
       <GuardianshipSection />
     </Section>
   );

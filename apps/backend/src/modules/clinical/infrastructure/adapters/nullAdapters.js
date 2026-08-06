@@ -15,8 +15,8 @@ export function createNullPlayerEligibilityProvider() {
 export function createNullPractitionerEligibilityProvider() {
   return {
     // Fails closed -- never treats anyone as eligible when the module isn't wired.
-    async isEligiblePractitioner() {
-      return false;
+    async getPractitionerEligibility() {
+      return { eligible: false, discipline: null };
     },
   };
 }

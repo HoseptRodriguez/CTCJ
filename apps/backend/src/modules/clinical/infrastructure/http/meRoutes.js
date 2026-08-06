@@ -8,6 +8,8 @@ export function createMeRoutes(controller) {
 
   router.get('/appointments', requireAuth, controller.getMyAppointments);
   router.get('/notes', requireAuth, controller.getMyNotes);
+  router.get('/recovery-plans', requireAuth, controller.getMyRecoveryPlans);
+  router.get('/medical-history', requireAuth, controller.getMyMedicalHistory);
 
   return router;
 }

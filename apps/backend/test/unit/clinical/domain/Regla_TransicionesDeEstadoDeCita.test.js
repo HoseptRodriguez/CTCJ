@@ -9,6 +9,7 @@ function buildAppointment() {
     clubId: 'club-1',
     playerId: 'player-1',
     practitionerId: 'psych-1',
+    discipline: 'PSYCHOLOGY',
     periodStart: new Date('2026-03-01T10:00:00Z'),
     periodEnd: new Date('2026-03-01T11:00:00Z'),
     scheduledBy: 'staff-1',
@@ -20,6 +21,11 @@ describe('Regla: transiciones de estado de cita clínica', () => {
   it('a new appointment starts SCHEDULED', () => {
     const appt = buildAppointment();
     expect(appt.status).toBe('SCHEDULED');
+  });
+
+  it('carries the discipline it was scheduled under', () => {
+    const appt = buildAppointment();
+    expect(appt.discipline).toBe('PSYCHOLOGY');
   });
 
   it('cancel() is legal from SCHEDULED', () => {

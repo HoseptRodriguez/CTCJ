@@ -22,7 +22,7 @@ describe('scheduleAppointment', () => {
       appointmentRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
-        new Set(['psych-1']),
+        new Map([['psych-1', 'PSYCHOLOGY']]),
       ),
       clock: createFakeClock(new Date('2026-02-20')),
       clubId: 'club-1',
@@ -42,6 +42,11 @@ describe('scheduleAppointment', () => {
     expect(appt.status).toBe('SCHEDULED');
     expect(appt.playerId).toBe('player-1');
     expect(appt.practitionerId).toBe('psych-1');
+  });
+
+  it('resolves the discipline server-side from the practitioner, not from the caller', async () => {
+    const appt = await scheduleAppointment(baseInput);
+    expect(appt.discipline).toBe('PSYCHOLOGY');
   });
 
   it('throws PlayerNotEligible when the target does not hold JUGADOR', async () => {

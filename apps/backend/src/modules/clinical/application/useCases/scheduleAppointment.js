@@ -32,9 +32,9 @@ export function createScheduleAppointment({
     if (!isPlayerEligible) {
       throw new PlayerNotEligible();
     }
-    const isPractitionerEligible =
-      await practitionerEligibilityProvider.isEligiblePractitioner(practitionerId);
-    if (!isPractitionerEligible) {
+    const { eligible, discipline } =
+      await practitionerEligibilityProvider.getPractitionerEligibility(practitionerId);
+    if (!eligible) {
       throw new PractitionerNotEligible();
     }
 
@@ -43,6 +43,7 @@ export function createScheduleAppointment({
       clubId,
       playerId,
       practitionerId,
+      discipline,
       periodStart,
       periodEnd,
       scheduledBy: scheduledByUserId,

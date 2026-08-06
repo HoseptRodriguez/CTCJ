@@ -29,6 +29,15 @@ const STATUS_LABELS = {
   CANCELLED: 'Cancelada',
   NO_SHOW: 'No asistió',
 };
+const RECOVERY_PLAN_STATUS_LABELS = {
+  ACTIVE: 'Activo',
+  COMPLETED: 'Completado',
+  DISCONTINUED: 'Interrumpido',
+};
+const MEDICAL_HISTORY_STATUS_LABELS = {
+  ACTIVE: 'Activo',
+  RESOLVED: 'Resuelto',
+};
 
 // Colombia has a fixed UTC-5 offset year-round (no DST) -- matches the
 // club's America/Bogota timezone assumption used elsewhere in this app.
@@ -426,9 +435,363 @@ function NotesSection({ playerId }) {
   );
 }
 
+function CreateRecoveryPlanForm({ playerId, onCreated }) {
+  const [title, setTitle] = useState('');
+  const [goal, setGoal] = useState('');
+  const [visibility, setVisibility] = useState('PRIVATE');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await clinicalClient.createRecoveryPlan(playerId, {
+        title: title.trim(),
+        goal: goal.trim() || undefined,
+        visibility,
+      });
+      setTitle('');
+      setGoal('');
+      await onCreated();
+    } catch (err) {
+      setError(describeClinicalError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-3">
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="plan-title">
+            Título
+          </label>
+          <input
+            id="plan-title"
+            type="text"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="mt-1 w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="plan-visibility">
+            Visibilidad
+          </label>
+          <select
+            id="plan-visibility"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          >
+            {Object.entries(VISIBILITY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-primary" htmlFor="plan-goal">
+          Objetivo (opcional)
+        </label>
+        <textarea
+          id="plan-goal"
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          rows={2}
+          className="mt-1 w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <Button type="submit" variant="primary" disabled={submitting || !title.trim()}>
+        {submitting ? 'Guardando...' : 'Crear plan'}
+      </Button>
+      {error ? <p className="text-sm text-error">{error}</p> : null}
+    </form>
+  );
+}
+
+function RecoveryPlanRow({ plan, onChanged }) {
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleAction(action) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      if (action === 'complete') {
+        await clinicalClient.completeRecoveryPlan(plan.id);
+      } else if (action === 'discontinue') {
+        const reason = window.prompt('Motivo de interrupción:');
+        if (!reason) {
+          setSubmitting(false);
+          return;
+        }
+        await clinicalClient.discontinueRecoveryPlan(plan.id, reason);
+      }
+      await onChanged();
+    } catch (err) {
+      setError(describeClinicalError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const isActive = plan.status === 'ACTIVE';
+
+  return (
+    <li className="rounded-md bg-raised px-4 py-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-primary">{plan.title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+          {RECOVERY_PLAN_STATUS_LABELS[plan.status] ?? plan.status} ·{' '}
+          {VISIBILITY_LABELS[plan.visibility] ?? plan.visibility}
+        </span>
+      </div>
+      {plan.goal ? <p className="mt-1 text-secondary">{plan.goal}</p> : null}
+      {plan.discontinueReason ? (
+        <p className="mt-1 text-xs text-tertiary">Motivo: {plan.discontinueReason}</p>
+      ) : null}
+      {isActive ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="ghost" disabled={submitting} onClick={() => handleAction('complete')}>
+            Marcar completado
+          </Button>
+          <Button variant="ghost" disabled={submitting} onClick={() => handleAction('discontinue')}>
+            Interrumpir
+          </Button>
+        </div>
+      ) : null}
+      {error ? <p className="mt-1 text-sm text-error">{error}</p> : null}
+    </li>
+  );
+}
+
+function RecoveryPlansSection({ playerId }) {
+  const [plans, setPlans] = useState(null);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return clinicalClient
+      .listRecoveryPlans(playerId)
+      .then((data) => setPlans(data.plans))
+      .catch((err) => setError(describeClinicalError(err)));
+  }
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId]);
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-display font-semibold text-primary">Planes de recuperación</h3>
+
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+      {!error && plans === null ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
+      {plans?.length === 0 ? (
+        <p className="mt-2 text-sm text-secondary">Sin planes todavía.</p>
+      ) : null}
+
+      {plans?.length > 0 ? (
+        <ul className="mt-2 space-y-2">
+          {plans.map((plan) => (
+            <RecoveryPlanRow key={plan.id} plan={plan} onChanged={refetch} />
+          ))}
+        </ul>
+      ) : null}
+
+      <CreateRecoveryPlanForm playerId={playerId} onCreated={refetch} />
+    </div>
+  );
+}
+
+function CreateMedicalHistoryForm({ playerId, onCreated }) {
+  const [condition, setCondition] = useState('');
+  const [description, setDescription] = useState('');
+  const [occurredAt, setOccurredAt] = useState('');
+  const [visibility, setVisibility] = useState('PRIVATE');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await clinicalClient.createMedicalHistoryEntry(playerId, {
+        condition: condition.trim(),
+        description: description.trim() || undefined,
+        visibility,
+        occurredAt: occurredAt || undefined,
+      });
+      setCondition('');
+      setDescription('');
+      setOccurredAt('');
+      await onCreated();
+    } catch (err) {
+      setError(describeClinicalError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-3">
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="history-condition">
+            Condición
+          </label>
+          <input
+            id="history-condition"
+            type="text"
+            required
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            className="mt-1 w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="history-date">
+            Fecha (opcional)
+          </label>
+          <input
+            id="history-date"
+            type="date"
+            value={occurredAt}
+            onChange={(e) => setOccurredAt(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="history-visibility">
+            Visibilidad
+          </label>
+          <select
+            id="history-visibility"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          >
+            {Object.entries(VISIBILITY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-primary" htmlFor="history-description">
+          Descripción (opcional)
+        </label>
+        <textarea
+          id="history-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="mt-1 w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+        />
+      </div>
+      <Button type="submit" variant="primary" disabled={submitting || !condition.trim()}>
+        {submitting ? 'Guardando...' : 'Agregar registro'}
+      </Button>
+      {error ? <p className="text-sm text-error">{error}</p> : null}
+    </form>
+  );
+}
+
+function MedicalHistoryRow({ entry, onChanged }) {
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleResolve() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await clinicalClient.resolveMedicalHistoryEntry(entry.id);
+      await onChanged();
+    } catch (err) {
+      setError(describeClinicalError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <li className="rounded-md bg-raised px-4 py-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-primary">{entry.condition}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+          {MEDICAL_HISTORY_STATUS_LABELS[entry.status] ?? entry.status} ·{' '}
+          {VISIBILITY_LABELS[entry.visibility] ?? entry.visibility}
+        </span>
+      </div>
+      {entry.description ? <p className="mt-1 text-secondary">{entry.description}</p> : null}
+      {entry.status === 'ACTIVE' ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="ghost" disabled={submitting} onClick={handleResolve}>
+            Marcar resuelto
+          </Button>
+        </div>
+      ) : null}
+      {error ? <p className="mt-1 text-sm text-error">{error}</p> : null}
+    </li>
+  );
+}
+
+function MedicalHistorySection({ playerId }) {
+  const [entries, setEntries] = useState(null);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return clinicalClient
+      .listMedicalHistory(playerId)
+      .then((data) => setEntries(data.entries))
+      .catch((err) => setError(describeClinicalError(err)));
+  }
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId]);
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-display font-semibold text-primary">Historial médico</h3>
+
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+      {!error && entries === null ? (
+        <p className="mt-2 text-sm text-secondary">Cargando...</p>
+      ) : null}
+      {entries?.length === 0 ? (
+        <p className="mt-2 text-sm text-secondary">Sin registros todavía.</p>
+      ) : null}
+
+      {entries?.length > 0 ? (
+        <ul className="mt-2 space-y-2">
+          {entries.map((entry) => (
+            <MedicalHistoryRow key={entry.id} entry={entry} onChanged={refetch} />
+          ))}
+        </ul>
+      ) : null}
+
+      <CreateMedicalHistoryForm playerId={playerId} onCreated={refetch} />
+    </div>
+  );
+}
+
 const TABS = [
   { id: 'citas', label: 'Citas' },
   { id: 'notas', label: 'Notas' },
+  { id: 'planes', label: 'Planes de recuperación' },
+  { id: 'historial', label: 'Historial médico' },
 ];
 
 function TabBar({ tabs, active, onChange }) {
@@ -460,20 +823,26 @@ export function ClinicalPage() {
   const isAdmin = roles.includes(ROLE_CODES.ADMINISTRADOR);
   const isPsicologo = roles.includes(ROLE_CODES.PSICOLOGO);
   const isNeuropsicologo = roles.includes(ROLE_CODES.NEUROPSICOLOGO);
-  const canSeeNotes = isPsicologo || isNeuropsicologo;
+  const isFisioterapeuta = roles.includes(ROLE_CODES.FISIOTERAPEUTA);
+  const canSeeNotes = isPsicologo || isNeuropsicologo || isFisioterapeuta;
   const canManageOutcome = isAdmin || canSeeNotes;
 
   const [foundUser, setFoundUser] = useState(null);
   const [activeTab, setActiveTab] = useState('citas');
 
-  const visibleTabs = canSeeNotes ? TABS : TABS.filter((t) => t.id !== 'notas');
+  const visibleTabs = TABS.filter((tab) => {
+    if (tab.id === 'notas') return canSeeNotes;
+    if (tab.id === 'planes' || tab.id === 'historial') return isFisioterapeuta;
+    return true;
+  });
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Salud mental</h1>
+      <h1 className="font-display text-2xl font-semibold text-primary">Salud y bienestar</h1>
       <p className="mt-1 text-secondary">
-        Agenda citas con psicología/neuropsicología y, si tienes rol clínico, registra notas de
-        seguimiento. Las notas privadas nunca son visibles para el jugador.
+        Agenda citas de psicología/neuropsicología y fisioterapia y, si tienes rol clínico, registra
+        notas, planes de recuperación e historial médico. El contenido privado y el de otra
+        disciplina nunca son visibles para ti.
       </p>
 
       <div className="mt-6">
@@ -498,6 +867,12 @@ export function ClinicalPage() {
               ) : null}
               {activeTab === 'notas' && canSeeNotes ? (
                 <NotesSection key={`notas-${foundUser.id}`} playerId={foundUser.id} />
+              ) : null}
+              {activeTab === 'planes' && isFisioterapeuta ? (
+                <RecoveryPlansSection key={`planes-${foundUser.id}`} playerId={foundUser.id} />
+              ) : null}
+              {activeTab === 'historial' && isFisioterapeuta ? (
+                <MedicalHistorySection key={`historial-${foundUser.id}`} playerId={foundUser.id} />
               ) : null}
             </>
           ) : (

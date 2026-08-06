@@ -14,9 +14,11 @@ export function StaffLayout() {
   const isEntrenador = user?.roles?.includes(ROLE_CODES.ENTRENADOR);
   const isPsicologo = user?.roles?.includes(ROLE_CODES.PSICOLOGO);
   const isNeuropsicologo = user?.roles?.includes(ROLE_CODES.NEUROPSICOLOGO);
+  const isFisioterapeuta = user?.roles?.includes(ROLE_CODES.FISIOTERAPEUTA);
   const canSeePagos = isAdmin || isRecepcion;
   const canSeeNotas = isAdmin || isEntrenador;
-  const canSeeClinical = isAdmin || isRecepcion || isPsicologo || isNeuropsicologo;
+  const canSeeClinical =
+    isAdmin || isRecepcion || isPsicologo || isNeuropsicologo || isFisioterapeuta;
   const homeTarget = canSeePagos ? '/staff/pagos' : canSeeNotas ? '/staff/notas' : '/staff/clinico';
 
   return (
@@ -69,7 +71,7 @@ export function StaffLayout() {
                   to="/staff/clinico"
                   className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
                 >
-                  Salud mental
+                  Salud y bienestar
                 </Link>
               ) : null}
               {isAdmin ? (

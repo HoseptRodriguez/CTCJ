@@ -47,7 +47,12 @@ vi.mock('../api/coachingClient.js', () => ({
 }));
 
 vi.mock('../api/clinicalClient.js', () => ({
-  clinicalClient: { getMyAppointments: vi.fn(), getMyNotes: vi.fn() },
+  clinicalClient: {
+    getMyAppointments: vi.fn(),
+    getMyNotes: vi.fn(),
+    getMyRecoveryPlans: vi.fn(),
+    getMyMedicalHistory: vi.fn(),
+  },
 }));
 
 vi.mock('../context/AuthContext.jsx', () => ({
@@ -69,6 +74,8 @@ describe('MyCtcjPage', () => {
     });
     clinicalClient.getMyAppointments.mockResolvedValue({ appointments: [] });
     clinicalClient.getMyNotes.mockResolvedValue({ notes: [] });
+    clinicalClient.getMyRecoveryPlans.mockResolvedValue({ plans: [] });
+    clinicalClient.getMyMedicalHistory.mockResolvedValue({ entries: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -322,7 +329,7 @@ describe('MyCtcjPage', () => {
     expect(clinicalClient.getMyAppointments).not.toHaveBeenCalled();
   });
 
-  it('a JUGADOR with a visible clinical note sees "Notas de psicología", read-only', async () => {
+  it('a JUGADOR with a visible clinical note sees "Notas de psicología y fisioterapia", read-only', async () => {
     useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
     membershipClient.getMyStatus.mockResolvedValue({ status: null });
     clinicalClient.getMyNotes.mockResolvedValue({
@@ -338,23 +345,23 @@ describe('MyCtcjPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Notas de psicología')).toBeInTheDocument();
+    expect(await screen.findByText('Notas de psicología y fisioterapia')).toBeInTheDocument();
     expect(
       screen.getByText('Practica ejercicios de respiración antes de competir.'),
     ).toBeInTheDocument();
   });
 
-  it('does not show "Notas de psicología" when there are none', async () => {
+  it('does not show "Notas de psicología y fisioterapia" when there are none', async () => {
     useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
     membershipClient.getMyStatus.mockResolvedValue({ status: null });
 
     renderPage();
 
     await waitFor(() => expect(clinicalClient.getMyNotes).toHaveBeenCalled());
-    expect(screen.queryByText('Notas de psicología')).not.toBeInTheDocument();
+    expect(screen.queryByText('Notas de psicología y fisioterapia')).not.toBeInTheDocument();
   });
 
-  it('a plain USUARIO never sees "Notas de psicología" (never fetched)', async () => {
+  it('a plain USUARIO never sees "Notas de psicología y fisioterapia" (never fetched)', async () => {
     useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
     membershipClient.getMyStatus.mockResolvedValue({ status: null });
 
@@ -362,5 +369,73 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(clinicalClient.getMyNotes).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with an active recovery plan sees "Mis planes de recuperación"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    clinicalClient.getMyRecoveryPlans.mockResolvedValue({
+      plans: [{ id: 'plan-1', title: 'Rehabilitación de rodilla', status: 'ACTIVE', goal: null }],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mis planes de recuperación')).toBeInTheDocument();
+    expect(screen.getByText('Rehabilitación de rodilla')).toBeInTheDocument();
+  });
+
+  it('does not show "Mis planes de recuperación" when there are none', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(clinicalClient.getMyRecoveryPlans).toHaveBeenCalled());
+    expect(screen.queryByText('Mis planes de recuperación')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Mis planes de recuperación" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(clinicalClient.getMyRecoveryPlans).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with a visible medical history entry sees "Mi historial médico"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    clinicalClient.getMyMedicalHistory.mockResolvedValue({
+      entries: [
+        { id: 'entry-1', condition: 'Esguince de tobillo', status: 'ACTIVE', description: null },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mi historial médico')).toBeInTheDocument();
+    expect(screen.getByText('Esguince de tobillo')).toBeInTheDocument();
+  });
+
+  it('does not show "Mi historial médico" when there are none', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(clinicalClient.getMyMedicalHistory).toHaveBeenCalled());
+    expect(screen.queryByText('Mi historial médico')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Mi historial médico" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(clinicalClient.getMyMedicalHistory).not.toHaveBeenCalled();
   });
 });

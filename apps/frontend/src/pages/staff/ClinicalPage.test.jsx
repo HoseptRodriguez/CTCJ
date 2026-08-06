@@ -19,6 +19,15 @@ vi.mock('../../api/clinicalClient.js', () => ({
     listPlayerNotes: vi.fn(),
     getMyAppointments: vi.fn(),
     getMyNotes: vi.fn(),
+    createRecoveryPlan: vi.fn(),
+    listRecoveryPlans: vi.fn(),
+    completeRecoveryPlan: vi.fn(),
+    discontinueRecoveryPlan: vi.fn(),
+    createMedicalHistoryEntry: vi.fn(),
+    listMedicalHistory: vi.fn(),
+    resolveMedicalHistoryEntry: vi.fn(),
+    getMyRecoveryPlans: vi.fn(),
+    getMyMedicalHistory: vi.fn(),
   },
 }));
 
@@ -33,6 +42,7 @@ vi.mock('../../context/AuthContext.jsx', () => ({
 const PSICOLOGO_USER = { user: { id: 'psych-1', roles: ['USUARIO', 'PSICOLOGO'] } };
 const RECEPCION_USER = { user: { id: 'staff-1', roles: ['USUARIO', 'RECEPCION'] } };
 const ADMIN_USER = { user: { id: 'admin-1', roles: ['USUARIO', 'ADMINISTRADOR'] } };
+const FISIO_USER = { user: { id: 'fisio-1', roles: ['USUARIO', 'FISIOTERAPEUTA'] } };
 
 const PLAYER = {
   id: 'user-1',
@@ -59,6 +69,8 @@ describe('ClinicalPage', () => {
     vi.clearAllMocks();
     clinicalClient.listAppointments.mockResolvedValue({ appointments: [] });
     clinicalClient.listPlayerNotes.mockResolvedValue({ notes: [] });
+    clinicalClient.listRecoveryPlans.mockResolvedValue({ plans: [] });
+    clinicalClient.listMedicalHistory.mockResolvedValue({ entries: [] });
   });
 
   it('shows appointment scheduling for a JUGADOR target, RECEPCION cannot see the Notas tab', async () => {
@@ -187,6 +199,79 @@ describe('ClinicalPage', () => {
         'appt-1',
         'jugador no puede asistir',
       ),
+    );
+  });
+
+  it('shows Notas, Planes de recuperación, and Historial médico tabs for a FISIOTERAPEUTA', async () => {
+    useAuth.mockReturnValue(FISIO_USER);
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+
+    const user = userEvent.setup();
+    render(<ClinicalPage />);
+    await searchFor(user, PLAYER.email);
+
+    expect(await screen.findByRole('tab', { name: 'Notas' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Planes de recuperación' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Historial médico' })).toBeInTheDocument();
+  });
+
+  it('does not show Planes de recuperación or Historial médico tabs for a PSICOLOGO', async () => {
+    useAuth.mockReturnValue(PSICOLOGO_USER);
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+
+    const user = userEvent.setup();
+    render(<ClinicalPage />);
+    await searchFor(user, PLAYER.email);
+
+    await screen.findByRole('tab', { name: 'Notas' });
+    expect(screen.queryByRole('tab', { name: 'Planes de recuperación' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Historial médico' })).not.toBeInTheDocument();
+  });
+
+  it('creates a recovery plan as FISIOTERAPEUTA', async () => {
+    useAuth.mockReturnValue(FISIO_USER);
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    clinicalClient.createRecoveryPlan.mockResolvedValue({ id: 'plan-1' });
+
+    const user = userEvent.setup();
+    render(<ClinicalPage />);
+    await searchFor(user, PLAYER.email);
+    await user.click(await screen.findByRole('tab', { name: 'Planes de recuperación' }));
+    await waitFor(() => expect(clinicalClient.listRecoveryPlans).toHaveBeenCalledWith('user-1'));
+
+    await user.type(screen.getByLabelText('Título'), 'Rehabilitación de rodilla');
+    await user.click(screen.getByRole('button', { name: 'Crear plan' }));
+
+    await waitFor(() =>
+      expect(clinicalClient.createRecoveryPlan).toHaveBeenCalledWith('user-1', {
+        title: 'Rehabilitación de rodilla',
+        goal: undefined,
+        visibility: 'PRIVATE',
+      }),
+    );
+  });
+
+  it('creates a medical history entry as FISIOTERAPEUTA', async () => {
+    useAuth.mockReturnValue(FISIO_USER);
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    clinicalClient.createMedicalHistoryEntry.mockResolvedValue({ id: 'entry-1' });
+
+    const user = userEvent.setup();
+    render(<ClinicalPage />);
+    await searchFor(user, PLAYER.email);
+    await user.click(await screen.findByRole('tab', { name: 'Historial médico' }));
+    await waitFor(() => expect(clinicalClient.listMedicalHistory).toHaveBeenCalledWith('user-1'));
+
+    await user.type(screen.getByLabelText('Condición'), 'Esguince de tobillo');
+    await user.click(screen.getByRole('button', { name: 'Agregar registro' }));
+
+    await waitFor(() =>
+      expect(clinicalClient.createMedicalHistoryEntry).toHaveBeenCalledWith('user-1', {
+        condition: 'Esguince de tobillo',
+        description: undefined,
+        visibility: 'PRIVATE',
+        occurredAt: undefined,
+      }),
     );
   });
 });

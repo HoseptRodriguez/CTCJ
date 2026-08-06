@@ -7,6 +7,7 @@ function toDomain(row) {
     clubId: row.clubId,
     playerId: row.playerId,
     practitionerId: row.practitionerId,
+    discipline: row.discipline,
     periodStart: row.periodStart,
     periodEnd: row.periodEnd,
     status: row.status,
@@ -39,15 +40,15 @@ export function createPrismaAppointmentRepository(prisma) {
       try {
         const rows = await prisma.$queryRaw`
           INSERT INTO clinical_appointments
-            (id, club_id, player_id, practitioner_id, period, status, scheduled_by)
+            (id, club_id, player_id, practitioner_id, discipline, period, status, scheduled_by)
           VALUES
             (${appointment.id}::uuid, ${appointment.clubId}::uuid, ${appointment.playerId}::uuid,
-             ${appointment.practitionerId}::uuid,
+             ${appointment.practitionerId}::uuid, ${appointment.discipline},
              tstzrange(${appointment.periodStart}::timestamptz, ${appointment.periodEnd}::timestamptz, '[)'),
              ${appointment.status}, ${appointment.scheduledBy}::uuid)
           RETURNING
             id, club_id AS "clubId", player_id AS "playerId", practitioner_id AS "practitionerId",
-            period_start AS "periodStart", period_end AS "periodEnd",
+            discipline, period_start AS "periodStart", period_end AS "periodEnd",
             status, scheduled_by AS "scheduledBy", created_at AS "createdAt",
             cancelled_at AS "cancelledAt", cancelled_by AS "cancelledBy", cancel_reason AS "cancelReason",
             resolved_at AS "resolvedAt", resolved_by AS "resolvedBy"

@@ -10,9 +10,20 @@ import { createGetMyAppointments } from '../application/useCases/getMyAppointmen
 import { createCreateNote } from '../application/useCases/createNote.js';
 import { createListPlayerNotes } from '../application/useCases/listPlayerNotes.js';
 import { createGetMyNotes } from '../application/useCases/getMyNotes.js';
+import { createCreateRecoveryPlan } from '../application/useCases/createRecoveryPlan.js';
+import { createCompleteRecoveryPlan } from '../application/useCases/completeRecoveryPlan.js';
+import { createDiscontinueRecoveryPlan } from '../application/useCases/discontinueRecoveryPlan.js';
+import { createListRecoveryPlans } from '../application/useCases/listRecoveryPlans.js';
+import { createGetMyRecoveryPlans } from '../application/useCases/getMyRecoveryPlans.js';
+import { createCreateMedicalHistoryEntry } from '../application/useCases/createMedicalHistoryEntry.js';
+import { createResolveMedicalHistoryEntry } from '../application/useCases/resolveMedicalHistoryEntry.js';
+import { createListMedicalHistory } from '../application/useCases/listMedicalHistory.js';
+import { createGetMyMedicalHistory } from '../application/useCases/getMyMedicalHistory.js';
 
 import { createPrismaAppointmentRepository } from './persistence/prismaAppointmentRepository.js';
 import { createPrismaNoteRepository } from './persistence/prismaNoteRepository.js';
+import { createPrismaRecoveryPlanRepository } from './persistence/prismaRecoveryPlanRepository.js';
+import { createPrismaMedicalHistoryRepository } from './persistence/prismaMedicalHistoryRepository.js';
 import {
   createNullPlayerEligibilityProvider,
   createNullPractitionerEligibilityProvider,
@@ -39,6 +50,8 @@ export function buildClinicalContainer({
 } = {}) {
   const appointmentRepository = createPrismaAppointmentRepository(prismaClient);
   const noteRepository = createPrismaNoteRepository(prismaClient);
+  const recoveryPlanRepository = createPrismaRecoveryPlanRepository(prismaClient);
+  const medicalHistoryRepository = createPrismaMedicalHistoryRepository(prismaClient);
 
   return {
     scheduleAppointment: createScheduleAppointment({
@@ -53,8 +66,40 @@ export function buildClinicalContainer({
     markNoShow: createMarkNoShow({ appointmentRepository, clock }),
     listAppointments: createListAppointments({ appointmentRepository, playerDirectoryProvider }),
     getMyAppointments: createGetMyAppointments({ appointmentRepository, playerDirectoryProvider }),
-    createNote: createCreateNote({ noteRepository, playerEligibilityProvider }),
-    listPlayerNotes: createListPlayerNotes({ noteRepository }),
+    createNote: createCreateNote({
+      noteRepository,
+      playerEligibilityProvider,
+      practitionerEligibilityProvider,
+    }),
+    listPlayerNotes: createListPlayerNotes({ noteRepository, practitionerEligibilityProvider }),
     getMyNotes: createGetMyNotes({ noteRepository }),
+    createRecoveryPlan: createCreateRecoveryPlan({
+      recoveryPlanRepository,
+      playerEligibilityProvider,
+      practitionerEligibilityProvider,
+      clock,
+    }),
+    completeRecoveryPlan: createCompleteRecoveryPlan({ recoveryPlanRepository, clock }),
+    discontinueRecoveryPlan: createDiscontinueRecoveryPlan({ recoveryPlanRepository, clock }),
+    listRecoveryPlans: createListRecoveryPlans({
+      recoveryPlanRepository,
+      practitionerEligibilityProvider,
+    }),
+    getMyRecoveryPlans: createGetMyRecoveryPlans({ recoveryPlanRepository }),
+    createMedicalHistoryEntry: createCreateMedicalHistoryEntry({
+      medicalHistoryRepository,
+      playerEligibilityProvider,
+      practitionerEligibilityProvider,
+      clock,
+    }),
+    resolveMedicalHistoryEntry: createResolveMedicalHistoryEntry({
+      medicalHistoryRepository,
+      clock,
+    }),
+    listMedicalHistory: createListMedicalHistory({
+      medicalHistoryRepository,
+      practitionerEligibilityProvider,
+    }),
+    getMyMedicalHistory: createGetMyMedicalHistory({ medicalHistoryRepository }),
   };
 }
