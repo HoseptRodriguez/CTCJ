@@ -14,3 +14,4 @@ export * from './validation/guardianshipSchemas.js';
 export * from './validation/billingSchemas.js';
 export * from './validation/coachingSchemas.js';
 export * from './validation/competitionSchemas.js';
+export * from './validation/tournamentSchemas.js';

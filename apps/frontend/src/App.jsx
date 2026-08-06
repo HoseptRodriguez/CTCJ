@@ -17,6 +17,7 @@ import { MembershipStatusPage } from './pages/staff/MembershipStatusPage.jsx';
 import { PaymentsQueuePage } from './pages/staff/PaymentsQueuePage.jsx';
 import { PlansPage } from './pages/staff/PlansPage.jsx';
 import { RequestsPage } from './pages/staff/RequestsPage.jsx';
+import { TournamentsPage } from './pages/staff/TournamentsPage.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
@@ -58,6 +59,7 @@ export function App() {
             <Route element={<StaffLayout />}>
               <Route path="/staff" element={<StaffHome />} />
               <Route path="/staff/competicion" element={<CompetitionPage />} />
+              <Route path="/staff/torneos" element={<TournamentsPage />} />
               <Route
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
               >

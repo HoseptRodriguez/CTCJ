@@ -46,6 +46,12 @@ import { createCompetitionController } from './modules/competition/infrastructur
 import { createCompetitionRoutes } from './modules/competition/infrastructure/http/competitionRoutes.js';
 import { createIdentityPlayerEligibilityProvider as createCompetitionPlayerEligibilityProvider } from './modules/competition/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createCompetitionPlayerDirectoryProvider } from './modules/competition/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { buildTournamentContainer } from './modules/tournament/infrastructure/compositionRoot.js';
+import { createTournamentController } from './modules/tournament/infrastructure/http/tournamentController.js';
+import { createTournamentRoutes } from './modules/tournament/infrastructure/http/tournamentRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createTournamentPlayerEligibilityProvider } from './modules/tournament/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createTournamentPlayerDirectoryProvider } from './modules/tournament/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { createCompetitionStandingsProvider } from './modules/tournament/infrastructure/adapters/standingsProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -143,6 +149,28 @@ export function createApp() {
   });
   const competitionController = createCompetitionController(competitionContainer);
   app.use('/api/competition', createCompetitionRoutes(competitionController));
+
+  const tournamentPlayerEligibilityProvider = createTournamentPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const tournamentPlayerDirectoryProvider = createTournamentPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  // The first module-to-module cross-module dependency in this codebase
+  // that isn't module-to-identity: tournament seeding reads competition's
+  // live standings via its exported application-layer getStandings
+  // function, never its persistence -- same adapter shape as every
+  // identity dependency above, just pointed at a different module.
+  const tournamentStandingsProvider = createCompetitionStandingsProvider({
+    getStandings: competitionContainer.getStandings,
+  });
+  const tournamentContainer = buildTournamentContainer({
+    playerEligibilityProvider: tournamentPlayerEligibilityProvider,
+    playerDirectoryProvider: tournamentPlayerDirectoryProvider,
+    standingsProvider: tournamentStandingsProvider,
+  });
+  const tournamentController = createTournamentController(tournamentContainer);
+  app.use('/api/tournaments', createTournamentRoutes(tournamentController));
 
   // Other module routers are mounted here as each module is implemented.
 

@@ -38,6 +38,7 @@ model Club {
   systemSettings SystemSetting[]
   membershipPlans MembershipPlan[]
   competitionSeasons CompetitionSeason[]
+  tournaments Tournament[]
 
   @@map("clubs")
 }
@@ -108,6 +109,9 @@ model User {
 
   // Competition (Phase 12) -- match results this user participated in
   competitionMatchParticipations CompetitionMatchParticipant[] @relation("CompetitionMatchParticipant")
+
+  // Tournament (Phase 13) -- bracket entries this user is a member of
+  tournamentParticipantMemberships TournamentParticipantMember[] @relation("TournamentParticipantMember")
 
   @@unique([clubId, email])
   @@map("users")
@@ -568,6 +572,110 @@ model CompetitionMatchParticipant {
   // side CHECK + player index added via raw-SQL migration.
   @@unique([matchId, playerId]) // no player appears twice in a match
   @@map("competition_match_participants")
+}
+
+// ---------------------------------------------------------------------------
+// Tournament (Phase 13) -- staff-run single-elimination brackets, seeded by
+// competition's live standings. Fully separate from competition's ranking
+// ladder (a judgment call): a tournament match's result affects ONLY the
+// bracket, never the season standings.
+// ---------------------------------------------------------------------------
+
+model Tournament {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId          String    @map("club_id") @db.Uuid
+  name            String    @db.VarChar(60)
+  category        String    @db.VarChar(20) // SEGUNDA|TERCERA|CUARTA|QUINTA -- reuses competition's vocabulary
+  modality        String    @db.VarChar(10) // SINGLES|DOBLES
+  status          String    @default("DRAFT") @db.VarChar(20) // DRAFT|DRAW_GENERATED|COMPLETED|CANCELLED
+  createdBy       String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt       DateTime  @default(now()) @map("created_at")
+  drawGeneratedAt DateTime? @map("draw_generated_at")
+  completedAt     DateTime? @map("completed_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  championId      String?   @map("champion_id") @db.Uuid // no FK -- points at the winning TournamentParticipant.id once COMPLETED
+
+  club         Club                    @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+
+  // status/category/modality CHECKs + per-terminal-state coherence CHECKs
+  // added via raw-SQL migration.
+  @@map("tournaments")
+}
+
+// One bracket "entry" -- 1 player for SINGLES, a FIXED pair for DOBLES
+// (unlike competition's ad-hoc per-match doubles pairing, a tournament pair
+// is registered once and plays together the whole bracket). Members live in
+// a normalized join table (not two nullable playerId columns), mirroring
+// competition_match_participants' own reasoning: uniform 1-or-2-player
+// handling, no CHECK-constraint gymnastics.
+model TournamentParticipant {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tournamentId String   @map("tournament_id") @db.Uuid
+  seed         Int?     @db.SmallInt // assigned at draw-generation time, null before
+  registeredBy String   @map("registered_by") @db.Uuid // no FK, audit-only
+  registeredAt DateTime @default(now()) @map("registered_at")
+
+  tournament Tournament                    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  members    TournamentParticipantMember[]
+  matchesAsA TournamentMatch[]             @relation("MatchParticipantA")
+  matchesAsB TournamentMatch[]             @relation("MatchParticipantB")
+  matchesWon TournamentMatch[]             @relation("MatchWinner")
+
+  @@map("tournament_participants")
+}
+
+model TournamentParticipantMember {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participantId String @map("participant_id") @db.Uuid
+  playerId      String @map("player_id") @db.Uuid
+
+  participant TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  player      User                  @relation("TournamentParticipantMember", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // player index added via raw-SQL migration.
+  @@unique([participantId, playerId])
+  @@map("tournament_participant_members")
+}
+
+// A bracket slot. Linkage to "which match feeds which next match" is NOT a
+// stored graph -- it's derived by (round, slot) arithmetic: the match at
+// (round r, 0-indexed slot s) feeds into (round r+1, slot floor(s/2)),
+// landing in participant A if s is even, B if odd. No status enum -- match
+// state is fully derived from the data: both slots null = awaiting a
+// feeder, both filled + no winner = ready to record, winner set with no
+// scores = a bye (auto-resolved at generation, no staff action), winner set
+// with scores = completed.
+model TournamentMatch {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tournamentId        String    @map("tournament_id") @db.Uuid
+  round               Int       @db.SmallInt // 1-indexed, round 1 = first round
+  slot                Int       @db.SmallInt // 0-indexed position within the round
+  participantAId      String?   @map("participant_a_id") @db.Uuid
+  participantBId      String?   @map("participant_b_id") @db.Uuid
+  setsWonA            Int?      @map("sets_won_a") @db.SmallInt // null for byes -- no match was actually played
+  setsWonB            Int?      @map("sets_won_b") @db.SmallInt
+  winnerParticipantId String?   @map("winner_participant_id") @db.Uuid
+  playedAt            DateTime? @map("played_at") @db.Date
+  recordedBy          String?   @map("recorded_by") @db.Uuid // no FK, audit-only; null for byes
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  tournament        Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  // CASCADE, not RESTRICT: a participant can only ever be deleted via its
+  // whole Tournament cascading (removeParticipant is pre-draw only), so
+  // RESTRICT here would just create a same-statement cascade-ordering race
+  // against tournament_participants' own CASCADE from tournaments.
+  participantA      TournamentParticipant? @relation("MatchParticipantA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB      TournamentParticipant? @relation("MatchParticipantB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winnerParticipant TournamentParticipant? @relation("MatchWinner", fields: [winnerParticipantId], references: [id], onDelete: Cascade)
+
+  // winner-participant-valid CHECK + sets-range CHECK + (tournament_id,
+  // round) index added via raw-SQL migration -- this codebase never
+  // declares @@index in schema.prisma, only in the hand-written migration.
+  @@unique([tournamentId, round, slot])
+  @@map("tournament_matches")
 }
 
 model OutboxEvent {
