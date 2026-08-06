@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
@@ -45,6 +46,10 @@ vi.mock('../api/coachingClient.js', () => ({
   coachingClient: { getMyNotes: vi.fn(), getMyPerformance: vi.fn() },
 }));
 
+vi.mock('../api/clinicalClient.js', () => ({
+  clinicalClient: { getMyAppointments: vi.fn(), getMyNotes: vi.fn() },
+}));
+
 vi.mock('../context/AuthContext.jsx', () => ({
   useAuth: vi.fn(),
 }));
@@ -62,6 +67,8 @@ describe('MyCtcjPage', () => {
       ratings: [],
       summary: { ratedAreas: [], latestByArea: {}, progressByArea: {} },
     });
+    clinicalClient.getMyAppointments.mockResolvedValue({ appointments: [] });
+    clinicalClient.getMyNotes.mockResolvedValue({ notes: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -272,5 +279,88 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(coachingClient.getMyPerformance).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with a scheduled appointment sees "Mis citas"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    clinicalClient.getMyAppointments.mockResolvedValue({
+      appointments: [
+        {
+          id: 'appt-1',
+          status: 'SCHEDULED',
+          periodStart: '2026-03-01T15:00:00.000Z',
+          practitionerName: 'Dra. Sofia Reyes',
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Mis citas')).toBeInTheDocument();
+    expect(screen.getByText(/Dra. Sofia Reyes/)).toBeInTheDocument();
+    expect(screen.getByText('Programada')).toBeInTheDocument();
+  });
+
+  it('does not show "Mis citas" when there are none', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(clinicalClient.getMyAppointments).toHaveBeenCalled());
+    expect(screen.queryByText('Mis citas')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Mis citas" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(clinicalClient.getMyAppointments).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with a visible clinical note sees "Notas de psicología", read-only', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    clinicalClient.getMyNotes.mockResolvedValue({
+      notes: [
+        {
+          id: 'note-1',
+          noteType: 'RECOMMENDATION',
+          content: 'Practica ejercicios de respiración antes de competir.',
+          createdAt: '2026-03-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Notas de psicología')).toBeInTheDocument();
+    expect(
+      screen.getByText('Practica ejercicios de respiración antes de competir.'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not show "Notas de psicología" when there are none', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(clinicalClient.getMyNotes).toHaveBeenCalled());
+    expect(screen.queryByText('Notas de psicología')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Notas de psicología" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(clinicalClient.getMyNotes).not.toHaveBeenCalled();
   });
 });

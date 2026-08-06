@@ -39,6 +39,7 @@ model Club {
   membershipPlans MembershipPlan[]
   competitionSeasons CompetitionSeason[]
   tournaments Tournament[]
+  clinicalAppointments ClinicalAppointment[]
 
   @@map("clubs")
 }
@@ -112,6 +113,10 @@ model User {
 
   // Tournament (Phase 13) -- bracket entries this user is a member of
   tournamentParticipantMemberships TournamentParticipantMember[] @relation("TournamentParticipantMember")
+
+  // Clinical (Phase 14) -- appointments and notes where this user is the patient
+  clinicalAppointments ClinicalAppointment[] @relation("ClinicalAppointmentSubject")
+  clinicalNotes        ClinicalNote[]        @relation("ClinicalNoteSubject")
 
   @@unique([clubId, email])
   @@map("users")
@@ -676,6 +681,66 @@ model TournamentMatch {
   // declares @@index in schema.prisma, only in the hand-written migration.
   @@unique([tournamentId, round, slot])
   @@map("tournament_matches")
+}
+
+// ---------------------------------------------------------------------------
+// Clinical (Phase 14) -- Psychology slice. Module name matches the
+// pre-registered clinical-domain-isolated dependency-cruiser rule (stricter
+// than every other module: no other module may import modules/clinical/domain
+// at all). Physiotherapy is a separate future phase, likely also under this
+// module. ClinicalAppointment carries zero clinical content by design --
+// scheduling logistics only. ClinicalNote is append-only, mirrors
+// coach_notes exactly.
+// ---------------------------------------------------------------------------
+
+model ClinicalAppointment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId         String    @map("club_id") @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  // Added via raw-SQL migration (Prisma has no native range-type support),
+  // reusing Reservation's exact pattern -- see the
+  // 20260731180029_init_identity_booking migration's "reservations: range
+  // period + structural double-booking prevention" section.
+  period      Unsupported("tstzrange")
+  periodStart DateTime  @map("period_start") // generated column, read-only from Prisma's POV
+  periodEnd   DateTime  @map("period_end") // generated column, read-only from Prisma's POV
+  status      String    @default("SCHEDULED") @db.VarChar(20) // SCHEDULED|COMPLETED|CANCELLED|NO_SHOW
+  scheduledBy String    @map("scheduled_by") @db.Uuid // no FK, audit-only
+  createdAt   DateTime  @default(now()) @map("created_at")
+  cancelledAt DateTime? @map("cancelled_at")
+  cancelledBy String?   @map("cancelled_by") @db.Uuid
+  cancelReason String?  @map("cancel_reason")
+  resolvedAt  DateTime? @map("resolved_at") // set when COMPLETED or NO_SHOW
+  resolvedBy  String?   @map("resolved_by") @db.Uuid
+
+  club   Club           @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  player User           @relation("ClinicalAppointmentSubject", fields: [playerId], references: [id], onDelete: Restrict)
+  notes  ClinicalNote[]
+
+  // EXCLUDE USING gist (practitioner_id WITH =, period WITH &&) WHERE
+  // status = 'SCHEDULED' + status/coherence CHECKs added via raw-SQL
+  // migration -- a practitioner can never have two overlapping scheduled
+  // appointments, enforced by Postgres itself.
+  @@map("clinical_appointments")
+}
+
+model ClinicalNote {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String   @map("player_id") @db.Uuid
+  practitionerId String   @map("practitioner_id") @db.Uuid // no FK, audit-only
+  appointmentId  String?  @map("appointment_id") @db.Uuid // optional cross-reference
+  noteType       String   @map("note_type") @db.VarChar(20) // FOLLOW_UP|RECOMMENDATION|SESSION_NOTE|GENERAL
+  visibility     String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  player      User                 @relation("ClinicalNoteSubject", fields: [playerId], references: [id], onDelete: Restrict)
+  appointment ClinicalAppointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  // note_type CHECK + visibility CHECK + player index added via raw-SQL
+  // migration, matching coach_notes' exact precedent.
+  @@map("clinical_notes")
 }
 
 model OutboxEvent {

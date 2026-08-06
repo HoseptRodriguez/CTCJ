@@ -4,6 +4,7 @@ import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
@@ -44,6 +45,25 @@ const NOTE_TYPE_LABELS = {
   TACTICAL: 'Táctica',
   RECOMMENDATION: 'Recomendación',
 };
+
+const CLINICAL_NOTE_TYPE_LABELS = {
+  FOLLOW_UP: 'Seguimiento',
+  RECOMMENDATION: 'Recomendación',
+  SESSION_NOTE: 'Nota de sesión',
+  GENERAL: 'General',
+};
+
+const APPOINTMENT_STATUS_LABELS = {
+  SCHEDULED: 'Programada',
+  COMPLETED: 'Completada',
+  CANCELLED: 'Cancelada',
+  NO_SHOW: 'No asistió',
+};
+
+const APPOINTMENT_DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
 
 function AffiliationSection() {
   const [requests, setRequests] = useState(null);
@@ -328,6 +348,95 @@ function MyNotesSection() {
   );
 }
 
+function MyAppointmentsSection() {
+  const [appointments, setAppointments] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    clinicalClient
+      .getMyAppointments()
+      .then((data) => {
+        if (!cancelled) setAppointments(data.appointments);
+      })
+      .catch(() => {
+        if (!cancelled) setAppointments([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!appointments || appointments.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Mis citas</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Citas de psicología/neuropsicología agendadas para ti.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {appointments.map((appointment) => (
+          <li key={appointment.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="font-semibold text-primary">
+              {appointment.practitionerName ?? 'Profesional'}
+            </span>{' '}
+            · {APPOINTMENT_DATE_FORMATTER.format(new Date(appointment.periodStart))}
+            {' · '}
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {APPOINTMENT_STATUS_LABELS[appointment.status] ?? appointment.status}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MyClinicalNotesSection() {
+  const [notes, setNotes] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    clinicalClient
+      .getMyNotes()
+      .then((data) => {
+        if (!cancelled) setNotes(data.notes);
+      })
+      .catch(() => {
+        if (!cancelled) setNotes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!notes || notes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Notas de psicología</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Notas de seguimiento y recomendaciones que tu psicólogo/a ha compartido contigo.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {notes.map((note) => (
+          <li key={note.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {CLINICAL_NOTE_TYPE_LABELS[note.noteType] ?? note.noteType} ·{' '}
+              {INVOICE_DATE_FORMATTER.format(new Date(note.createdAt))}
+            </span>
+            <p className="mt-1 text-secondary">{note.content}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function MyPerformanceSection() {
   const [data, setData] = useState(null);
 
@@ -552,6 +661,8 @@ export function MyCtcjPage() {
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}
       {isJugador ? <MyPerformanceSection /> : null}
+      {isJugador ? <MyAppointmentsSection /> : null}
+      {isJugador ? <MyClinicalNotesSection /> : null}
       <GuardianshipSection />
     </Section>
   );

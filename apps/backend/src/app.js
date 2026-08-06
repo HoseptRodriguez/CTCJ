@@ -52,6 +52,14 @@ import { createTournamentRoutes } from './modules/tournament/infrastructure/http
 import { createIdentityPlayerEligibilityProvider as createTournamentPlayerEligibilityProvider } from './modules/tournament/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createTournamentPlayerDirectoryProvider } from './modules/tournament/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createCompetitionStandingsProvider } from './modules/tournament/infrastructure/adapters/standingsProviderAdapter.js';
+import { buildClinicalContainer } from './modules/clinical/infrastructure/compositionRoot.js';
+import { createClinicalAdminController } from './modules/clinical/infrastructure/http/clinicalAdminController.js';
+import { createClinicalAdminRoutes } from './modules/clinical/infrastructure/http/clinicalAdminRoutes.js';
+import { createMeController as createClinicalMeController } from './modules/clinical/infrastructure/http/meController.js';
+import { createMeRoutes as createClinicalMeRoutes } from './modules/clinical/infrastructure/http/meRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createClinicalPlayerEligibilityProvider } from './modules/clinical/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPractitionerEligibilityProvider } from './modules/clinical/infrastructure/adapters/practitionerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createClinicalPlayerDirectoryProvider } from './modules/clinical/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 
 export function createApp() {
   const app = express();
@@ -171,6 +179,28 @@ export function createApp() {
   });
   const tournamentController = createTournamentController(tournamentContainer);
   app.use('/api/tournaments', createTournamentRoutes(tournamentController));
+
+  const clinicalPlayerEligibilityProvider = createClinicalPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  // First consumer of identity's checkHasAnyRole primitive (added in this
+  // phase alongside checkIsJugador, not replacing it) -- checks PSICOLOGO
+  // or NEUROPSICOLOGO rather than a single fixed role.
+  const clinicalPractitionerEligibilityProvider = createIdentityPractitionerEligibilityProvider({
+    checkHasAnyRole: identityContainer.checkHasAnyRole,
+  });
+  const clinicalPlayerDirectoryProvider = createClinicalPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  const clinicalContainer = buildClinicalContainer({
+    playerEligibilityProvider: clinicalPlayerEligibilityProvider,
+    practitionerEligibilityProvider: clinicalPractitionerEligibilityProvider,
+    playerDirectoryProvider: clinicalPlayerDirectoryProvider,
+  });
+  const clinicalAdminController = createClinicalAdminController(clinicalContainer);
+  const clinicalMeController = createClinicalMeController(clinicalContainer);
+  app.use('/api/admin/clinical', createClinicalAdminRoutes(clinicalAdminController));
+  app.use('/api/clinical/me', createClinicalMeRoutes(clinicalMeController));
 
   // Other module routers are mounted here as each module is implemented.
 

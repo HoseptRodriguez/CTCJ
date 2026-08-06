@@ -9,6 +9,7 @@ import { Login } from './pages/Login.jsx';
 import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
+import { ClinicalPage } from './pages/staff/ClinicalPage.jsx';
 import { CoachNotesPage } from './pages/staff/CoachNotesPage.jsx';
 import { CompetitionPage } from './pages/staff/CompetitionPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
@@ -23,14 +24,20 @@ import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
 
 // /staff/pagos isn't reachable by every staff role (Phase 10 added ENTRENADOR,
-// which can't see Pagos/Membresías) -- a static <Navigate> would bounce a
-// coach's first visit straight through to "/" via RequireRole's own
-// lacking-role fallback. Land each role on a route they can actually see.
+// which can't see Pagos/Membresías; Phase 14 added PSICOLOGO/NEUROPSICOLOGO,
+// which can't see Pagos or Notas either) -- a static <Navigate> would bounce
+// a coach's or psychologist's first visit straight through to "/" via
+// RequireRole's own lacking-role fallback. Land each role on a route they
+// can actually see.
 function StaffHome() {
   const { user } = useAuth();
+  const roles = user?.roles ?? [];
   const canSeePagos =
-    user?.roles?.includes(ROLE_CODES.ADMINISTRADOR) || user?.roles?.includes(ROLE_CODES.RECEPCION);
-  return <Navigate to={canSeePagos ? '/staff/pagos' : '/staff/notas'} replace />;
+    roles.includes(ROLE_CODES.ADMINISTRADOR) || roles.includes(ROLE_CODES.RECEPCION);
+  const canSeeNotas =
+    roles.includes(ROLE_CODES.ADMINISTRADOR) || roles.includes(ROLE_CODES.ENTRENADOR);
+  const target = canSeePagos ? '/staff/pagos' : canSeeNotas ? '/staff/notas' : '/staff/clinico';
+  return <Navigate to={target} replace />;
 }
 
 export function App() {
@@ -52,7 +59,13 @@ export function App() {
           <Route
             element={
               <RequireRole
-                roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION, ROLE_CODES.ENTRENADOR]}
+                roles={[
+                  ROLE_CODES.ADMINISTRADOR,
+                  ROLE_CODES.RECEPCION,
+                  ROLE_CODES.ENTRENADOR,
+                  ROLE_CODES.PSICOLOGO,
+                  ROLE_CODES.NEUROPSICOLOGO,
+                ]}
               />
             }
           >
@@ -70,6 +83,20 @@ export function App() {
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.ENTRENADOR]} />}
               >
                 <Route path="/staff/notas" element={<CoachNotesPage />} />
+              </Route>
+              <Route
+                element={
+                  <RequireRole
+                    roles={[
+                      ROLE_CODES.ADMINISTRADOR,
+                      ROLE_CODES.RECEPCION,
+                      ROLE_CODES.PSICOLOGO,
+                      ROLE_CODES.NEUROPSICOLOGO,
+                    ]}
+                  />
+                }
+              >
+                <Route path="/staff/clinico" element={<ClinicalPage />} />
               </Route>
               <Route element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR]} />}>
                 <Route path="/staff/precios" element={<CourtPricingPage />} />

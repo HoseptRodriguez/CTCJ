@@ -83,8 +83,12 @@ const ROLE_PERMISSION_GRANTS = {
   PSICOLOGO: ['clinical:appointment:manage', 'clinical:record:read', 'clinical:record:write'],
   NEUROPSICOLOGO: ['clinical:appointment:manage', 'clinical:record:read', 'clinical:record:write'],
   FISIOTERAPEUTA: ['clinical:appointment:manage', 'clinical:record:read', 'clinical:record:write'],
-  // Deliberately excludes clinical:record:read/write -- see ADR-0006:
-  // Administrador manages the clinical module's existence, never its content.
+  // Deliberately excludes clinical:record:read/write -- Administrador
+  // manages the clinical module's existence (scheduling, role grants) but
+  // never its content, enforced for real in Phase 14's clinical module
+  // requireRole gates (this Permission/RolePermission catalog itself is
+  // decorative, never read by real authorization code -- see the module's
+  // own README/compositionRoot for the actual enforcement).
   ADMINISTRADOR: [
     'booking:reservation:read_all',
     'booking:reservation:manage',

@@ -4,8 +4,9 @@
  * generic SystemSettingRepository; it only sees this one boolean question.
  * A future module needing its own club-configurable policy gets its own
  * equally narrow port, never this one and never the generic one directly --
- * see the Phase 5 plan for why (ADR-0006: payment status must never gate
- * sporting or clinical data, so the mechanism itself must not generalize).
+ * payment status must never gate sporting or clinical data, so the
+ * mechanism itself must not generalize. (Not actually documented in
+ * ADR-0006, which is unrelated -- see Phase 14's plan for the correction.)
  */
 export class BookingPolicySettings {
   /** @returns {Promise<boolean>} */
