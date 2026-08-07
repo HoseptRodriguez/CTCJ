@@ -4,6 +4,7 @@ import { PAYMENT_METHOD } from '@ctcj/shared';
 import { billingClient } from '../../api/billingClient.js';
 import { bookingClient } from '../../api/bookingClient.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { CashFlowChart } from '../../components/ui/CashFlowChart.jsx';
 import { describeBillingError } from '../../lib/billingErrorMessages.js';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 import { exportToCsv } from '../../lib/csvExport.js';
@@ -246,6 +247,84 @@ function CarteraSection({ data, error }) {
   );
 }
 
+function CashFlowSection() {
+  const [monthsCount, setMonthsCount] = useState(6);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setData(null);
+    setError(null);
+    Promise.all([
+      bookingClient.getMonthlyRevenue({ months: monthsCount }),
+      billingClient.getMonthlyRevenue({ months: monthsCount }),
+    ])
+      .then(([courtResult, membershipResult]) => {
+        const merged = courtResult.months.map((courtMonth, i) => ({
+          month: courtMonth.month,
+          courtCop: courtMonth.totalCop,
+          membershipCop: membershipResult.months[i]?.totalCop ?? 0,
+        }));
+        setData(merged);
+      })
+      .catch((err) => setError(describeBookingError(err) ?? describeBillingError(err)));
+  }, [monthsCount]);
+
+  return (
+    <div className="mt-6 rounded-md border border-neutral-200 bg-canvas p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-display font-semibold text-primary">Flujo de caja</h3>
+        <div className="flex items-center gap-3">
+          {data ? (
+            <Button
+              variant="ghost"
+              onClick={() =>
+                exportToCsv({
+                  filename: 'flujo-de-caja.csv',
+                  columns: [
+                    { header: 'Mes', get: (m) => m.month },
+                    { header: 'Canchas', get: (m) => m.courtCop },
+                    { header: 'Membresías', get: (m) => m.membershipCop },
+                    { header: 'Total', get: (m) => m.courtCop + m.membershipCop },
+                  ],
+                  rows: data,
+                })
+              }
+            >
+              Exportar CSV
+            </Button>
+          ) : null}
+          <label
+            className="flex items-center gap-2 text-sm text-secondary"
+            htmlFor="cashflow-months"
+          >
+            Meses
+            <select
+              id="cashflow-months"
+              value={monthsCount}
+              onChange={(e) => setMonthsCount(Number(e.target.value))}
+              className="rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
+            >
+              <option value={3}>3</option>
+              <option value={6}>6</option>
+              <option value={12}>12</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+      {!error && !data ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
+
+      {data ? (
+        <div className="mt-4">
+          <CashFlowChart months={data} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function FinancePage() {
   const [range, setRange] = useState(currentMonthRange);
   const [courtPayments, setCourtPayments] = useState(null);
@@ -287,7 +366,7 @@ export function FinancePage() {
     <div>
       <h1 className="font-display text-2xl font-semibold text-primary">Gestión financiera</h1>
       <p className="mt-1 text-secondary">
-        Ingresos por canchas y membresías, y cartera pendiente de cobro.
+        Flujo de caja, ingresos por canchas y membresías, y cartera pendiente de cobro.
       </p>
 
       <div className="mt-6">
@@ -301,6 +380,7 @@ export function FinancePage() {
         </p>
       </div>
 
+      <CashFlowSection />
       <CourtPaymentsSection data={courtPayments} error={courtError} />
       <MembershipPaymentsSection data={membershipPayments} error={membershipError} />
       <CarteraSection data={cartera} error={carteraError} />

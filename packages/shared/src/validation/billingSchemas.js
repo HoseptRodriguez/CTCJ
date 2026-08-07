@@ -60,3 +60,8 @@ export const listInvoicesQuerySchema = z.object({
   from: dateOnly.optional(),
   to: dateOnly.optional(),
 });
+
+// Cash flow (financial dashboard) -- last N club-local months, newest last.
+export const invoicesMonthlyQuerySchema = z.object({
+  months: z.coerce.number().int().min(1).max(24).default(6),
+});

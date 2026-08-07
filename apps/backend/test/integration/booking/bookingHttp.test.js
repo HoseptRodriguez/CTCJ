@@ -536,6 +536,51 @@ describe('Booking HTTP API (real Postgres)', () => {
 
       expect(res.body).toEqual({ payments: [], totalCop: 0, count: 0 });
     });
+
+    describe('GET /payments/monthly (cash flow, Phase 16)', () => {
+      it("buckets today's payment into the current club-local month, oldest month first, STAFF_ROLES only", async () => {
+        const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+        const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+        const player = await seedVerifiedUser();
+        const adminToken = await login(app, admin.email, admin.password);
+        const staffToken = await login(app, staff.email, staff.password);
+        const playerToken = await login(app, player.email, player.password);
+
+        await payForAReservation(13, adminToken, staffToken, playerToken);
+        await payForAReservation(14, adminToken, staffToken, playerToken);
+
+        const res = await request(app)
+          .get('/api/booking/payments/monthly')
+          .query({ months: 3 })
+          .set('Authorization', `Bearer ${staffToken}`)
+          .expect(200);
+
+        expect(res.body.months).toHaveLength(3);
+        const currentMonth = res.body.months[2];
+        expect(currentMonth.totalCop).toBe(120000);
+        expect(currentMonth.count).toBe(2);
+        expect(res.body.months[0].totalCop).toBe(0);
+        expect(res.body.months[1].totalCop).toBe(0);
+
+        await request(app).get('/api/booking/payments/monthly').expect(401);
+        await request(app)
+          .get('/api/booking/payments/monthly')
+          .set('Authorization', `Bearer ${playerToken}`)
+          .expect(403);
+      });
+
+      it('defaults months to 6 when not provided', async () => {
+        const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+        const adminToken = await login(app, admin.email, admin.password);
+
+        const res = await request(app)
+          .get('/api/booking/payments/monthly')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(res.body.months).toHaveLength(6);
+      });
+    });
   });
 
   describe('membership overdue booking block (Phase 5)', () => {

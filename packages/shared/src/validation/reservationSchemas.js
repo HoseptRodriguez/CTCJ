@@ -41,3 +41,8 @@ export const listPaymentsQuerySchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format'),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be in YYYY-MM-DD format'),
 });
+
+// Cash flow (financial dashboard) -- last N club-local months, newest last.
+export const paymentsMonthlyQuerySchema = z.object({
+  months: z.coerce.number().int().min(1).max(24).default(6),
+});

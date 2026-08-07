@@ -10,6 +10,7 @@ import {
   recordInvoicePaymentSchema,
   cancelInvoiceSchema,
   listInvoicesQuerySchema,
+  invoicesMonthlyQuerySchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -95,6 +96,13 @@ export function createBillingAdminRoutes(controller) {
     requireRole(STAFF_ROLES),
     validateQuery(listInvoicesQuerySchema),
     controller.listInvoices,
+  );
+  router.get(
+    '/invoices/monthly',
+    requireAuth,
+    requireRole(STAFF_ROLES),
+    validateQuery(invoicesMonthlyQuerySchema),
+    controller.getMonthlyRevenue,
   );
   router.get('/invoices/:id', requireAuth, requireRole(STAFF_ROLES), controller.getInvoice);
   router.post(

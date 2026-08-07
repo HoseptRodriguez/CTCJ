@@ -9,6 +9,7 @@ import { createCancelReservation } from '../application/useCases/cancelReservati
 import { createSetCourtPrice } from '../application/useCases/setCourtPrice.js';
 import { createRecordPayment } from '../application/useCases/recordPayment.js';
 import { createListPaymentsByDateRange } from '../application/useCases/listPaymentsByDateRange.js';
+import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
 import { createGetOverdueBookingPolicy } from '../application/useCases/getOverdueBookingPolicy.js';
 import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
@@ -70,6 +71,7 @@ export function buildBookingContainer({
       clubId: DEFAULT_CLUB_ID,
     }),
     listPaymentsByDateRange: createListPaymentsByDateRange({ paymentRepository }),
+    getMonthlyRevenue: createGetMonthlyRevenue({ paymentRepository, clock }),
     getOverdueBookingPolicy: createGetOverdueBookingPolicy({ bookingPolicySettings }),
     setOverdueBookingPolicy: createSetOverdueBookingPolicy({ bookingPolicySettings }),
   };

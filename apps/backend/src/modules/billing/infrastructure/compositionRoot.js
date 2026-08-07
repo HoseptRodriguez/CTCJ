@@ -17,6 +17,7 @@ import { createRecordInvoicePayment } from '../application/useCases/recordInvoic
 import { createCancelInvoice } from '../application/useCases/cancelInvoice.js';
 import { createGetMyInvoices } from '../application/useCases/getMyInvoices.js';
 import { createListInvoices } from '../application/useCases/listInvoices.js';
+import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
 import { systemClock } from '../application/ports/Clock.js';
 
 import { createPrismaPlanRepository } from './persistence/prismaPlanRepository.js';
@@ -78,5 +79,6 @@ export function buildBillingContainer({
     cancelInvoice: createCancelInvoice({ invoiceRepository, clock }),
     getMyInvoices: createGetMyInvoices({ membershipRepository, invoiceRepository }),
     listInvoices: createListInvoices({ invoiceRepository, playerDirectoryProvider, clock }),
+    getMonthlyRevenue: createGetMonthlyRevenue({ invoiceRepository, clock }),
   };
 }

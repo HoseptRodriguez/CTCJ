@@ -5,6 +5,7 @@ import {
   setCourtPriceSchema,
   recordPaymentSchema,
   listPaymentsQuerySchema,
+  paymentsMonthlyQuerySchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -52,5 +53,19 @@ export const bookingClient = {
   listPayments: (params) => {
     listPaymentsQuerySchema.parse(params);
     return request('/api/booking/payments', { params });
+  },
+
+  /**
+   * Cash flow (financial dashboard) -- court-payment revenue grouped by
+   * club-local month, oldest first.
+   * @param {{ months?: number }} params
+   * @returns {Promise<{months: Array<{month: string, totalCop: number, count: number}>}>}
+   */
+  getMonthlyRevenue: (params = {}) => {
+    paymentsMonthlyQuerySchema.parse(params);
+    const definedParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined),
+    );
+    return request('/api/booking/payments/monthly', { params: definedParams });
   },
 };

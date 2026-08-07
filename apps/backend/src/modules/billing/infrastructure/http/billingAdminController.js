@@ -128,6 +128,11 @@ export function createBillingAdminController(container) {
     res.status(200).json(result);
   });
 
+  const getMonthlyRevenue = asyncHandler(async (req, res) => {
+    const result = await container.getMonthlyRevenue({ months: req.query.months });
+    res.status(200).json(result);
+  });
+
   return {
     listPlans,
     createPlan,
@@ -144,5 +149,6 @@ export function createBillingAdminController(container) {
     recordInvoicePayment,
     cancelInvoice,
     listInvoices,
+    getMonthlyRevenue,
   };
 }

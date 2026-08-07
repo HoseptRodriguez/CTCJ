@@ -8,6 +8,7 @@ import {
   recordInvoicePaymentSchema,
   cancelInvoiceSchema,
   listInvoicesQuerySchema,
+  invoicesMonthlyQuerySchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -117,5 +118,19 @@ export const billingClient = {
       Object.entries(params).filter(([, value]) => value !== undefined),
     );
     return request('/api/admin/billing/invoices', { params: definedParams });
+  },
+
+  /**
+   * Cash flow (financial dashboard) -- membership revenue actually
+   * collected, grouped by club-local month, oldest first.
+   * @param {{ months?: number }} params
+   * @returns {Promise<{months: Array<{month: string, totalCop: number, count: number}>}>}
+   */
+  getMonthlyRevenue: (params = {}) => {
+    invoicesMonthlyQuerySchema.parse(params);
+    const definedParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined),
+    );
+    return request('/api/admin/billing/invoices/monthly', { params: definedParams });
   },
 };

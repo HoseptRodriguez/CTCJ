@@ -6,6 +6,7 @@ import {
   setCourtPriceSchema,
   recordPaymentSchema,
   listPaymentsQuerySchema,
+  paymentsMonthlyQuerySchema,
   overduePolicySchema,
   ROLE_CODES,
 } from '@ctcj/shared';
@@ -47,6 +48,14 @@ export function createBookingRoutes(controller) {
     requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
     validateQuery(listPaymentsQuerySchema),
     controller.listPayments,
+  );
+
+  router.get(
+    '/payments/monthly',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    validateQuery(paymentsMonthlyQuerySchema),
+    controller.getMonthlyRevenue,
   );
 
   router.get(

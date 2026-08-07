@@ -20,3 +20,25 @@ export function resolveClubDayRangeUtc(dateStr) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
   return { dayStart, dayEnd };
 }
+
+/** @returns {{ year: number, month: number }} the club-local calendar year/month (1-12) containing the UTC instant `now`. */
+export function getClubLocalYearMonth(now) {
+  const clubLocal = new Date(now.getTime() - CLUB_UTC_OFFSET_HOURS * 60 * 60 * 1000);
+  return { year: clubLocal.getUTCFullYear(), month: clubLocal.getUTCMonth() + 1 };
+}
+
+/**
+ * Resolves a club-local calendar month to the [monthStart, monthEnd) UTC
+ * instant range that covers it -- composed from resolveClubDayRangeUtc on
+ * the month's first day and the following month's first day, reusing the
+ * exact same offset math rather than duplicating it.
+ * @param {number} year @param {number} month 1-12
+ */
+export function resolveClubMonthRangeUtc(year, month) {
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const { dayStart: monthStart } = resolveClubDayRangeUtc(`${year}-${pad2(month)}-01`);
+  const { dayStart: monthEnd } = resolveClubDayRangeUtc(`${nextYear}-${pad2(nextMonth)}-01`);
+  return { monthStart, monthEnd };
+}

@@ -396,4 +396,61 @@ describe('Invoice HTTP API (real Postgres)', () => {
       await request(app).get('/api/admin/billing/invoices').expect(401);
     });
   });
+
+  describe('GET /api/admin/billing/invoices/monthly (cash flow, Phase 16)', () => {
+    it("buckets today's collected payment into the current club-local month, oldest month first, STAFF_ROLES only", async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      const planId = await seedPricedPlan(app, adminToken);
+      const membershipId = await enrollPlayer(app, adminToken, { playerId: player.id, planId });
+      const invoiceId = (
+        await request(app)
+          .post(`/api/admin/billing/memberships/${membershipId}/invoices`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ periodStart: '2026-03-01', periodEnd: '2026-04-01', dueDate: '2026-03-05' })
+          .expect(201)
+      ).body.id;
+      await request(app)
+        .post(`/api/admin/billing/invoices/${invoiceId}/payment`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ method: 'CASH' })
+        .expect(200);
+
+      const res = await request(app)
+        .get('/api/admin/billing/invoices/monthly')
+        .query({ months: 3 })
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(200);
+
+      expect(res.body.months).toHaveLength(3);
+      const currentMonth = res.body.months[2];
+      expect(currentMonth.totalCop).toBe(100000);
+      expect(currentMonth.count).toBe(1);
+      expect(res.body.months[0].totalCop).toBe(0);
+      expect(res.body.months[1].totalCop).toBe(0);
+
+      await request(app)
+        .get('/api/admin/billing/invoices/monthly')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(403);
+      await request(app).get('/api/admin/billing/invoices/monthly').expect(401);
+    });
+
+    it('defaults months to 6 when not provided', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+
+      const res = await request(app)
+        .get('/api/admin/billing/invoices/monthly')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.months).toHaveLength(6);
+    });
+  });
 });
