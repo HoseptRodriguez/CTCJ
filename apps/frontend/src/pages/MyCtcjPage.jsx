@@ -10,6 +10,7 @@ import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { PerformanceLineChart } from '../components/ui/PerformanceLineChart.jsx';
 import { PerformanceRadarChart } from '../components/ui/PerformanceRadarChart.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -574,22 +575,32 @@ function MyPerformanceSection() {
       {data.ratings.length === 0 ? (
         <p className="mt-3 text-sm text-secondary">Aún no tienes evaluaciones registradas.</p>
       ) : (
-        <div className="mt-4 grid gap-6 lg:grid-cols-2">
-          <PerformanceRadarChart latestByArea={data.summary.latestByArea} />
-          <ul className="space-y-2">
-            {data.summary.ratedAreas.map((area) => (
-              <li
-                key={area}
-                className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
-              >
-                <span className="text-secondary">{describeArea(area)}</span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
-                  {describeRatingBand(data.summary.latestByArea[area])}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <>
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <PerformanceRadarChart latestByArea={data.summary.latestByArea} />
+            <ul className="space-y-2">
+              {data.summary.ratedAreas.map((area) => (
+                <li
+                  key={area}
+                  className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+                >
+                  <span className="text-secondary">{describeArea(area)}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                    {describeRatingBand(data.summary.latestByArea[area])}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {Object.keys(data.summary.progressByArea).length > 0 ? (
+            <div className="mt-6">
+              <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary">
+                Tu progreso en el tiempo
+              </h4>
+              <PerformanceLineChart ratings={data.ratings} />
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

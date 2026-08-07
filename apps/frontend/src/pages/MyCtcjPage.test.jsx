@@ -278,6 +278,40 @@ describe('MyCtcjPage', () => {
     expect(bandLabel.closest('li')).not.toHaveTextContent('8');
   });
 
+  it('a JUGADOR with a repeated evaluation for an area sees their progress-over-time chart', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    coachingClient.getMyPerformance.mockResolvedValue({
+      ratings: [
+        { id: 'r1', area: 'SERVE', rating: 5, recordedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'r2', area: 'SERVE', rating: 8, recordedAt: '2026-03-01T00:00:00.000Z' },
+      ],
+      summary: {
+        ratedAreas: ['SERVE'],
+        latestByArea: { SERVE: 8 },
+        progressByArea: { SERVE: 3 },
+      },
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Tu progreso en el tiempo')).toBeInTheDocument();
+  });
+
+  it('a JUGADOR with only one evaluation ever does not see a progress-over-time chart', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    coachingClient.getMyPerformance.mockResolvedValue({
+      ratings: [{ id: 'r1', area: 'SERVE', rating: 8, recordedAt: '2026-03-01T00:00:00.000Z' }],
+      summary: { ratedAreas: ['SERVE'], latestByArea: { SERVE: 8 }, progressByArea: {} },
+    });
+
+    renderPage();
+
+    await screen.findByText('Mi rendimiento');
+    expect(screen.queryByText('Tu progreso en el tiempo')).not.toBeInTheDocument();
+  });
+
   it('a plain USUARIO never sees "Mi rendimiento" (never fetched)', async () => {
     useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
     membershipClient.getMyStatus.mockResolvedValue({ status: null });
