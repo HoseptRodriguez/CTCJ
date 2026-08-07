@@ -22,5 +22,15 @@ export function createNodemailerEmailSender({ host, port, user, password, from }
         html: `<p>Bienvenido a Club de Tenis Ciudad Jardin.</p><p><a href="${verificationUrl}">Verifica tu correo</a></p>`,
       });
     },
+
+    async sendPasswordResetEmail(toEmail, resetUrl) {
+      await transporter.sendMail({
+        from,
+        to: toEmail,
+        subject: 'Restablece tu clave - Club de Tenis Ciudad Jardin',
+        text: `Restablece tu clave visitando: ${resetUrl}. Si no solicitaste esto, ignora este correo -- el enlace expira en 1 hora.`,
+        html: `<p>Restablece tu clave en Club de Tenis Ciudad Jardin.</p><p><a href="${resetUrl}">Restablecer clave</a></p><p>Si no solicitaste esto, ignora este correo. El enlace expira en 1 hora.</p>`,
+      });
+    },
   };
 }

@@ -103,6 +103,12 @@ export class User {
     this.status = UserStatus.ACTIVE;
   }
 
+  /** Replaces the stored hash -- hashing itself is the caller's job (via
+   * PasswordHasher), this entity never sees a plaintext password. */
+  changePassword(newPasswordHash) {
+    this.passwordHash = newPasswordHash;
+  }
+
   ensureEmailVerified() {
     if (!this.emailVerifiedAt) {
       throw new EmailNotVerified();

@@ -90,7 +90,7 @@ export function Register() {
           value={form.password}
           onChange={handleChange}
           error={fieldErrors.password}
-          hint="Entre 10 y 100 caracteres."
+          hint="Entre 10 y 100 caracteres, con al menos una letra y un número."
         />
 
         {apiError && <p className="text-sm text-red-600">{apiError}</p>}

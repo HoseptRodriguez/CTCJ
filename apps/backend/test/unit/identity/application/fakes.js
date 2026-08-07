@@ -152,6 +152,28 @@ export function createFakeEmailVerificationRepository() {
   };
 }
 
+export function createFakePasswordResetRepository() {
+  const byId = new Map();
+  const idByHash = new Map();
+
+  return {
+    async create(userId, tokenHash, expiresAt, requestedIp) {
+      const id = randomUUID();
+      byId.set(id, { id, userId, tokenHash, expiresAt, consumedAt: null, requestedIp });
+      idByHash.set(tokenHash, id);
+      return { id };
+    },
+    async findByHash(tokenHash) {
+      const id = idByHash.get(tokenHash);
+      return id ? { ...byId.get(id) } : null;
+    },
+    async markConsumed(id) {
+      const record = byId.get(id);
+      if (record) record.consumedAt = new Date();
+    },
+  };
+}
+
 export function createFakePasswordHasher() {
   return {
     async hash(plainPassword) {
@@ -188,10 +210,15 @@ export function createFakeTokenService() {
 
 export function createFakeEmailSender() {
   const sent = [];
+  const passwordResetsSent = [];
   return {
     sent,
+    passwordResetsSent,
     async sendVerificationEmail(toEmail, verificationUrl) {
       sent.push({ toEmail, verificationUrl });
+    },
+    async sendPasswordResetEmail(toEmail, resetUrl) {
+      passwordResetsSent.push({ toEmail, resetUrl });
     },
   };
 }

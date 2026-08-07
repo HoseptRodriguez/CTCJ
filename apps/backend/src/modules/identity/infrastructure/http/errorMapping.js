@@ -14,6 +14,7 @@ const STATUS_BY_CODE = {
   email_not_verified: 403,
   email_already_registered: 409,
   invalid_verification_token: 400,
+  invalid_password_reset_token: 400,
   invalid_refresh_token: 401,
   user_not_found: 404,
   membership_not_applicable: 409,

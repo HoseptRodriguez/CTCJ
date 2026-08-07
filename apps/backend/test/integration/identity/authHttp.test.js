@@ -43,6 +43,35 @@ async function fetchVerificationLinkFor(toEmail, { retries = 20, delayMs = 250 }
   throw new Error(`No verification email found for ${toEmail}`);
 }
 
+async function fetchPasswordResetLinkFor(toEmail, { retries = 20, delayMs = 250 } = {}) {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    const res = await fetch(`${MAILHOG_API}/v2/messages`);
+    const data = await res.json();
+    const message = (data.items ?? []).find((m) =>
+      (m.To ?? []).some(
+        (to) => `${to.Mailbox}@${to.Domain}`.toLowerCase() === toEmail.toLowerCase(),
+      ),
+    );
+    if (message) {
+      const body = decodeQuotedPrintable(message.Content.Body);
+      const match = body.match(/href="([^"]*reset-password\?token=[^"]*)"/);
+      if (match) return match[1];
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error(`No password reset email found for ${toEmail}`);
+}
+
+async function registerAndVerify(app, { email, password }) {
+  await request(app)
+    .post('/api/auth/register')
+    .send({ email, password, firstName: 'Ana', lastName: 'Gomez' })
+    .expect(201);
+  const verificationUrl = await fetchVerificationLinkFor(email);
+  const token = new URL(verificationUrl).searchParams.get('token');
+  await request(app).get('/api/auth/verify').query({ token }).expect(200);
+}
+
 async function seedVerifiedAdmin() {
   const passwordHasher = createArgon2PasswordHasher();
   const email = `admin-${randomUUID()}@example.com`;
@@ -224,5 +253,149 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     const updatedPlayer =
       await prisma.$queryRaw`SELECT role_code FROM user_roles_view WHERE user_id = ${playerId}::uuid`;
     expect(updatedPlayer.map((r) => r.role_code)).toContain(ROLE_CODES.ENTRENADOR);
+  });
+
+  describe('password reset', () => {
+    it('full flow: request -> email received -> confirm -> old password rejected, new password works', async () => {
+      const email = `reset-${randomUUID()}@example.com`;
+      const oldPassword = 'ClaveVieja123';
+      const newPassword = 'ClaveNueva456';
+      await registerAndVerify(app, { email, password: oldPassword });
+
+      await request(app).post('/api/auth/password-reset/request').send({ email }).expect(200);
+
+      const resetUrl = await fetchPasswordResetLinkFor(email);
+      const token = new URL(resetUrl).searchParams.get('token');
+
+      await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword })
+        .expect(200);
+
+      await request(app).post('/api/auth/login').send({ email, password: oldPassword }).expect(401);
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: newPassword })
+        .expect(200);
+      expect(loginRes.body.accessToken).toBeTruthy();
+    });
+
+    it('resetting the password revokes every existing refresh token', async () => {
+      const email = `reset-revoke-${randomUUID()}@example.com`;
+      const oldPassword = 'ClaveVieja123';
+      await registerAndVerify(app, { email, password: oldPassword });
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: oldPassword })
+        .expect(200);
+      const preResetCookie = loginRes.headers['set-cookie'].find((c) =>
+        c.startsWith('ctcj_refresh='),
+      );
+
+      await request(app).post('/api/auth/password-reset/request').send({ email }).expect(200);
+      const resetUrl = await fetchPasswordResetLinkFor(email);
+      const token = new URL(resetUrl).searchParams.get('token');
+      await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: 'ClaveNueva456' })
+        .expect(200);
+
+      await request(app).post('/api/auth/refresh').set('Cookie', preResetCookie).expect(401);
+    });
+
+    it('does not reveal whether an email exists: unknown email still returns 200 and sends no email', async () => {
+      const unknownEmail = `no-existe-${randomUUID()}@example.com`;
+
+      const res = await request(app)
+        .post('/api/auth/password-reset/request')
+        .send({ email: unknownEmail })
+        .expect(200);
+      expect(res.body).toEqual({ requested: true });
+
+      // Give any (incorrectly) queued email a moment to arrive, then confirm none did.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const mailhogRes = await fetch(`${MAILHOG_API}/v2/messages`);
+      const data = await mailhogRes.json();
+      const found = (data.items ?? []).some((m) =>
+        (m.To ?? []).some(
+          (to) => `${to.Mailbox}@${to.Domain}`.toLowerCase() === unknownEmail.toLowerCase(),
+        ),
+      );
+      expect(found).toBe(false);
+    });
+
+    it('rejects a token that has already been consumed with a clean 400', async () => {
+      const email = `reset-reuse-${randomUUID()}@example.com`;
+      await registerAndVerify(app, { email, password: 'ClaveVieja123' });
+
+      await request(app).post('/api/auth/password-reset/request').send({ email }).expect(200);
+      const resetUrl = await fetchPasswordResetLinkFor(email);
+      const token = new URL(resetUrl).searchParams.get('token');
+
+      await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: 'ClaveNueva456' })
+        .expect(200);
+
+      const secondAttempt = await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: 'OtraClave789' })
+        .expect(400);
+      expect(secondAttempt.body.code).toBe('invalid_password_reset_token');
+    });
+
+    it('rejects an expired token with a clean 400', async () => {
+      const email = `reset-expired-${randomUUID()}@example.com`;
+      await registerAndVerify(app, { email, password: 'ClaveVieja123' });
+
+      await request(app).post('/api/auth/password-reset/request').send({ email }).expect(200);
+      const resetUrl = await fetchPasswordResetLinkFor(email);
+      const token = new URL(resetUrl).searchParams.get('token');
+
+      // Directly backdate the token's expiry -- the app itself has no way
+      // to fast-forward a full hour, matching how other integration tests
+      // reach into Prisma directly to set up an otherwise-untestable edge case.
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { clubId_email: { clubId: TEST_CLUB_ID, email } },
+      });
+      await prisma.passwordReset.updateMany({
+        where: { userId: user.id },
+        data: { expiresAt: new Date(Date.now() - 1000) },
+      });
+
+      const res = await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: 'ClaveNueva456' })
+        .expect(400);
+      expect(res.body.code).toBe('invalid_password_reset_token');
+    });
+
+    it('rejects an unknown/garbage token with a clean 400, not a 500', async () => {
+      const res = await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token: 'not-a-real-token', newPassword: 'ClaveNueva456' })
+        .expect(400);
+      expect(res.body.code).toBe('invalid_password_reset_token');
+    });
+
+    it('rejects a new password that fails the letter+digit policy with 400', async () => {
+      const email = `reset-weak-${randomUUID()}@example.com`;
+      await registerAndVerify(app, { email, password: 'ClaveVieja123' });
+
+      await request(app).post('/api/auth/password-reset/request').send({ email }).expect(200);
+      const resetUrl = await fetchPasswordResetLinkFor(email);
+      const token = new URL(resetUrl).searchParams.get('token');
+
+      await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: 'soloLetras' })
+        .expect(400);
+      await request(app)
+        .post('/api/auth/password-reset/confirm')
+        .send({ token, newPassword: '1234567890' })
+        .expect(400);
+    });
   });
 });

@@ -65,6 +65,19 @@ export function createAuthController(container) {
     res.status(200).json({ verified: true });
   });
 
+  const requestPasswordReset = asyncHandler(async (req, res) => {
+    await container.requestPasswordReset({ email: req.body.email, ip: req.ip });
+    res.status(200).json({ requested: true });
+  });
+
+  const confirmPasswordReset = asyncHandler(async (req, res) => {
+    await container.confirmPasswordReset({
+      rawToken: req.body.token,
+      newPassword: req.body.newPassword,
+    });
+    res.status(200).json({ reset: true });
+  });
+
   const logout = asyncHandler(async (req, res) => {
     const rawRefreshToken = req.cookies?.[config.refreshToken.cookieName];
     await container.logoutUser({ rawRefreshToken });
@@ -72,5 +85,13 @@ export function createAuthController(container) {
     res.status(204).end();
   });
 
-  return { register, login, refresh, verify, logout };
+  return {
+    register,
+    login,
+    refresh,
+    verify,
+    logout,
+    requestPasswordReset,
+    confirmPasswordReset,
+  };
 }

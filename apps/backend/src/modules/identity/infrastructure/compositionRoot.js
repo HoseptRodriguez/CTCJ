@@ -6,6 +6,8 @@ import { createRegisterUser } from '../application/useCases/registerUser.js';
 import { createLoginUser } from '../application/useCases/loginUser.js';
 import { createRefreshSession } from '../application/useCases/refreshSession.js';
 import { createVerifyEmail } from '../application/useCases/verifyEmail.js';
+import { createRequestPasswordReset } from '../application/useCases/requestPasswordReset.js';
+import { createConfirmPasswordReset } from '../application/useCases/confirmPasswordReset.js';
 import { createLogoutUser } from '../application/useCases/logoutUser.js';
 import { createGrantRoleToUser } from '../application/useCases/grantRoleToUser.js';
 import { createSetMembershipStatus } from '../application/useCases/setMembershipStatus.js';
@@ -30,6 +32,7 @@ import { createPrismaUserRepository } from './persistence/prismaUserRepository.j
 import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.js';
 import { createPrismaRefreshTokenRepository } from './persistence/prismaRefreshTokenRepository.js';
 import { createPrismaEmailVerificationRepository } from './persistence/prismaEmailVerificationRepository.js';
+import { createPrismaPasswordResetRepository } from './persistence/prismaPasswordResetRepository.js';
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
@@ -47,6 +50,7 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
   const roleRepository = createPrismaRoleRepository(prismaClient);
   const refreshTokenRepository = createPrismaRefreshTokenRepository(prismaClient);
   const emailVerificationRepository = createPrismaEmailVerificationRepository(prismaClient);
+  const passwordResetRepository = createPrismaPasswordResetRepository(prismaClient);
   const systemSettingRepository = createPrismaSystemSettingRepository(prismaClient);
   const affiliationRequestRepository = createPrismaAffiliationRequestRepository(prismaClient);
   const guardianshipRepository = createPrismaGuardianshipRepository(prismaClient);
@@ -96,6 +100,23 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
       emailVerificationRepository,
       userRepository,
       tokenService,
+      clock,
+    }),
+    requestPasswordReset: createRequestPasswordReset({
+      userRepository,
+      passwordResetRepository,
+      tokenService,
+      emailSender,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+      appPublicUrl: config.appPublicUrl,
+    }),
+    confirmPasswordReset: createConfirmPasswordReset({
+      passwordResetRepository,
+      userRepository,
+      passwordHasher,
+      tokenService,
+      refreshTokenRepository,
       clock,
     }),
     logoutUser: createLogoutUser({ refreshTokenRepository, tokenService }),

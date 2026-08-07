@@ -83,6 +83,9 @@ export function Login() {
           {fieldErrors.password && (
             <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
           )}
+          <Link to="/forgot-password" className="mt-1 inline-block text-xs text-brand-accent">
+            ¿Olvidaste tu contraseña?
+          </Link>
         </div>
 
         {apiError && <p className="text-sm text-red-600">{apiError}</p>}
