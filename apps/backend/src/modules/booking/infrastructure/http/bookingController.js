@@ -87,6 +87,12 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const getMyTrainingFrequency = asyncHandler(async (req, res) => {
+    const days = req.query.days ? Number(req.query.days) : undefined;
+    const result = await container.getMyTrainingFrequency({ playerId: req.user.id, days });
+    res.status(200).json(result);
+  });
+
   const getOverduePolicy = asyncHandler(async (req, res) => {
     const result = await container.getOverdueBookingPolicy();
     res.status(200).json(result);
@@ -110,6 +116,7 @@ export function createBookingController(container) {
     recordPayment,
     listPayments,
     getMonthlyRevenue,
+    getMyTrainingFrequency,
     getOverduePolicy,
     setOverduePolicy,
   };

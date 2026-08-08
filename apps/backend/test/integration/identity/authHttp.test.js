@@ -462,4 +462,136 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
         .expect(400);
     });
   });
+
+  describe('profile edit / avatar upload (Phase 2)', () => {
+    async function loginNewPlayer() {
+      const email = `perfil2-${randomUUID()}@example.com`;
+      await registerAndVerify(app, { email, password: 'ClaveSegura123' });
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: 'ClaveSegura123' })
+        .expect(200);
+      return loginRes.body.accessToken;
+    }
+
+    it('PATCH /api/identity/me updates phone/birthDate/bio and GET reflects it', async () => {
+      const token = await loginNewPlayer();
+
+      const patchRes = await request(app)
+        .patch('/api/identity/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ phone: '3001234567', birthDate: '2000-01-15', bio: 'Me encanta el tenis.' })
+        .expect(200);
+      expect(patchRes.body).toMatchObject({ phone: '3001234567', bio: 'Me encanta el tenis.' });
+
+      const getRes = await request(app)
+        .get('/api/identity/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(getRes.body).toMatchObject({ phone: '3001234567', bio: 'Me encanta el tenis.' });
+
+      await request(app).patch('/api/identity/me').send({ bio: 'x' }).expect(401);
+    });
+
+    it('POST /api/identity/me/avatar stores the image and serves it back', async () => {
+      const token = await loginNewPlayer();
+
+      const uploadRes = await request(app)
+        .post('/api/identity/me/avatar')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('avatar', Buffer.from([0xff, 0xd8, 0xff]), {
+          filename: 'foto.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(200);
+      expect(uploadRes.body.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.jpg$/);
+
+      await request(app).get(uploadRes.body.avatarUrl).expect(200);
+
+      const getRes = await request(app)
+        .get('/api/identity/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(getRes.body.avatarUrl).toBe(uploadRes.body.avatarUrl);
+    });
+
+    it('rejects a non-image file with 400', async () => {
+      const token = await loginNewPlayer();
+
+      const res = await request(app)
+        .post('/api/identity/me/avatar')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('avatar', Buffer.from('not an image'), {
+          filename: 'archivo.pdf',
+          contentType: 'application/pdf',
+        })
+        .expect(400);
+      expect(res.body.code).toBe('invalid_avatar_file');
+    });
+
+    it('rejects a file over the size limit with 400', async () => {
+      const token = await loginNewPlayer();
+
+      const res = await request(app)
+        .post('/api/identity/me/avatar')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('avatar', Buffer.alloc(3 * 1024 * 1024, 1), {
+          filename: 'grande.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(400);
+      expect(res.body.code).toBe('invalid_avatar_file');
+    });
+
+    it('unauthenticated avatar upload gets 401', async () => {
+      await request(app)
+        .post('/api/identity/me/avatar')
+        .attach('avatar', Buffer.from([0xff, 0xd8, 0xff]), {
+          filename: 'foto.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(401);
+    });
+  });
+
+  describe('GET /api/identity/me/achievements (Phase 2)', () => {
+    async function loginNewPlayer() {
+      const email = `logros-${randomUUID()}@example.com`;
+      await registerAndVerify(app, { email, password: 'ClaveSegura123' });
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password: 'ClaveSegura123' })
+        .expect(200);
+      return loginRes.body.accessToken;
+    }
+
+    // Cross-module (competition/coaching/booking) wiring is proven end to
+    // end here via the real, patched-in identityContainer.getMyAchievements
+    // (see app.js) -- the badge logic itself (which combination of data
+    // earns which badge) is already exhaustively covered by
+    // getMyAchievements.test.js's fakes, so this only needs to confirm the
+    // real route returns the full catalog shape and is authenticated.
+    it('returns the full badge catalog, all not-earned for a fresh player', async () => {
+      const token = await loginNewPlayer();
+
+      const res = await request(app)
+        .get('/api/identity/me/achievements')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.badges).toHaveLength(5);
+      expect(res.body.badges.every((b) => b.earned === false)).toBe(true);
+      expect(res.body.badges.map((b) => b.code)).toEqual([
+        'FIRST_WIN',
+        'TEN_WINS',
+        'TOP_10_RANKING',
+        'OUTSTANDING_RATING',
+        'FULL_WEEK',
+      ]);
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      await request(app).get('/api/identity/me/achievements').expect(401);
+    });
+  });
 });

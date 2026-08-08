@@ -86,6 +86,13 @@ export function createFakeReservationRepository(byId = new Map()) {
         (r) => r.holderUserId === holderUserId && OCCUPYING_STATUSES.includes(r.status),
       ).length;
     },
+    async listByHolderAndDateRange(holderUserId, from, to) {
+      return Array.from(byId.values())
+        .filter(
+          (r) => r.holderUserId === holderUserId && r.periodStart >= from && r.periodStart < to,
+        )
+        .map(cloneReservation);
+    },
     async transitionStatus({ id, fromStatuses, toStatus, extra = {} }) {
       const reservation = byId.get(id);
       if (!reservation || !fromStatuses.includes(reservation.status)) {

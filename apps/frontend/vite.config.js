@@ -10,6 +10,13 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // Avatar images (Phase 2) -- served by the backend's express.static
+      // mount, same proxy pattern as /api so relative <img src> URLs
+      // returned by the API resolve correctly from the frontend's own origin.
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
   test: {

@@ -57,7 +57,9 @@ export const competitionClient = {
    * no category/modality needed upfront (unlike getStandings/listMatches).
    * @returns {Promise<{hasSeason: boolean, categories: Array, recentMatches: Array}>}
    */
-  getMyCompetitionSummary: () => request('/api/competition/me/summary'),
+  /** @param {{matchLimit?: number}} [params] */
+  getMyCompetitionSummary: ({ matchLimit } = {}) =>
+    request('/api/competition/me/summary', { params: matchLimit ? { matchLimit } : undefined }),
 
   /** @param {string} matchId @param {string} reason */
   voidMatch: (matchId, reason) => {

@@ -58,6 +58,8 @@ export function createBookingRoutes(controller) {
     controller.getMonthlyRevenue,
   );
 
+  router.get('/me/training-frequency', requireAuth, controller.getMyTrainingFrequency);
+
   router.get(
     '/settings/overdue-policy',
     requireAuth,

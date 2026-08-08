@@ -9,6 +9,7 @@ import { bookingClient } from '../api/bookingClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { competitionClient } from '../api/competitionClient.js';
+import { goalsClient } from '../api/goalsClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -33,6 +34,10 @@ vi.mock('../api/membershipClient.js', () => ({
 
 vi.mock('../api/competitionClient.js', () => ({
   competitionClient: { getMyCompetitionSummary: vi.fn() },
+}));
+
+vi.mock('../api/goalsClient.js', () => ({
+  goalsClient: { getMyGoals: vi.fn(), createGoal: vi.fn(), abandonGoal: vi.fn() },
 }));
 
 vi.mock('../api/affiliationClient.js', () => ({
@@ -92,6 +97,7 @@ describe('MyCtcjPage', () => {
       categories: [],
       recentMatches: [],
     });
+    goalsClient.getMyGoals.mockResolvedValue({ goals: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -618,5 +624,64 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(competitionClient.getMyCompetitionSummary).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR with no active goals sees the "Mis metas" empty state', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    expect(await screen.findByText('Mis metas')).toBeInTheDocument();
+    expect(
+      screen.getByText('Aún no tienes metas activas. Crea una para seguir tu progreso.'),
+    ).toBeInTheDocument();
+  });
+
+  it('a JUGADOR with an active goal sees its title and a progress bar', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    goalsClient.getMyGoals.mockResolvedValue({
+      goals: [
+        {
+          id: 'goal-1',
+          title: 'Saque a 8',
+          metricType: 'SKILL_RATING',
+          status: 'ACTIVE',
+          currentProgress: 6,
+          percentComplete: 75,
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Saque a 8')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver todas / Agregar meta' })).toHaveAttribute(
+      'href',
+      '/mi-ctcj/perfil',
+    );
+  });
+
+  it('a JUGADOR sees a link to their full profile page', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: 'Ver mi perfil completo' })).toHaveAttribute(
+      'href',
+      '/mi-ctcj/perfil',
+    );
+  });
+
+  it('a plain USUARIO never sees "Mis metas" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(goalsClient.getMyGoals).not.toHaveBeenCalled();
   });
 });

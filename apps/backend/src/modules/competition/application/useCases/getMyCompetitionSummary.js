@@ -21,8 +21,8 @@ export function createGetMyCompetitionSummary({
   seasonRepository,
   clubId,
 }) {
-  /** @param {{ playerId: string }} input */
-  return async function getMyCompetitionSummary({ playerId }) {
+  /** @param {{ playerId: string, matchLimit?: number }} input */
+  return async function getMyCompetitionSummary({ playerId, matchLimit = 10 }) {
     const season = await seasonRepository.findOpenByClub(clubId);
     if (!season) {
       return { hasSeason: false, categories: [], recentMatches: [] };
@@ -87,7 +87,7 @@ export function createGetMyCompetitionSummary({
       });
     }
 
-    const recentMatches = myMatches.slice(0, 10).map((match) => ({
+    const recentMatches = myMatches.slice(0, matchLimit).map((match) => ({
       ...match,
       participantsA: enrichSide(match.participantsA),
       participantsB: enrichSide(match.participantsB),

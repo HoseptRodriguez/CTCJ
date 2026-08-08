@@ -1,5 +1,8 @@
 import './shared/bigintJson.js';
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -10,6 +13,10 @@ import { config } from './config/env.js';
 import { logger } from './shared/logger.js';
 import { toProblemDetail } from './shared/errors/httpError.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
+import { createGetMyAchievements } from './modules/identity/application/useCases/getMyAchievements.js';
+import { createCompetitionProgressProviderAdapter } from './modules/identity/infrastructure/adapters/competitionProgressProviderAdapter.js';
+import { createPerformanceProgressProviderAdapter } from './modules/identity/infrastructure/adapters/performanceProgressProviderAdapter.js';
+import { createTrainingFrequencyProviderAdapter } from './modules/identity/infrastructure/adapters/trainingFrequencyProviderAdapter.js';
 import { createAuthController } from './modules/identity/infrastructure/http/authController.js';
 import { createAuthRoutes } from './modules/identity/infrastructure/http/authRoutes.js';
 import { createRoleAdminController } from './modules/identity/infrastructure/http/roleAdminController.js';
@@ -61,6 +68,16 @@ import { createMeRoutes as createClinicalMeRoutes } from './modules/clinical/inf
 import { createIdentityPlayerEligibilityProvider as createClinicalPlayerEligibilityProvider } from './modules/clinical/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPractitionerEligibilityProvider } from './modules/clinical/infrastructure/adapters/practitionerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createClinicalPlayerDirectoryProvider } from './modules/clinical/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { buildGoalsContainer } from './modules/goals/infrastructure/compositionRoot.js';
+import { createMeController as createGoalsMeController } from './modules/goals/infrastructure/http/meController.js';
+import { createMeRoutes as createGoalsMeRoutes } from './modules/goals/infrastructure/http/meRoutes.js';
+import { createCompetitionProgressProviderAdapter as createGoalsCompetitionProgressProviderAdapter } from './modules/goals/infrastructure/adapters/competitionProgressProviderAdapter.js';
+import { createPerformanceProgressProviderAdapter as createGoalsPerformanceProgressProviderAdapter } from './modules/goals/infrastructure/adapters/performanceProgressProviderAdapter.js';
+import { createTrainingFrequencyProviderAdapter as createGoalsTrainingFrequencyProviderAdapter } from './modules/goals/infrastructure/adapters/trainingFrequencyProviderAdapter.js';
+
+// apps/backend/src -> apps/backend/uploads (matches identity's
+// compositionRoot.js AVATAR_UPLOADS_DIR resolution)
+const UPLOADS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../uploads');
 
 export function createApp() {
   const app = express();
@@ -80,6 +97,11 @@ export function createApp() {
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok', env: config.nodeEnv });
   });
+
+  // Player Profile (Phase 2) -- serves avatar images written by
+  // localDiskAvatarStorage.js. Only uploads/avatars/* is ever written to,
+  // but serving the whole uploads tree keeps this simple.
+  app.use('/uploads', express.static(UPLOADS_DIR));
 
   const identityContainer = buildIdentityContainer();
   const authController = createAuthController(identityContainer);
@@ -162,6 +184,46 @@ export function createApp() {
   });
   const competitionController = createCompetitionController(competitionContainer);
   app.use('/api/competition', createCompetitionRoutes(competitionController));
+
+  // Achievements (Phase 2) -- the reverse direction of every other
+  // cross-module wire-up in this file: identity is the *consumer* here, not
+  // the producer, but its container was necessarily built before
+  // booking/coaching/competition existed (they depend on identity's own
+  // checkIsJugador/getUserSummaries). meController reads
+  // identityContainer.getMyAchievements dynamically per-request (not a
+  // closure captured at construction time), so patching it in now, after
+  // all three producers exist, is safe -- mirrors tournament's identical
+  // "consume a sibling module's already-built container" pattern above,
+  // just wired after the fact instead of before.
+  identityContainer.getMyAchievements = createGetMyAchievements({
+    competitionProgressProvider: createCompetitionProgressProviderAdapter({
+      getMyCompetitionSummary: competitionContainer.getMyCompetitionSummary,
+    }),
+    performanceProgressProvider: createPerformanceProgressProviderAdapter({
+      getMyPerformance: coachingContainer.getMyPerformance,
+    }),
+    trainingFrequencyProvider: createTrainingFrequencyProviderAdapter({
+      getMyTrainingFrequency: bookingContainer.getMyTrainingFrequency,
+    }),
+  });
+
+  // Goals (Phase 2) -- same "consume booking/coaching/competition's
+  // already-built containers" shape as achievements above, but goals has
+  // its own module/container (a real player-owned resource with a
+  // lifecycle), not a single patched-in use case on an existing container.
+  const goalsContainer = buildGoalsContainer({
+    competitionProgressProvider: createGoalsCompetitionProgressProviderAdapter({
+      getMyCompetitionSummary: competitionContainer.getMyCompetitionSummary,
+    }),
+    performanceProgressProvider: createGoalsPerformanceProgressProviderAdapter({
+      getMyPerformance: coachingContainer.getMyPerformance,
+    }),
+    trainingFrequencyProvider: createGoalsTrainingFrequencyProviderAdapter({
+      getMyTrainingFrequency: bookingContainer.getMyTrainingFrequency,
+    }),
+  });
+  const goalsMeController = createGoalsMeController(goalsContainer);
+  app.use('/api/goals/me', createGoalsMeRoutes(goalsMeController));
 
   const tournamentPlayerEligibilityProvider = createTournamentPlayerEligibilityProvider({
     checkIsJugador: identityContainer.checkIsJugador,

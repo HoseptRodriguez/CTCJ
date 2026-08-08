@@ -30,6 +30,17 @@ export class ReservationRepository {
   }
 
   /**
+   * The holder's own reservations (any status) over [from, to) -- unlike
+   * listOccupyingByClubAndDateRange (club-wide, occupying statuses only,
+   * forward-looking schedule use), this covers historical ranges too, e.g.
+   * "how many times did I train last week" (Goals/Achievements, Phase 2).
+   * @returns {Promise<Reservation[]>}
+   */
+  async listByHolderAndDateRange(_holderUserId, _from, _to) {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Atomically transitions status only if the row is currently in one of
    * `fromStatuses` -- a 0 result means the row changed underneath the call
    * (e.g. the expiry job fired first), which the caller must handle.

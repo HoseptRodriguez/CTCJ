@@ -13,6 +13,30 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
+  const updateMyProfile = asyncHandler(async (req, res) => {
+    const result = await container.updateMyProfile({
+      userId: req.user.id,
+      phone: req.body.phone,
+      birthDate: req.body.birthDate,
+      bio: req.body.bio,
+    });
+    res.status(200).json(result);
+  });
+
+  const uploadMyAvatar = asyncHandler(async (req, res) => {
+    const result = await container.uploadMyAvatar({
+      userId: req.user.id,
+      buffer: req.file?.buffer,
+      mimeType: req.file?.mimetype,
+    });
+    res.status(200).json(result);
+  });
+
+  const getMyAchievements = asyncHandler(async (req, res) => {
+    const result = await container.getMyAchievements({ userId: req.user.id });
+    res.status(200).json(result);
+  });
+
   const getMembershipStatus = asyncHandler(async (req, res) => {
     const result = await container.getMembershipStatus({ userId: req.user.id });
     res.status(200).json(result);
@@ -48,6 +72,9 @@ export function createMeController(container) {
 
   return {
     getMyProfile,
+    updateMyProfile,
+    uploadMyAvatar,
+    getMyAchievements,
     getMembershipStatus,
     requestAffiliation,
     getMyAffiliationRequests,

@@ -1,3 +1,6 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { prisma } from '../../../shared/prismaClient.js';
 import { config } from '../../../config/env.js';
 import { DEFAULT_CLUB_ID } from '../../../config/club.js';
@@ -13,6 +16,8 @@ import { createGrantRoleToUser } from '../application/useCases/grantRoleToUser.j
 import { createSetMembershipStatus } from '../application/useCases/setMembershipStatus.js';
 import { createGetMembershipStatus } from '../application/useCases/getMembershipStatus.js';
 import { createGetMyProfile } from '../application/useCases/getMyProfile.js';
+import { createUpdateMyProfile } from '../application/useCases/updateMyProfile.js';
+import { createUploadMyAvatar } from '../application/useCases/uploadMyAvatar.js';
 import { createGetPlayerCounts } from '../application/useCases/getPlayerCounts.js';
 import { createLookupUserByEmail } from '../application/useCases/lookupUserByEmail.js';
 import { createGetSystemSetting } from '../application/useCases/getSystemSetting.js';
@@ -29,6 +34,7 @@ import { createCanBookForMinor } from '../application/useCases/canBookForMinor.j
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
+import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
 import { createPrismaUserRepository } from './persistence/prismaUserRepository.js';
 import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.js';
@@ -41,13 +47,30 @@ import { createPrismaGuardianshipRepository } from './persistence/prismaGuardian
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
+import { createLocalDiskAvatarStorage } from './storage/localDiskAvatarStorage.js';
+import {
+  createNullCompetitionProgressProvider,
+  createNullPerformanceProgressProvider,
+  createNullTrainingFrequencyProvider,
+} from './adapters/nullAdapters.js';
+
+// apps/backend/src/modules/identity/infrastructure -> apps/backend/uploads/avatars
+const AVATAR_UPLOADS_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../../uploads/avatars',
+);
 
 /**
  * Wires concrete infrastructure adapters to application use cases. This is
  * the one place in the identity module allowed to know about every layer at
  * once -- controllers/routes only ever see the returned use-case functions.
  */
-export function buildIdentityContainer({ prismaClient = prisma } = {}) {
+export function buildIdentityContainer({
+  prismaClient = prisma,
+  competitionProgressProvider = createNullCompetitionProgressProvider(),
+  performanceProgressProvider = createNullPerformanceProgressProvider(),
+  trainingFrequencyProvider = createNullTrainingFrequencyProvider(),
+} = {}) {
   const userRepository = createPrismaUserRepository(prismaClient);
   const roleRepository = createPrismaRoleRepository(prismaClient);
   const refreshTokenRepository = createPrismaRefreshTokenRepository(prismaClient);
@@ -67,6 +90,10 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
     user: config.smtp.user,
     password: config.smtp.password,
     from: config.smtp.from,
+  });
+  const avatarStorage = createLocalDiskAvatarStorage({
+    uploadsDir: AVATAR_UPLOADS_DIR,
+    publicPath: '/uploads/avatars',
   });
   const clock = systemClock;
   const refreshTokenTtlMs = config.refreshToken.ttlDays * 24 * 60 * 60 * 1000;
@@ -125,6 +152,13 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
     grantRoleToUser: createGrantRoleToUser({ userRepository, roleRepository }),
     setMembershipStatus: createSetMembershipStatus({ userRepository, clock }),
     getMyProfile: createGetMyProfile({ userRepository }),
+    getMyAchievements: createGetMyAchievements({
+      competitionProgressProvider,
+      performanceProgressProvider,
+      trainingFrequencyProvider,
+    }),
+    updateMyProfile: createUpdateMyProfile({ userRepository }),
+    uploadMyAvatar: createUploadMyAvatar({ userRepository, avatarStorage }),
     getPlayerCounts: createGetPlayerCounts({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getMembershipStatus: createGetMembershipStatus({ userRepository }),
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),

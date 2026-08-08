@@ -13,6 +13,12 @@ npm-debug.log*
 # prisma
 apps/backend/prisma/*.db
 
+# uploaded avatar images (local-disk storage, Phase 2) -- never checked in
+apps/backend/uploads/*
+!apps/backend/uploads/avatars/
+apps/backend/uploads/avatars/*
+!apps/backend/uploads/avatars/.gitkeep
+
 # editors/os
 .DS_Store
 Thumbs.db

@@ -58,3 +58,38 @@ export async function request(path, { method = 'GET', body, params } = {}) {
 
   return data;
 }
+
+/**
+ * For multipart/form-data uploads (avatar upload, Phase 2) -- request()
+ * always JSON-stringifies its body, which doesn't fit a file upload. Shares
+ * the same in-memory access token and error-handling shape as request()
+ * (never sets Content-Type itself -- the browser sets the multipart
+ * boundary automatically when given a FormData body).
+ */
+export async function requestMultipart(path, { method = 'POST', formData } = {}) {
+  const url = new URL(path, window.location.origin);
+  const headers = {};
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  const res = await fetch(url, {
+    method,
+    headers: Object.keys(headers).length ? headers : undefined,
+    body: formData,
+    credentials: 'include',
+  });
+
+  const contentType = res.headers.get('content-type') ?? '';
+  const data = contentType.includes('application/json') ? await res.json().catch(() => null) : null;
+
+  if (!res.ok) {
+    const error = new Error(data?.title ?? `Request failed with status ${res.status}`);
+    error.status = res.status;
+    error.code = data?.code;
+    if (res.status === 401) {
+      unauthorizedHandler?.();
+    }
+    throw error;
+  }
+
+  return data;
+}

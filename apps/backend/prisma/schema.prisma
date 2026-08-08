@@ -60,6 +60,10 @@ model User {
   documentNumber    String?   @map("document_number")
   phone             String?
   birthDate         DateTime? @map("birth_date") @db.Date
+  // Player Profile (Phase 2) -- self-editable, unlike the identity fields
+  // above. See User.updateProfile()/setAvatarUrl().
+  bio               String?
+  avatarUrl         String?   @map("avatar_url") @db.VarChar(255)
   status            String    @default("PENDING_VERIFICATION") @db.VarChar(20)
   emailVerifiedAt   DateTime? @map("email_verified_at")
   mfaEnabled        Boolean   @default(false) @map("mfa_enabled")
@@ -121,6 +125,9 @@ model User {
   // Physiotherapy (Phase 15) -- recovery plans and medical history where this user is the patient
   recoveryPlans         RecoveryPlan[]         @relation("RecoveryPlanSubject")
   medicalHistoryEntries MedicalHistoryEntry[]  @relation("MedicalHistorySubject")
+
+  // Goals (Phase 2) -- personal goals this user owns
+  goals Goal[] @relation("GoalSubject")
 
   @@unique([clubId, email])
   @@map("users")
@@ -904,4 +911,37 @@ model ShedLock {
   lockedBy  String   @map("locked_by")
 
   @@map("shedlock")
+}
+
+// ---------------------------------------------------------------------------
+// Goals (Phase 2) -- player-owned personal targets, connected to real
+// progress data wherever possible (competition standings, coaching skill
+// ratings, training frequency) rather than a separate tracked-progress
+// column: progress is always computed live from those modules on read,
+// never stored/duplicated here, matching how standings/rank are already
+// computed live elsewhere in this codebase. player_id FK is RESTRICT,
+// matching coach_notes'/medical_history_entries' precedent: a player's goal
+// history must never silently disappear.
+// ---------------------------------------------------------------------------
+
+model Goal {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  title          String    @db.VarChar(200)
+  metricType     String    @map("metric_type") @db.VarChar(20) // SKILL_RATING|MATCH_WINS|RANKING_POSITION|TRAINING_FREQUENCY|CUSTOM
+  targetArea     String?   @map("target_area") @db.VarChar(20) // SKILL_RATING only -- reuses coaching's skill area vocabulary
+  targetValue    Int?      @map("target_value") // meaning depends on metricType: rating threshold, win count, rank position, sessions/week
+  targetCategory String?   @map("target_category") @db.VarChar(20) // optional scoping for MATCH_WINS/RANKING_POSITION
+  targetModality String?   @map("target_modality") @db.VarChar(10) // optional scoping for MATCH_WINS/RANKING_POSITION
+  status         String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|ACHIEVED|ABANDONED
+  createdAt      DateTime  @default(now()) @map("created_at")
+  achievedAt     DateTime? @map("achieved_at")
+  abandonedAt    DateTime? @map("abandoned_at")
+
+  player User @relation("GoalSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // metric_type CHECK + target_area CHECK + status CHECK + player_id index
+  // added via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("goals")
 }

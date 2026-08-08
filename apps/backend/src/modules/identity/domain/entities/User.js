@@ -36,6 +36,10 @@ export class User {
     membershipStatus = null,
     membershipStatusUpdatedAt = null,
     membershipStatusUpdatedBy = null,
+    phone = null,
+    birthDate = null,
+    bio = null,
+    avatarUrl = null,
   }) {
     this.id = id;
     this.clubId = clubId;
@@ -52,6 +56,10 @@ export class User {
     this.membershipStatus = membershipStatus;
     this.membershipStatusUpdatedAt = membershipStatusUpdatedAt;
     this.membershipStatusUpdatedBy = membershipStatusUpdatedBy;
+    this.phone = phone;
+    this.birthDate = birthDate;
+    this.bio = bio;
+    this.avatarUrl = avatarUrl;
   }
 
   static normalizeEmail(email) {
@@ -148,5 +156,22 @@ export class User {
     this.membershipStatus = status;
     this.membershipStatusUpdatedAt = now;
     this.membershipStatusUpdatedBy = updatedByUserId;
+  }
+
+  /**
+   * Player Profile (Phase 2). Only fields actually passed are changed --
+   * `undefined` leaves the current value alone, so a partial PATCH never
+   * clobbers fields the caller didn't mention. Identity documents
+   * (documentType/documentNumber) are deliberately not editable here --
+   * those stay staff-only, unlike phone/birthDate/bio.
+   */
+  updateProfile({ phone, birthDate, bio } = {}) {
+    if (phone !== undefined) this.phone = phone;
+    if (birthDate !== undefined) this.birthDate = birthDate;
+    if (bio !== undefined) this.bio = bio;
+  }
+
+  setAvatarUrl(url) {
+    this.avatarUrl = url;
   }
 }

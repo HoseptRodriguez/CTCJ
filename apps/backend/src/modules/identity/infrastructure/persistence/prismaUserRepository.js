@@ -17,6 +17,10 @@ function toDomainUser(row, roleCodes) {
     membershipStatus: row.membershipStatus,
     membershipStatusUpdatedAt: row.membershipStatusUpdatedAt,
     membershipStatusUpdatedBy: row.membershipStatusUpdatedBy,
+    phone: row.phone,
+    birthDate: row.birthDate,
+    bio: row.bio,
+    avatarUrl: row.avatarUrl,
   });
 }
 
@@ -104,6 +108,10 @@ export function createPrismaUserRepository(prisma) {
           membershipStatus: user.membershipStatus,
           membershipStatusUpdatedAt: user.membershipStatusUpdatedAt,
           membershipStatusUpdatedBy: user.membershipStatusUpdatedBy,
+          phone: user.phone,
+          birthDate: user.birthDate,
+          bio: user.bio,
+          avatarUrl: user.avatarUrl,
         },
       });
       return toDomainUser(updated, await getActiveRoleCodes(user.id));

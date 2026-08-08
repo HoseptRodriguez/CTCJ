@@ -33,6 +33,10 @@ describe('getMyProfile', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       email: 'ana@example.com',
+      phone: null,
+      birthDate: null,
+      bio: null,
+      avatarUrl: null,
     });
   });
 

@@ -89,6 +89,17 @@ export function createPrismaReservationRepository(prisma) {
       });
     },
 
+    async listByHolderAndDateRange(holderUserId, from, to) {
+      const rows = await prisma.reservation.findMany({
+        where: {
+          holderUserId,
+          periodStart: { gte: from, lt: to },
+        },
+        orderBy: { periodStart: 'asc' },
+      });
+      return rows.map(toDomainReservation);
+    },
+
     /**
      * Atomic conditional update -- a 0 result tells the caller the row was
      * no longer in `fromStatuses` (e.g. the expiry job already moved it),

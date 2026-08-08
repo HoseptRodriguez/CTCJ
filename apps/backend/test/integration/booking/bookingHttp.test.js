@@ -805,4 +805,65 @@ describe('Booking HTTP API (real Postgres)', () => {
       expect(cancelRes.body.status).toBe('CANCELLED');
     });
   });
+
+  describe('GET /api/booking/me/training-frequency (Phase 2)', () => {
+    // Reservations can't be created in the past through the public API
+    // (bookingPolicy.js's MIN_ADVANCE_MINUTES check) -- inserted directly via
+    // Prisma raw SQL to simulate a session that already happened, mirroring
+    // the CLASS-promotion precedent above in this same file. Each seeded row
+    // gets a distinct `hour` so none of them overlap on the shared court --
+    // otherwise two CONFIRMED/HOLD rows on the same day would collide with
+    // the reservation_no_overlap exclusion constraint.
+    async function seedPastReservation({
+      holderUserId,
+      daysAgo,
+      hour,
+      status = 'CONFIRMED',
+      reservationType = 'CLASS',
+    }) {
+      const start = new Date();
+      start.setUTCHours(hour, 0, 0, 0);
+      start.setUTCDate(start.getUTCDate() - daysAgo);
+      const end = new Date(start.getTime() + 60 * 60_000);
+      await prisma.$executeRaw`
+        INSERT INTO reservations (id, club_id, court_id, period, status, reservation_type, holder_user_id, created_by, updated_at)
+        VALUES (${randomUUID()}::uuid, ${TEST_CLUB_ID}::uuid, ${courtId}::uuid,
+                tstzrange(${start}::timestamptz, ${end}::timestamptz, '[)'),
+                ${status}, ${reservationType}, ${holderUserId}::uuid, ${holderUserId}::uuid, now())
+      `;
+    }
+
+    it("counts only the caller's own CONFIRMED CLASS sessions in the last 7 days", async () => {
+      const player = await seedVerifiedUser();
+      const otherPlayer = await seedVerifiedUser();
+      const token = await login(app, player.email, player.password);
+
+      await seedPastReservation({ holderUserId: player.id, daysAgo: 1, hour: 6 });
+      await seedPastReservation({ holderUserId: player.id, daysAgo: 3, hour: 6 });
+      await seedPastReservation({ holderUserId: player.id, daysAgo: 10, hour: 6 }); // outside window
+      await seedPastReservation({
+        holderUserId: player.id,
+        daysAgo: 2,
+        hour: 6,
+        reservationType: 'PRIVATE',
+      });
+      await seedPastReservation({
+        holderUserId: player.id,
+        daysAgo: 2,
+        hour: 7,
+        status: 'CANCELLED',
+      });
+      await seedPastReservation({ holderUserId: otherPlayer.id, daysAgo: 1, hour: 8 });
+
+      const res = await request(app)
+        .get('/api/booking/me/training-frequency')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(res.body).toEqual({ count: 2 });
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      await request(app).get('/api/booking/me/training-frequency').expect(401);
+    });
+  });
 });

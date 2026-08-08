@@ -21,6 +21,10 @@ export function createGetMyProfile({ userRepository }) {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      phone: user.phone,
+      birthDate: user.birthDate,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
     };
   };
 }

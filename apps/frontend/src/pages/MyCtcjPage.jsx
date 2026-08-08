@@ -7,6 +7,7 @@ import { bookingClient } from '../api/bookingClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { competitionClient } from '../api/competitionClient.js';
+import { goalsClient } from '../api/goalsClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
@@ -548,13 +549,13 @@ function MyMedicalHistorySection() {
   );
 }
 
-function MyRankingSection() {
+export function MyRankingSection({ matchLimit = 5 } = {}) {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     competitionClient
-      .getMyCompetitionSummary()
+      .getMyCompetitionSummary({ matchLimit })
       .then((data) => {
         if (!cancelled) setSummary(data);
       })
@@ -564,7 +565,7 @@ function MyRankingSection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [matchLimit]);
 
   if (!summary || !summary.hasSeason || summary.categories.length === 0) {
     return null;
@@ -605,7 +606,7 @@ function MyRankingSection() {
             Partidos recientes
           </h4>
           <ul className="mt-2 space-y-2">
-            {summary.recentMatches.slice(0, 5).map((match) => {
+            {summary.recentMatches.slice(0, matchLimit).map((match) => {
               const opponents = (match.won ? match.participantsB : match.participantsA)
                 .map((p) => (p.firstName ? `${p.firstName} ${p.lastName ?? ''}`.trim() : null))
                 .filter(Boolean)
@@ -636,7 +637,7 @@ function MyRankingSection() {
   );
 }
 
-function MyPerformanceSection() {
+export function MyPerformanceSection() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -704,6 +705,81 @@ function MyPerformanceSection() {
   );
 }
 
+const GOAL_METRIC_LABELS = {
+  SKILL_RATING: 'Habilidad',
+  MATCH_WINS: 'Victorias',
+  RANKING_POSITION: 'Ranking',
+  TRAINING_FREQUENCY: 'Frecuencia de entrenamiento',
+  CUSTOM: 'Meta personal',
+};
+
+/** Compact dashboard summary -- full create/list/abandon management lives
+ * on PlayerProfilePage.jsx, matching the Dashboard's own "summary here,
+ * full management on a dedicated page" split established for every other
+ * section (e.g. staff shortcuts on AdminDashboard.jsx). */
+function MyGoalsSection() {
+  const [goals, setGoals] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    goalsClient
+      .getMyGoals()
+      .then((data) => {
+        if (!cancelled) setGoals(data.goals);
+      })
+      .catch(() => {
+        if (!cancelled) setGoals([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (goals === null) {
+    return null;
+  }
+
+  const activeGoals = goals.filter((g) => g.status === 'ACTIVE').slice(0, 3);
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg font-semibold text-primary">Mis metas</h3>
+        <Button to="/mi-ctcj/perfil" variant="ghost" className="px-0 text-xs">
+          Ver todas / Agregar meta
+        </Button>
+      </div>
+
+      {activeGoals.length === 0 ? (
+        <p className="mt-3 text-sm text-secondary">
+          Aún no tienes metas activas. Crea una para seguir tu progreso.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {activeGoals.map((goal) => (
+            <li key={goal.id} className="rounded-md bg-raised px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-primary">{goal.title}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                  {GOAL_METRIC_LABELS[goal.metricType] ?? goal.metricType}
+                </span>
+              </div>
+              {goal.percentComplete != null ? (
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+                  <div
+                    className="h-full rounded-full bg-action"
+                    style={{ width: `${goal.percentComplete}%` }}
+                  />
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -723,10 +799,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
 
 // Real features this platform doesn't have yet -- named specifically, not
 // hidden and not claimed as one click away.
-const UPCOMING_FEATURES = [
-  'Metas personales y seguimiento de progreso',
-  'Pago en línea de tus facturas',
-];
+const UPCOMING_FEATURES = ['Pago en línea de tus facturas'];
 
 function addDaysToKey(baseKey, days) {
   const [year, month, day] = baseKey.split('-').map(Number);
@@ -830,6 +903,12 @@ export function MyCtcjPage() {
         </p>
       ) : null}
 
+      {isJugador ? (
+        <Button to="/mi-ctcj/perfil" variant="ghost" className="mt-4 px-0">
+          Ver mi perfil completo
+        </Button>
+      ) : null}
+
       {isJugador && nextTraining ? (
         <div className="mt-6 rounded-lg border border-action bg-raised p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
@@ -897,6 +976,7 @@ export function MyCtcjPage() {
       </div>
 
       {!isJugador ? <AffiliationSection /> : null}
+      {isJugador ? <MyGoalsSection /> : null}
       {isJugador ? <MyRankingSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}

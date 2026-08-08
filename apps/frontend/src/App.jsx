@@ -8,6 +8,7 @@ import { ForgotPassword } from './pages/ForgotPassword.jsx';
 import { HomePage } from './pages/HomePage.jsx';
 import { Login } from './pages/Login.jsx';
 import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
+import { PlayerProfilePage } from './pages/PlayerProfilePage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
@@ -51,6 +52,7 @@ export function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route element={<RequireAuth />}>
               <Route path="/mi-ctcj" element={<MyCtcjPage />} />
+              <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
             </Route>
           </Route>
 

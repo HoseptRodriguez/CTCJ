@@ -169,6 +169,30 @@ describe('getMyCompetitionSummary', () => {
     expect(result.recentMatches[1].won).toBe(false);
   });
 
+  it('respects a custom matchLimit (defaults to 10)', async () => {
+    seedOpenSeason(seasonRepository);
+    for (let i = 0; i < 15; i += 1) {
+      competitionMatchRepository._seed({
+        seasonId: 'season-1',
+        category: 'CUARTA',
+        modality: 'SINGLES',
+        winnerSide: 'A',
+        setsWonA: 2,
+        setsWonB: 0,
+        participantsA: ['p1'],
+        participantsB: ['p2'],
+        playedAt: new Date(2026, 2, i + 1),
+        recordedBy: 'staff-1',
+      });
+    }
+
+    const defaultResult = await getMyCompetitionSummary({ playerId: 'p1' });
+    expect(defaultResult.recentMatches).toHaveLength(10);
+
+    const limitedResult = await getMyCompetitionSummary({ playerId: 'p1', matchLimit: 3 });
+    expect(limitedResult.recentMatches).toHaveLength(3);
+  });
+
   it('excludes VOID matches from both categories and recent matches', async () => {
     seedOpenSeason(seasonRepository);
     competitionMatchRepository._seed({

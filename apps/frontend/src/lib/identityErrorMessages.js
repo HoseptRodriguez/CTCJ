@@ -11,6 +11,8 @@ const IDENTITY_ERROR_MESSAGES = {
   guardianship_self_link_forbidden: 'No puedes vincularte como tutor de tu propia cuenta.',
   guardianship_not_found: 'No se encontró esa vinculación familiar.',
   guardianship_not_pending: 'Esa vinculación familiar ya fue resuelta.',
+  invalid_avatar_file: 'El archivo debe ser una imagen JPEG, PNG o WEBP de máximo 2MB.',
+  validation_error: 'Revisa los datos ingresados.',
 };
 
 export function describeIdentityError(err) {

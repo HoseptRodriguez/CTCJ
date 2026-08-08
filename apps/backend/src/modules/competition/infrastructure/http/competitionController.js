@@ -69,7 +69,11 @@ export function createCompetitionController(container) {
   });
 
   const getMyCompetitionSummary = asyncHandler(async (req, res) => {
-    const summary = await container.getMyCompetitionSummary({ playerId: req.user.id });
+    const matchLimit = req.query.matchLimit ? Number(req.query.matchLimit) : undefined;
+    const summary = await container.getMyCompetitionSummary({
+      playerId: req.user.id,
+      matchLimit,
+    });
     res.status(200).json(summary);
   });
 
