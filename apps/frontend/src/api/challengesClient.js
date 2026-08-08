@@ -1,4 +1,4 @@
-import { createChallengeSchema } from '@ctcj/shared';
+import { createChallengeSchema, submitMatchScoreSchema } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
 
@@ -23,4 +23,11 @@ export const challengesClient = {
   /** @param {string} challengeId */
   cancelChallenge: (challengeId) =>
     request(`/api/challenges/me/${challengeId}/cancel`, { method: 'POST' }),
+
+  /** @param {string} challengeId
+   * @param {{category: string, mySetsWon: number, opponentSetsWon: number, playedAt: string}} payload */
+  submitMatchScore: (challengeId, payload) => {
+    submitMatchScoreSchema.parse(payload);
+    return request(`/api/challenges/me/${challengeId}/score`, { method: 'POST', body: payload });
+  },
 };

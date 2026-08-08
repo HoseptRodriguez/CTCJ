@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createChallengeSchema } from '@ctcj/shared';
+import { createChallengeSchema, submitMatchScoreSchema } from '@ctcj/shared';
 
 import { requireAuth } from '../../../identity/infrastructure/http/middleware/requireAuth.js';
 
@@ -14,6 +14,12 @@ export function createMeRoutes(controller) {
   router.post('/:id/accept', requireAuth, controller.acceptChallenge);
   router.post('/:id/reject', requireAuth, controller.rejectChallenge);
   router.post('/:id/cancel', requireAuth, controller.cancelChallenge);
+  router.post(
+    '/:id/score',
+    requireAuth,
+    validateBody(submitMatchScoreSchema),
+    controller.submitMatchScore,
+  );
 
   return router;
 }

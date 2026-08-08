@@ -16,6 +16,7 @@ export class Challenge {
     status = CHALLENGE_STATUS.PENDING,
     createdAt = null,
     respondedAt = null,
+    completedAt = null,
   }) {
     this.id = id;
     this.challengerUserId = challengerUserId;
@@ -24,6 +25,7 @@ export class Challenge {
     this.status = status;
     this.createdAt = createdAt;
     this.respondedAt = respondedAt;
+    this.completedAt = completedAt;
   }
 
   static create({ id, challengerUserId, opponentUserId, message, now }) {
@@ -64,5 +66,17 @@ export class Challenge {
     }
     this.status = CHALLENGE_STATUS.CANCELLED;
     this.respondedAt = now;
+  }
+
+  /** Legal only from ACCEPTED. Not called by any HTTP action directly --
+   * only as a side effect of submitMatchScore.js, once the two players'
+   * ChallengeMatchResult submissions agree and get recorded into
+   * competition. Terminal, like REJECTED/CANCELLED. */
+  complete(now) {
+    if (this.status !== CHALLENGE_STATUS.ACCEPTED) {
+      throw new InvalidChallengeState(this.status, 'complete');
+    }
+    this.status = CHALLENGE_STATUS.COMPLETED;
+    this.completedAt = now;
   }
 }

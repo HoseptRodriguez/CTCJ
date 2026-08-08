@@ -7,6 +7,10 @@ const STATUS_BY_CODE = {
   player_not_eligible: 409,
   challenge_already_pending: 409,
   invalid_challenge_state: 409,
+  challenge_not_accepted: 409,
+  invalid_score_submission: 400,
+  invalid_match_result_state: 409,
+  match_recording_unavailable: 409,
 };
 
 export function mapChallengesError(err) {

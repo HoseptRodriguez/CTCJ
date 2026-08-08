@@ -67,6 +67,50 @@ export function createFakeNotificationSender() {
   };
 }
 
+export function createFakeChallengeMatchResultRepository() {
+  const byId = new Map();
+
+  return {
+    async findByChallengeId(challengeId) {
+      return [...byId.values()].find((r) => r.challengeId === challengeId) ?? null;
+    },
+    async findByChallengeIds(challengeIds) {
+      const ids = new Set(challengeIds);
+      const result = new Map();
+      for (const r of byId.values()) {
+        if (ids.has(r.challengeId)) {
+          result.set(r.challengeId, r);
+        }
+      }
+      return result;
+    },
+    async create(result) {
+      byId.set(result.id, result);
+      return result;
+    },
+    async update(result) {
+      byId.set(result.id, result);
+      return result;
+    },
+  };
+}
+
+/** @param {{ shouldThrow?: Error }} [options] */
+export function createFakeMatchRecorder(options = {}) {
+  const recorded = [];
+  return {
+    recorded,
+    async recordConfirmedMatch(input) {
+      if (options.shouldThrow) {
+        throw options.shouldThrow;
+      }
+      const match = { id: `match-${recorded.length + 1}`, ...input };
+      recorded.push(match);
+      return match;
+    },
+  };
+}
+
 export function createFakeClock(initial) {
   let current = initial;
   return {

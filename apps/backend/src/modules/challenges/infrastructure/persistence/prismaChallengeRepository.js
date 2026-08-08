@@ -9,6 +9,7 @@ function toDomain(row) {
     status: row.status,
     createdAt: row.createdAt,
     respondedAt: row.respondedAt,
+    completedAt: row.completedAt,
   });
 }
 
@@ -63,6 +64,7 @@ export function createPrismaChallengeRepository(prisma) {
         data: {
           status: challenge.status,
           respondedAt: challenge.respondedAt,
+          completedAt: challenge.completedAt,
         },
       });
       return toDomain(row);

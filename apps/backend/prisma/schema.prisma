@@ -992,16 +992,53 @@ model Challenge {
   challengerUserId  String    @map("challenger_user_id") @db.Uuid
   opponentUserId    String    @map("opponent_user_id") @db.Uuid
   message           String?   @db.VarChar(500)
-  status            String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED
+  status            String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED|COMPLETED
   createdAt         DateTime  @default(now()) @map("created_at")
   respondedAt       DateTime? @map("responded_at")
+  completedAt       DateTime? @map("completed_at")
 
-  challenger User @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
-  opponent   User @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
+  challenger User                  @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
+  opponent   User                  @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
+  matchResult ChallengeMatchResult?
 
   // status CHECK + self-challenge CHECK + response coherence CHECK +
-  // pending-pair unique index + indexes added via raw-SQL migration -- this
-  // codebase never declares @@index in schema.prisma, only in the
-  // hand-written migration.
+  // completed coherence CHECK + pending-pair unique index + indexes added
+  // via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
   @@map("challenges")
+}
+
+model ChallengeMatchResult {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId String @unique @map("challenge_id") @db.Uuid
+  status      String @default("PENDING") @db.VarChar(20) // PENDING|CONFIRMED
+
+  challengerCategory     String?   @map("challenger_category") @db.VarChar(20)
+  challengerSetsWonA     Int?      @map("challenger_sets_won_a") @db.SmallInt
+  challengerSetsWonB     Int?      @map("challenger_sets_won_b") @db.SmallInt
+  challengerPlayedAt     DateTime? @map("challenger_played_at") @db.Date
+  challengerSubmittedAt  DateTime? @map("challenger_submitted_at")
+
+  opponentCategory       String?   @map("opponent_category") @db.VarChar(20)
+  opponentSetsWonA       Int?      @map("opponent_sets_won_a") @db.SmallInt
+  opponentSetsWonB       Int?      @map("opponent_sets_won_b") @db.SmallInt
+  opponentPlayedAt       DateTime? @map("opponent_played_at") @db.Date
+  opponentSubmittedAt    DateTime? @map("opponent_submitted_at")
+
+  // competition_match_id has a real FK + RESTRICT constraint at the DB
+  // level (see the raw-SQL migration), but no Prisma @relation field here
+  // -- nothing in this codebase queries it via Prisma relation traversal,
+  // only as a plain scalar (repository maps columns manually, matching
+  // every other repository's toDomain shape).
+  competitionMatchId String?   @map("competition_match_id") @db.Uuid
+  confirmedAt        DateTime? @map("confirmed_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  // status CHECK + category CHECKs + sets-range CHECKs + no-tie CHECKs +
+  // confirmed-coherence CHECK added via raw-SQL migration -- this codebase
+  // never declares @@index in schema.prisma, only in the hand-written
+  // migration.
+  @@map("challenge_match_results")
 }

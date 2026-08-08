@@ -40,6 +40,7 @@ import { createMeRoutes as createChallengesMeRoutes } from './modules/challenges
 import { createIdentityPlayerEligibilityProvider as createChallengesPlayerEligibilityProvider } from './modules/challenges/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createChallengesPlayerDirectoryProvider } from './modules/challenges/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createNotificationsSenderAdapter as createChallengesNotificationSender } from './modules/challenges/infrastructure/adapters/notificationSenderAdapter.js';
+import { createMatchRecorderAdapter as createChallengesMatchRecorder } from './modules/challenges/infrastructure/adapters/matchRecorderAdapter.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
 import { createBookingController } from './modules/booking/infrastructure/http/bookingController.js';
 import { createBookingRoutes } from './modules/booking/infrastructure/http/bookingRoutes.js';
@@ -142,8 +143,12 @@ export function createApp() {
   app.use('/api/notifications/me', createNotificationsMeRoutes(notificationsMeController));
 
   // Challenges (Phase 3a) -- needs both identity (eligibility/directory)
-  // and notifications (createNotification), both already built above, so
-  // no build-after-the-fact patching needed (unlike achievements' case).
+  // and notifications (createNotification), both already built above.
+  // submitMatchScore also needs competition (to record a confirmed
+  // friendly-match result), but competition isn't built yet at this point
+  // -- built with the null MatchRecorder default here, patched with the
+  // real one once competitionContainer exists below (see
+  // _rebuildSubmitMatchScoreWithMatchRecorder's own docstring).
   const challengesPlayerEligibilityProvider = createChallengesPlayerEligibilityProvider({
     checkIsJugador: identityContainer.checkIsJugador,
   });
@@ -224,6 +229,20 @@ export function createApp() {
   });
   const competitionController = createCompetitionController(competitionContainer);
   app.use('/api/competition', createCompetitionRoutes(competitionController));
+
+  // Challenge match score confirmation -- same reverse-direction shape as
+  // achievements below (challenges, the consumer, was necessarily built
+  // before competition, the producer), but only submitMatchScore itself
+  // needs rebuilding, not challengesContainer as a whole -- see
+  // _rebuildSubmitMatchScoreWithMatchRecorder's own docstring. meController
+  // reads container.submitMatchScore dynamically per-request, so patching
+  // it now is safe.
+  challengesContainer.submitMatchScore =
+    challengesContainer._rebuildSubmitMatchScoreWithMatchRecorder(
+      createChallengesMatchRecorder({
+        recordMatchForOpenSeason: competitionContainer.recordMatchForOpenSeason,
+      }),
+    );
 
   // Achievements (Phase 2) -- the reverse direction of every other
   // cross-module wire-up in this file: identity is the *consumer* here, not

@@ -41,6 +41,7 @@ vi.mock('../api/challengesClient.js', () => ({
     acceptChallenge: vi.fn(),
     rejectChallenge: vi.fn(),
     cancelChallenge: vi.fn(),
+    submitMatchScore: vi.fn(),
   },
 }));
 
@@ -775,6 +776,151 @@ describe('MyCtcjPage', () => {
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     await waitFor(() => expect(challengesClient.cancelChallenge).toHaveBeenCalledWith('c1'));
+  });
+
+  it('a JUGADOR sees an ACCEPTED challenge under "Partidos por confirmar" even as the opponent (regression: previously invisible)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'OPPONENT',
+          status: 'ACCEPTED',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+          matchResult: null,
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Partidos por confirmar')).toBeInTheDocument();
+    expect(screen.getByText('vs. Ana Gomez')).toBeInTheDocument();
+    // Neither the (PENDING-only) received list nor the (CHALLENGER-only) sent list.
+    expect(screen.queryByText('Retos recibidos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Retos enviados')).not.toBeInTheDocument();
+  });
+
+  it('submitting a match score sends the caller-relative payload to the API', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'CHALLENGER',
+          status: 'ACCEPTED',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+          matchResult: null,
+        },
+      ],
+    });
+    challengesClient.submitMatchScore.mockResolvedValue({ status: 'PENDING' });
+    const user = userEvent.setup();
+
+    renderPage();
+    await screen.findByText('Partidos por confirmar');
+    await user.type(screen.getByLabelText('Sets que ganaste'), '2');
+    await user.type(screen.getByLabelText('Sets que ganó tu rival'), '0');
+    await user.click(screen.getByRole('button', { name: 'Enviar resultado' }));
+
+    await waitFor(() =>
+      expect(challengesClient.submitMatchScore).toHaveBeenCalledWith(
+        'c1',
+        expect.objectContaining({ mySetsWon: 2, opponentSetsWon: 0 }),
+      ),
+    );
+  });
+
+  it('shows a waiting message once the caller has submitted but the opponent has not', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'CHALLENGER',
+          status: 'ACCEPTED',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+          matchResult: {
+            status: 'PENDING',
+            mySubmission: {
+              category: 'CUARTA',
+              mySetsWon: 2,
+              opponentSetsWon: 0,
+              playedAt: '2026-08-14',
+            },
+            opponentSubmission: null,
+            mismatch: false,
+          },
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByText('Esperando que Ana Gomez registre el resultado.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a mismatch banner with both submissions when they disagree', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'CHALLENGER',
+          status: 'ACCEPTED',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+          matchResult: {
+            status: 'PENDING',
+            mySubmission: {
+              category: 'CUARTA',
+              mySetsWon: 2,
+              opponentSetsWon: 0,
+              playedAt: '2026-08-14',
+            },
+            opponentSubmission: {
+              category: 'CUARTA',
+              mySetsWon: 2,
+              opponentSetsWon: 0,
+              playedAt: '2026-08-14',
+            },
+            mismatch: true,
+          },
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText(/Los resultados no coinciden/)).toBeInTheDocument();
+    expect(screen.getByText(/Tu resultado: 2-0/)).toBeInTheDocument();
+    expect(screen.getByText(/Resultado de Ana Gomez: 2-0/)).toBeInTheDocument();
+  });
+
+  it('a CONFIRMED (COMPLETED) challenge no longer appears in "Partidos por confirmar"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'CHALLENGER',
+          status: 'COMPLETED',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+          matchResult: null,
+        },
+      ],
+    });
+
+    renderPage();
+
+    await screen.findByText('Retos');
+    expect(screen.queryByText('Partidos por confirmar')).not.toBeInTheDocument();
   });
 
   it('a plain USUARIO never sees "Retos" (never fetched)', async () => {

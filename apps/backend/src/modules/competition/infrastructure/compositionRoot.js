@@ -10,6 +10,7 @@ import { createListMatches } from '../application/useCases/listMatches.js';
 import { createGetStandings } from '../application/useCases/getStandings.js';
 import { createGetMyCompetitionSummary } from '../application/useCases/getMyCompetitionSummary.js';
 import { createGetRecentClubMatches } from '../application/useCases/getRecentClubMatches.js';
+import { createRecordMatchForOpenSeason } from '../application/useCases/recordMatchForOpenSeason.js';
 
 import { createPrismaSeasonRepository } from './persistence/prismaSeasonRepository.js';
 import { createPrismaCompetitionMatchRepository } from './persistence/prismaCompetitionMatchRepository.js';
@@ -38,15 +39,24 @@ export function buildCompetitionContainer({
   const seasonRepository = createPrismaSeasonRepository(prismaClient);
   const competitionMatchRepository = createPrismaCompetitionMatchRepository(prismaClient);
 
+  const recordMatch = createRecordMatch({
+    seasonRepository,
+    competitionMatchRepository,
+    playerEligibilityProvider,
+    clock,
+  });
+
   return {
     createSeason: createCreateSeason({ seasonRepository, clock, clubId }),
     closeSeason: createCloseSeason({ seasonRepository, clock }),
     listSeasons: createListSeasons({ seasonRepository, clubId }),
-    recordMatch: createRecordMatch({
+    recordMatch,
+    // Internal-only, no HTTP route -- see recordMatchForOpenSeason.js's own
+    // docstring. Consumed cross-module by challenges' MatchRecorder adapter.
+    recordMatchForOpenSeason: createRecordMatchForOpenSeason({
       seasonRepository,
-      competitionMatchRepository,
-      playerEligibilityProvider,
-      clock,
+      recordMatch,
+      clubId,
     }),
     voidMatch: createVoidMatch({ competitionMatchRepository, clock }),
     listMatches: createListMatches({

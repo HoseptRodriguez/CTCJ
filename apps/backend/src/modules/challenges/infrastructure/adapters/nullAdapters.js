@@ -29,3 +29,13 @@ export function createNullNotificationSender() {
     async notify() {},
   };
 }
+
+/** Fails LOUD, unlike every other port here -- see MatchRecorder.js's
+ * own docstring for why a silent no-op would be unsafe for this one. */
+export function createNullMatchRecorder() {
+  return {
+    async recordConfirmedMatch() {
+      throw new Error('MatchRecorder not configured');
+    },
+  };
+}

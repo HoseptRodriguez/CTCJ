@@ -4,6 +4,7 @@ import { DomainError } from '../../domain/errors/DomainError.js';
 const STATUS_BY_CODE = {
   season_not_found: 404,
   season_already_open: 409,
+  no_open_season: 409,
   match_not_found: 404,
   player_not_eligible: 409,
   invalid_season_state: 409,

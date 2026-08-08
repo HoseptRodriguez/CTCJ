@@ -50,4 +50,28 @@ describe('Challenge state machine', () => {
 
     expect(() => challenge[action](NOW)).toThrow(InvalidChallengeState);
   });
+
+  it('complete() transitions ACCEPTED -> COMPLETED and stamps completedAt', () => {
+    const challenge = buildPendingChallenge();
+    challenge.accept(NOW);
+    const completedAt = new Date('2026-08-15T10:00:00Z');
+
+    challenge.complete(completedAt);
+
+    expect(challenge.status).toBe('COMPLETED');
+    expect(challenge.completedAt).toBe(completedAt);
+  });
+
+  it('rejects complete() from PENDING', () => {
+    const challenge = buildPendingChallenge();
+    expect(() => challenge.complete(NOW)).toThrow(InvalidChallengeState);
+  });
+
+  it.each(['accept', 'reject', 'cancel', 'complete'])('rejects %s() once COMPLETED', (action) => {
+    const challenge = buildPendingChallenge();
+    challenge.accept(NOW);
+    challenge.complete(NOW);
+
+    expect(() => challenge[action](NOW)).toThrow(InvalidChallengeState);
+  });
 });

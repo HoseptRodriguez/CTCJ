@@ -46,5 +46,24 @@ export function createMeController(container) {
     res.status(200).json(challenge);
   });
 
-  return { createChallenge, getMyChallenges, acceptChallenge, rejectChallenge, cancelChallenge };
+  const submitMatchScore = asyncHandler(async (req, res) => {
+    const result = await container.submitMatchScore({
+      userId: req.user.id,
+      challengeId: req.params.id,
+      category: req.body.category,
+      mySetsWon: req.body.mySetsWon,
+      opponentSetsWon: req.body.opponentSetsWon,
+      playedAt: new Date(req.body.playedAt),
+    });
+    res.status(200).json(result);
+  });
+
+  return {
+    createChallenge,
+    getMyChallenges,
+    acceptChallenge,
+    rejectChallenge,
+    cancelChallenge,
+    submitMatchScore,
+  };
 }

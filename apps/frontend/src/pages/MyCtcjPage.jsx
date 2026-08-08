@@ -788,6 +788,7 @@ const CHALLENGE_STATUS_LABELS = {
   ACCEPTED: 'Aceptado',
   REJECTED: 'Rechazado',
   CANCELLED: 'Cancelado',
+  COMPLETED: 'Completado',
 };
 
 /** "Find practice partners" + "challenge other players" as one combined
@@ -905,6 +906,100 @@ function PlayerSearchAndChallenge({ onChallenged }) {
   );
 }
 
+/** ACCEPTED challenges need a score entered by each player before they can
+ * ever become a real match -- this form covers both the first entry and
+ * editing/resubmitting your own prior one (submit() overwrites it
+ * pre-confirmation, see submitMatchScore.js). */
+function MatchScoreForm({ challenge, onSubmitted }) {
+  const existing = challenge.matchResult?.mySubmission ?? null;
+  const [category, setCategory] = useState(existing?.category ?? Object.keys(CATEGORY_LABELS)[0]);
+  const [mySetsWon, setMySetsWon] = useState(existing?.mySetsWon ?? '');
+  const [opponentSetsWon, setOpponentSetsWon] = useState(existing?.opponentSetsWon ?? '');
+  const [playedAt, setPlayedAt] = useState(
+    existing?.playedAt ? String(existing.playedAt).slice(0, 10) : bogotaTodayKey(),
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await challengesClient.submitMatchScore(challenge.id, {
+        category,
+        mySetsWon: Number(mySetsWon),
+        opponentSetsWon: Number(opponentSetsWon),
+        playedAt,
+      });
+      await onSubmitted();
+    } catch (err) {
+      setError(describeChallengesError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-end gap-2">
+      <label className="text-xs text-secondary">
+        Categoría
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="mt-1 block rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
+        >
+          {Object.entries(CATEGORY_LABELS).map(([code, label]) => (
+            <option key={code} value={code}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-xs text-secondary">
+        Sets que ganaste
+        <input
+          type="number"
+          min="0"
+          max="5"
+          value={mySetsWon}
+          onChange={(e) => setMySetsWon(e.target.value)}
+          className="mt-1 block w-16 rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
+        />
+      </label>
+      <label className="text-xs text-secondary">
+        Sets que ganó tu rival
+        <input
+          type="number"
+          min="0"
+          max="5"
+          value={opponentSetsWon}
+          onChange={(e) => setOpponentSetsWon(e.target.value)}
+          className="mt-1 block w-16 rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
+        />
+      </label>
+      <label className="text-xs text-secondary">
+        Fecha
+        <input
+          type="date"
+          value={playedAt}
+          onChange={(e) => setPlayedAt(e.target.value)}
+          className="mt-1 block rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
+        />
+      </label>
+      <Button
+        type="button"
+        variant="primary"
+        className="px-3 py-1 text-xs"
+        disabled={submitting}
+        onClick={handleSubmit}
+      >
+        {submitting ? 'Enviando...' : existing ? 'Actualizar resultado' : 'Enviar resultado'}
+      </Button>
+      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
+    </div>
+  );
+}
+
 function MyChallengesSection() {
   const [challenges, setChallenges] = useState(null);
   const [error, setError] = useState(null);
@@ -933,7 +1028,10 @@ function MyChallengesSection() {
   const received = (challenges ?? []).filter(
     (c) => c.role === 'OPPONENT' && c.status === 'PENDING',
   );
-  const sent = (challenges ?? []).filter((c) => c.role === 'CHALLENGER');
+  // ACCEPTED challenges move to "Partidos por confirmar" below instead --
+  // both roles, not just CHALLENGER, since either player can submit a score.
+  const toConfirm = (challenges ?? []).filter((c) => c.status === 'ACCEPTED');
+  const sent = (challenges ?? []).filter((c) => c.role === 'CHALLENGER' && c.status !== 'ACCEPTED');
 
   return (
     <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
@@ -983,6 +1081,49 @@ function MyChallengesSection() {
                 </span>
               </li>
             ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {toConfirm.length > 0 ? (
+        <div className="mt-6">
+          <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary">
+            Partidos por confirmar
+          </h4>
+          <ul className="mt-2 space-y-3">
+            {toConfirm.map((c) => {
+              const opponentLabel = c.otherParty
+                ? `${c.otherParty.firstName} ${c.otherParty.lastName}`
+                : 'Jugador';
+              const mr = c.matchResult;
+              return (
+                <li key={c.id} className="rounded-md bg-raised px-4 py-3 text-sm">
+                  <span className="font-semibold text-primary">vs. {opponentLabel}</span>
+
+                  {mr?.mismatch ? (
+                    <div className="mt-2 rounded-md bg-error/10 px-3 py-2 text-xs text-error">
+                      Los resultados no coinciden. Revisa y vuelve a enviar el resultado.
+                      <div className="mt-1 text-secondary">
+                        Tu resultado: {mr.mySubmission.mySetsWon}-{mr.mySubmission.opponentSetsWon}{' '}
+                        ({CATEGORY_LABELS[mr.mySubmission.category] ?? mr.mySubmission.category})
+                        <br />
+                        Resultado de {opponentLabel}: {mr.opponentSubmission.mySetsWon}-
+                        {mr.opponentSubmission.opponentSetsWon} (
+                        {CATEGORY_LABELS[mr.opponentSubmission.category] ??
+                          mr.opponentSubmission.category}
+                        )
+                      </div>
+                    </div>
+                  ) : mr?.mySubmission && !mr?.opponentSubmission ? (
+                    <p className="mt-1 text-xs text-secondary">
+                      Esperando que {opponentLabel} registre el resultado.
+                    </p>
+                  ) : null}
+
+                  <MatchScoreForm challenge={c} onSubmitted={refetch} />
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
