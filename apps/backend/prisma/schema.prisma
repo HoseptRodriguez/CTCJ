@@ -129,6 +129,13 @@ model User {
   // Goals (Phase 2) -- personal goals this user owns
   goals Goal[] @relation("GoalSubject")
 
+  // Notifications (Phase 3a) -- this user's own inbox
+  notifications Notification[] @relation("NotificationRecipient")
+
+  // Challenges (Phase 3a) -- both sides of a friendly-match proposal
+  challengesAsChallenger Challenge[] @relation("ChallengeAsChallenger")
+  challengesAsOpponent   Challenge[] @relation("ChallengeAsOpponent")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -944,4 +951,57 @@ model Goal {
   // added via raw-SQL migration -- this codebase never declares @@index in
   // schema.prisma, only in the hand-written migration.
   @@map("goals")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (Phase 3a) -- a real in-app inbox. recipient_id is CASCADE,
+// not RESTRICT like goals'/coach_notes' precedent -- a notification is
+// ephemeral/transient, not a durable record that must never silently
+// disappear, so it's fine for it to vanish along with the user it was for.
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientId String    @map("recipient_id") @db.Uuid
+  type        String    @db.VarChar(30) // CHALLENGE_RECEIVED|CHALLENGE_ACCEPTED|CHALLENGE_REJECTED|CHALLENGE_CANCELLED
+  title       String    @db.VarChar(200)
+  body        String?
+  linkPath    String?   @map("link_path") @db.VarChar(255)
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  recipient User @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // type CHECK + recipient_id index added via raw-SQL migration -- this
+  // codebase never declares @@index in schema.prisma, only in the
+  // hand-written migration.
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Challenges (Phase 3a) -- player-to-player: one player proposes a friendly
+// match, the other accepts/rejects. Two named FKs to users, mirroring
+// Guardianship's exact precedent (the only other row in this schema linking
+// two existing users by distinct roles). Both CASCADE, not RESTRICT like
+// goals'/coach_notes' -- a challenge has no standalone value once either
+// party is gone.
+// ---------------------------------------------------------------------------
+
+model Challenge {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengerUserId  String    @map("challenger_user_id") @db.Uuid
+  opponentUserId    String    @map("opponent_user_id") @db.Uuid
+  message           String?   @db.VarChar(500)
+  status            String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED
+  createdAt         DateTime  @default(now()) @map("created_at")
+  respondedAt       DateTime? @map("responded_at")
+
+  challenger User @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
+  opponent   User @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
+
+  // status CHECK + self-challenge CHECK + response coherence CHECK +
+  // pending-pair unique index + indexes added via raw-SQL migration -- this
+  // codebase never declares @@index in schema.prisma, only in the
+  // hand-written migration.
+  @@map("challenges")
 }

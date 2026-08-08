@@ -34,6 +34,7 @@ import { createCanBookForMinor } from '../application/useCases/canBookForMinor.j
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
+import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
 import { createPrismaUserRepository } from './persistence/prismaUserRepository.js';
@@ -187,5 +188,6 @@ export function buildIdentityContainer({
     checkIsJugador: createCheckIsJugador({ userRepository }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
+    searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),
   };
 }

@@ -138,5 +138,20 @@ export function createPrismaUserRepository(prisma) {
       }
       return counts;
     },
+
+    async searchPlayersByName(clubId, query, limit) {
+      const pattern = `%${query}%`;
+      const rows = await prisma.$queryRaw`
+        SELECT u.id, u.first_name AS "firstName", u.last_name AS "lastName"
+        FROM "users" u
+        JOIN user_roles_view urv ON urv.user_id = u.id
+        WHERE u.club_id = ${clubId}::uuid
+          AND urv.role_code = 'JUGADOR'
+          AND (u.first_name || ' ' || u.last_name) ILIKE ${pattern}
+        ORDER BY u.first_name, u.last_name
+        LIMIT ${limit}
+      `;
+      return rows;
+    },
   };
 }

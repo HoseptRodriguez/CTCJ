@@ -4,6 +4,7 @@ import { ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { challengesClient } from '../api/challengesClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { competitionClient } from '../api/competitionClient.js';
@@ -17,6 +18,7 @@ import { PerformanceRadarChart } from '../components/ui/PerformanceRadarChart.js
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { describeChallengesError } from '../lib/challengesErrorMessages.js';
 import { describeIdentityError } from '../lib/identityErrorMessages.js';
 import {
   MEMBERSHIP_STATUS_DISPLAY,
@@ -780,6 +782,247 @@ function MyGoalsSection() {
   );
 }
 
+const CHALLENGE_STATUS_LABELS = {
+  PENDING: 'Pendiente',
+  ACCEPTED: 'Aceptado',
+  REJECTED: 'Rechazado',
+  CANCELLED: 'Cancelado',
+};
+
+/** "Find practice partners" + "challenge other players" as one combined
+ * flow (search -> challenge), not two separate systems -- see the Phase 3a
+ * plan for why. */
+function PlayerSearchAndChallenge({ onChallenged }) {
+  const [query, setQuery] = useState('');
+  const [players, setPlayers] = useState([]);
+  const [challengingId, setChallengingId] = useState(null);
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setPlayers([]);
+      return undefined;
+    }
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      membershipClient
+        .searchPlayers(query.trim())
+        .then((data) => {
+          if (!cancelled) setPlayers(data.players);
+        })
+        .catch(() => {
+          if (!cancelled) setPlayers([]);
+        });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [query]);
+
+  async function handleChallenge(opponentUserId) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await challengesClient.createChallenge({
+        opponentUserId,
+        message: message.trim() || undefined,
+      });
+      setChallengingId(null);
+      setMessage('');
+      setQuery('');
+      setPlayers([]);
+      await onChallenged();
+    } catch (err) {
+      setError(describeChallengesError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-primary" htmlFor="player-search">
+        Buscar jugador
+      </label>
+      <input
+        id="player-search"
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Nombre del jugador"
+        className="mt-1 w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm sm:w-72"
+      />
+
+      {players.length > 0 ? (
+        <ul className="mt-3 space-y-2">
+          {players.map((player) => (
+            <li key={player.id} className="rounded-md bg-raised px-4 py-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-primary">
+                  {player.firstName} {player.lastName}
+                </span>
+                {challengingId === player.id ? null : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="px-3 py-1 text-xs"
+                    onClick={() => setChallengingId(player.id)}
+                  >
+                    Retar
+                  </Button>
+                )}
+              </div>
+              {challengingId === player.id ? (
+                <div className="mt-2 flex flex-wrap items-end gap-2">
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Mensaje (opcional)"
+                    className="w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm sm:w-56"
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="px-3 py-1 text-xs"
+                    disabled={submitting}
+                    onClick={() => handleChallenge(player.id)}
+                  >
+                    {submitting ? 'Enviando...' : 'Enviar reto'}
+                  </Button>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
+    </div>
+  );
+}
+
+function MyChallengesSection() {
+  const [challenges, setChallenges] = useState(null);
+  const [error, setError] = useState(null);
+
+  function refetch() {
+    return challengesClient
+      .getMyChallenges()
+      .then((data) => setChallenges(data.challenges))
+      .catch((err) => setError(describeChallengesError(err)));
+  }
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleAction(actionFn, challengeId) {
+    try {
+      await actionFn(challengeId);
+      await refetch();
+    } catch (err) {
+      setError(describeChallengesError(err));
+    }
+  }
+
+  const received = (challenges ?? []).filter(
+    (c) => c.role === 'OPPONENT' && c.status === 'PENDING',
+  );
+  const sent = (challenges ?? []).filter((c) => c.role === 'CHALLENGER');
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Retos</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Busca un jugador para retarlo a un partido amistoso.
+      </p>
+
+      <div className="mt-4">
+        <PlayerSearchAndChallenge onChallenged={refetch} />
+      </div>
+
+      {error ? <p className="mt-3 text-sm text-error">{error}</p> : null}
+
+      {received.length > 0 ? (
+        <div className="mt-6">
+          <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary">
+            Retos recibidos
+          </h4>
+          <ul className="mt-2 space-y-2">
+            {received.map((c) => (
+              <li
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-4 py-2 text-sm"
+              >
+                <span className="text-secondary">
+                  {c.otherParty ? `${c.otherParty.firstName} ${c.otherParty.lastName}` : 'Jugador'}
+                  {c.message ? ` · "${c.message}"` : ''}
+                </span>
+                <span className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="px-3 py-1 text-xs"
+                    onClick={() => handleAction(challengesClient.acceptChallenge, c.id)}
+                  >
+                    Aceptar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="px-3 py-1 text-xs"
+                    onClick={() => handleAction(challengesClient.rejectChallenge, c.id)}
+                  >
+                    Rechazar
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {sent.length > 0 ? (
+        <div className="mt-6">
+          <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary">
+            Retos enviados
+          </h4>
+          <ul className="mt-2 space-y-2">
+            {sent.map((c) => (
+              <li
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-4 py-2 text-sm"
+              >
+                <span className="text-secondary">
+                  {c.otherParty ? `${c.otherParty.firstName} ${c.otherParty.lastName}` : 'Jugador'}
+                  {' · '}
+                  <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                    {CHALLENGE_STATUS_LABELS[c.status] ?? c.status}
+                  </span>
+                </span>
+                {c.status === 'PENDING' ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="px-3 py-1 text-xs"
+                    onClick={() => handleAction(challengesClient.cancelChallenge, c.id)}
+                  >
+                    Cancelar
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -977,6 +1220,7 @@ export function MyCtcjPage() {
 
       {!isJugador ? <AffiliationSection /> : null}
       {isJugador ? <MyGoalsSection /> : null}
+      {isJugador ? <MyChallengesSection /> : null}
       {isJugador ? <MyRankingSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}

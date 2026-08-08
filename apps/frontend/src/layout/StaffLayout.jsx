@@ -5,6 +5,8 @@ import { Button } from '../components/ui/Button.jsx';
 import { Container } from '../components/ui/Container.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
+import { NotificationBell } from './NotificationBell.jsx';
+
 // Minimal chrome for the internal staff area -- deliberately not the public
 // marketing Header/Footer/PublicLayout, which are a different product surface.
 export function StaffLayout() {
@@ -112,6 +114,7 @@ export function StaffLayout() {
             <Link to="/" className="text-sm text-tertiary">
               Ir al sitio público
             </Link>
+            <NotificationBell />
             <Button variant="outline" onClick={logout}>
               Cerrar sesión
             </Button>

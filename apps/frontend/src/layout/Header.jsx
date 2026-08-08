@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 const STAFF_ROLES = [ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION];
 
 import { MobileMenu } from './MobileMenu.jsx';
+import { NotificationBell } from './NotificationBell.jsx';
 
 export const NAV_LINKS = [
   { label: 'El Club', hash: '#club' },
@@ -59,6 +60,7 @@ export function Header() {
         <div className="hidden items-center gap-3 lg:flex">
           {status === 'authenticated' ? (
             <>
+              <NotificationBell />
               {isStaff ? (
                 <Button to="/staff/pagos" variant="ghost">
                   Staff

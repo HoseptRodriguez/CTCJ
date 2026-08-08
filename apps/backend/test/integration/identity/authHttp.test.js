@@ -594,4 +594,79 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
       await request(app).get('/api/identity/me/achievements').expect(401);
     });
   });
+
+  describe('GET /api/players/search (Phase 3a)', () => {
+    async function seedPlayer({ firstName, lastName }) {
+      const passwordHasher = createArgon2PasswordHasher();
+      const email = `jugador-${randomUUID()}@example.com`;
+      const passwordHash = await passwordHasher.hash('ClaveSegura123');
+      const user = await prisma.user.create({
+        data: {
+          id: randomUUID(),
+          clubId: TEST_CLUB_ID,
+          email,
+          passwordHash,
+          firstName,
+          lastName,
+          status: 'ACTIVE',
+          emailVerifiedAt: new Date(),
+        },
+      });
+      const usuarioRole = await prisma.role.findUniqueOrThrow({
+        where: { code: ROLE_CODES.USUARIO },
+      });
+      const jugadorRole = await prisma.role.findUniqueOrThrow({
+        where: { code: ROLE_CODES.JUGADOR },
+      });
+      await prisma.userRole.create({ data: { userId: user.id, roleId: usuarioRole.id } });
+      await prisma.userRole.create({ data: { userId: user.id, roleId: jugadorRole.id } });
+      return { id: user.id, email, password: 'ClaveSegura123' };
+    }
+
+    it('matches JUGADOR players by name, never exposes email, excludes non-players', async () => {
+      const caller = await seedPlayer({ firstName: 'Caller', lastName: 'Player' });
+      await seedPlayer({ firstName: 'Anabel', lastName: 'Gomez' });
+      // A same-name-prefix non-JUGADOR account, created directly (not via
+      // registerAndVerify, which hardcodes 'Ana Gomez' and would collide
+      // with the seeded player above) to prove the role filter, not just
+      // the name filter, is doing the excluding.
+      const passwordHasher = createArgon2PasswordHasher();
+      const nonPlayer = await prisma.user.create({
+        data: {
+          id: randomUUID(),
+          clubId: TEST_CLUB_ID,
+          email: `anais-${randomUUID()}@example.com`,
+          passwordHash: await passwordHasher.hash('ClaveSegura123'),
+          firstName: 'Anais',
+          lastName: 'NoJugador',
+          status: 'ACTIVE',
+          emailVerifiedAt: new Date(),
+        },
+      });
+      const usuarioRole = await prisma.role.findUniqueOrThrow({
+        where: { code: ROLE_CODES.USUARIO },
+      });
+      await prisma.userRole.create({ data: { userId: nonPlayer.id, roleId: usuarioRole.id } });
+      const token = (
+        await request(app)
+          .post('/api/auth/login')
+          .send({ email: caller.email, password: caller.password })
+          .expect(200)
+      ).body.accessToken;
+
+      const res = await request(app)
+        .get('/api/players/search')
+        .query({ q: 'ana' })
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.players).toHaveLength(1);
+      expect(res.body.players[0]).toMatchObject({ firstName: 'Anabel', lastName: 'Gomez' });
+      expect(res.body.players[0]).not.toHaveProperty('email');
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      await request(app).get('/api/players/search').query({ q: 'ana' }).expect(401);
+    });
+  });
 });

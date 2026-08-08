@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { affiliationClient } from '../api/affiliationClient.js';
 import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
+import { challengesClient } from '../api/challengesClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
 import { competitionClient } from '../api/competitionClient.js';
@@ -29,7 +30,17 @@ vi.mock('../api/bookingClient.js', () => ({
 }));
 
 vi.mock('../api/membershipClient.js', () => ({
-  membershipClient: { getMyStatus: vi.fn(), getMyProfile: vi.fn() },
+  membershipClient: { getMyStatus: vi.fn(), getMyProfile: vi.fn(), searchPlayers: vi.fn() },
+}));
+
+vi.mock('../api/challengesClient.js', () => ({
+  challengesClient: {
+    createChallenge: vi.fn(),
+    getMyChallenges: vi.fn(),
+    acceptChallenge: vi.fn(),
+    rejectChallenge: vi.fn(),
+    cancelChallenge: vi.fn(),
+  },
 }));
 
 vi.mock('../api/competitionClient.js', () => ({
@@ -98,6 +109,7 @@ describe('MyCtcjPage', () => {
       recentMatches: [],
     });
     goalsClient.getMyGoals.mockResolvedValue({ goals: [] });
+    challengesClient.getMyChallenges.mockResolvedValue({ challenges: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -683,5 +695,88 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(goalsClient.getMyGoals).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR can search for a player and send a challenge', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    membershipClient.searchPlayers.mockResolvedValue({
+      players: [{ id: 'p2', firstName: 'Luis', lastName: 'Perez' }],
+    });
+    challengesClient.createChallenge.mockResolvedValue({ id: 'c1', status: 'PENDING' });
+    const user = userEvent.setup();
+
+    renderPage();
+    await user.type(await screen.findByLabelText('Buscar jugador'), 'lu');
+
+    expect(await screen.findByText('Luis Perez')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Retar' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar reto' }));
+
+    await waitFor(() =>
+      expect(challengesClient.createChallenge).toHaveBeenCalledWith(
+        expect.objectContaining({ opponentUserId: 'p2' }),
+      ),
+    );
+  });
+
+  it('a JUGADOR sees a received challenge and can accept it', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'OPPONENT',
+          status: 'PENDING',
+          message: 'Sábado?',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+        },
+      ],
+    });
+    challengesClient.acceptChallenge.mockResolvedValue({ id: 'c1', status: 'ACCEPTED' });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    expect(await screen.findByText('Retos recibidos')).toBeInTheDocument();
+    expect(screen.getByText(/Ana Gomez/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Aceptar' }));
+
+    await waitFor(() => expect(challengesClient.acceptChallenge).toHaveBeenCalledWith('c1'));
+  });
+
+  it('a JUGADOR sees a sent challenge and can cancel it', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    challengesClient.getMyChallenges.mockResolvedValue({
+      challenges: [
+        {
+          id: 'c1',
+          role: 'CHALLENGER',
+          status: 'PENDING',
+          otherParty: { id: 'p2', firstName: 'Ana', lastName: 'Gomez' },
+        },
+      ],
+    });
+    challengesClient.cancelChallenge.mockResolvedValue({ id: 'c1', status: 'CANCELLED' });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    expect(await screen.findByText('Retos enviados')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(challengesClient.cancelChallenge).toHaveBeenCalledWith('c1'));
+  });
+
+  it('a plain USUARIO never sees "Retos" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(challengesClient.getMyChallenges).not.toHaveBeenCalled();
   });
 });

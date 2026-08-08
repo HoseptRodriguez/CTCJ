@@ -53,6 +53,19 @@ export function createFakeUserRepository() {
       }
       return counts;
     },
+    async searchPlayersByName(clubId, query, limit) {
+      const lowerQuery = query.toLowerCase();
+      return Array.from(byId.values())
+        .filter(
+          (user) =>
+            user.clubId === clubId &&
+            user.roleCodes?.has('JUGADOR') &&
+            `${user.firstName} ${user.lastName}`.toLowerCase().includes(lowerQuery),
+        )
+        .sort((a, b) => a.firstName.localeCompare(b.firstName))
+        .slice(0, limit)
+        .map((user) => ({ id: user.id, firstName: user.firstName, lastName: user.lastName }));
+    },
   };
 }
 

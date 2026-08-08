@@ -48,6 +48,10 @@ export const membershipClient = {
   /** @returns {Promise<{badges: {code: string, label: string, earned: boolean}[]}>} */
   getMyAchievements: () => request('/api/identity/me/achievements'),
 
+  /** Peer-facing player search (Phase 3a) -- JUGADOR-only results, never
+   * includes email. @param {string} q @returns {Promise<{players: {id, firstName, lastName}[]}>} */
+  searchPlayers: (q) => request('/api/players/search', { params: { q } }),
+
   /** @returns {Promise<{enabled: boolean}>} */
   getOverduePolicy: () => request('/api/booking/settings/overdue-policy'),
 

@@ -29,6 +29,17 @@ import { createAffiliationAdminController } from './modules/identity/infrastruct
 import { createAffiliationAdminRoutes } from './modules/identity/infrastructure/http/affiliationAdminRoutes.js';
 import { createGuardianshipAdminController } from './modules/identity/infrastructure/http/guardianshipAdminController.js';
 import { createGuardianshipAdminRoutes } from './modules/identity/infrastructure/http/guardianshipAdminRoutes.js';
+import { createPlayersController } from './modules/identity/infrastructure/http/playersController.js';
+import { createPlayersRoutes } from './modules/identity/infrastructure/http/playersRoutes.js';
+import { buildNotificationsContainer } from './modules/notifications/infrastructure/compositionRoot.js';
+import { createMeController as createNotificationsMeController } from './modules/notifications/infrastructure/http/meController.js';
+import { createMeRoutes as createNotificationsMeRoutes } from './modules/notifications/infrastructure/http/meRoutes.js';
+import { buildChallengesContainer } from './modules/challenges/infrastructure/compositionRoot.js';
+import { createMeController as createChallengesMeController } from './modules/challenges/infrastructure/http/meController.js';
+import { createMeRoutes as createChallengesMeRoutes } from './modules/challenges/infrastructure/http/meRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createChallengesPlayerEligibilityProvider } from './modules/challenges/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createChallengesPlayerDirectoryProvider } from './modules/challenges/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { createNotificationsSenderAdapter as createChallengesNotificationSender } from './modules/challenges/infrastructure/adapters/notificationSenderAdapter.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
 import { createBookingController } from './modules/booking/infrastructure/http/bookingController.js';
 import { createBookingRoutes } from './modules/booking/infrastructure/http/bookingRoutes.js';
@@ -110,16 +121,45 @@ export function createApp() {
   const meController = createMeController(identityContainer);
   const affiliationAdminController = createAffiliationAdminController(identityContainer);
   const guardianshipAdminController = createGuardianshipAdminController(identityContainer);
+  const playersController = createPlayersController(identityContainer);
 
   app.use('/api/auth', createAuthRoutes(authController));
   app.use('/api/admin/roles', createRoleAdminRoutes(roleAdminController));
   app.use('/api/admin/users', createUserAdminRoutes(userAdminController));
   app.use('/api/identity/me', createMeRoutes(meController));
+  app.use('/api/players', createPlayersRoutes(playersController));
   app.use(
     '/api/admin/affiliation-requests',
     createAffiliationAdminRoutes(affiliationAdminController),
   );
   app.use('/api/admin/guardianships', createGuardianshipAdminRoutes(guardianshipAdminController));
+
+  // Notifications (Phase 3a) -- no cross-module deps of its own; built
+  // right after identity since challenges (built next) needs its
+  // createNotification function.
+  const notificationsContainer = buildNotificationsContainer();
+  const notificationsMeController = createNotificationsMeController(notificationsContainer);
+  app.use('/api/notifications/me', createNotificationsMeRoutes(notificationsMeController));
+
+  // Challenges (Phase 3a) -- needs both identity (eligibility/directory)
+  // and notifications (createNotification), both already built above, so
+  // no build-after-the-fact patching needed (unlike achievements' case).
+  const challengesPlayerEligibilityProvider = createChallengesPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const challengesPlayerDirectoryProvider = createChallengesPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  const challengesNotificationSender = createChallengesNotificationSender({
+    createNotification: notificationsContainer.createNotification,
+  });
+  const challengesContainer = buildChallengesContainer({
+    playerEligibilityProvider: challengesPlayerEligibilityProvider,
+    playerDirectoryProvider: challengesPlayerDirectoryProvider,
+    notificationSender: challengesNotificationSender,
+  });
+  const challengesMeController = createChallengesMeController(challengesContainer);
+  app.use('/api/challenges/me', createChallengesMeRoutes(challengesMeController));
 
   // Cross-module wiring (Phase 5/6): booking owns narrow, single-purpose
   // ports; these adapters are the only bridge to identity, and app.js is the
