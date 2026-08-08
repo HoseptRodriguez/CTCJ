@@ -14,6 +14,7 @@ export function createCoachingAdminController(container) {
       noteType: req.body.noteType,
       visibility: req.body.visibility,
       content: req.body.content,
+      area: req.body.area,
       coachUserId: req.user.id,
     });
     res.status(201).json(note);
@@ -38,10 +39,17 @@ export function createCoachingAdminController(container) {
     res.status(200).json(result);
   });
 
+  const getRecentActivity = asyncHandler(async (req, res) => {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const result = await container.getRecentActivity({ limit });
+    res.status(200).json(result);
+  });
+
   return {
     createNote,
     listPlayerNotes,
     recordPerformanceSnapshot,
     listPlayerPerformance,
+    getRecentActivity,
   };
 }

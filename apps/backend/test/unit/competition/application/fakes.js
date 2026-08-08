@@ -75,6 +75,13 @@ export function createFakeCompetitionMatchRepository() {
         .sort((a, b) => b.playedAt - a.playedAt)
         .map((m) => new CompetitionMatch(m));
     },
+    async listByPlayer(seasonId, playerId) {
+      return [...byId.values()]
+        .filter((m) => m.seasonId === seasonId && m.status !== 'VOID')
+        .filter((m) => m.participantsA.includes(playerId) || m.participantsB.includes(playerId))
+        .sort((a, b) => b.playedAt - a.playedAt)
+        .map((m) => new CompetitionMatch(m));
+    },
     // Test-only: seed a match row directly, bypassing create().
     _seed(match) {
       const id = match.id ?? randomUUID();

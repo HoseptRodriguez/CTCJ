@@ -96,5 +96,18 @@ export function createPrismaCompetitionMatchRepository(prisma) {
       });
       return records.map(toDomain);
     },
+
+    async listByPlayer(seasonId, playerId) {
+      const records = await prisma.competitionMatch.findMany({
+        where: {
+          seasonId,
+          status: { not: 'VOID' },
+          participants: { some: { playerId } },
+        },
+        include: { participants: true },
+        orderBy: { playedAt: 'desc' },
+      });
+      return records.map(toDomain);
+    },
   };
 }

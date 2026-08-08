@@ -1,5 +1,6 @@
 /**
- * @typedef {{ id: string, playerId: string, coachId: string, noteType: string, visibility: string, content: string, createdAt: Date }} CoachNoteRow
+ * @typedef {{ id: string, playerId: string, coachId: string, noteType: string, visibility: string,
+ *   content: string, area: string|null, createdAt: Date }} CoachNoteRow
  */
 
 export class CoachNoteRepository {
@@ -15,6 +16,13 @@ export class CoachNoteRepository {
 
   /** @returns {Promise<CoachNoteRow[]>} only PLAYER_VISIBLE notes for this player, newest first */
   async listVisibleByPlayer(_playerId) {
+    throw new Error('Not implemented');
+  }
+
+  /** Coach Dashboard support: most recent notes club-wide, across every
+   * player -- unlike listByPlayer, not scoped to one player.
+   * @returns {Promise<CoachNoteRow[]>} newest first, capped at `limit` */
+  async listRecent(_limit) {
     throw new Error('Not implemented');
   }
 }

@@ -28,5 +28,12 @@ export function createUserAdminRoutes(controller) {
     controller.setMembershipStatus,
   );
 
+  router.get(
+    '/counts',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    controller.getPlayerCounts,
+  );
+
   return router;
 }

@@ -11,7 +11,9 @@ import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
+import { AdminDashboard } from './pages/staff/AdminDashboard.jsx';
 import { ClinicalPage } from './pages/staff/ClinicalPage.jsx';
+import { CoachDashboard } from './pages/staff/CoachDashboard.jsx';
 import { CoachNotesPage } from './pages/staff/CoachNotesPage.jsx';
 import { CompetitionPage } from './pages/staff/CompetitionPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
@@ -24,22 +26,14 @@ import { TournamentsPage } from './pages/staff/TournamentsPage.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
+import { resolvePostLoginRoute } from './lib/postLoginRoute.js';
 
-// /staff/pagos isn't reachable by every staff role (Phase 10 added ENTRENADOR,
-// which can't see Pagos/Membresías; Phase 14 added PSICOLOGO/NEUROPSICOLOGO,
-// which can't see Pagos or Notas either) -- a static <Navigate> would bounce
-// a coach's or psychologist's first visit straight through to "/" via
-// RequireRole's own lacking-role fallback. Land each role on a route they
-// can actually see.
+// The bare /staff route has no content of its own -- land every role on
+// their own dashboard, the same place login itself sends them
+// (resolvePostLoginRoute.js), instead of a role-specific existing page.
 function StaffHome() {
   const { user } = useAuth();
-  const roles = user?.roles ?? [];
-  const canSeePagos =
-    roles.includes(ROLE_CODES.ADMINISTRADOR) || roles.includes(ROLE_CODES.RECEPCION);
-  const canSeeNotas =
-    roles.includes(ROLE_CODES.ADMINISTRADOR) || roles.includes(ROLE_CODES.ENTRENADOR);
-  const target = canSeePagos ? '/staff/pagos' : canSeeNotas ? '/staff/notas' : '/staff/clinico';
-  return <Navigate to={target} replace />;
+  return <Navigate to={resolvePostLoginRoute(user?.roles ?? [])} replace />;
 }
 
 export function App() {
@@ -81,12 +75,14 @@ export function App() {
               <Route
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
               >
+                <Route path="/staff/panel" element={<AdminDashboard />} />
                 <Route path="/staff/pagos" element={<PaymentsQueuePage />} />
                 <Route path="/staff/membresias" element={<MembershipStatusPage />} />
               </Route>
               <Route
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.ENTRENADOR]} />}
               >
+                <Route path="/staff/panel-entrenador" element={<CoachDashboard />} />
                 <Route path="/staff/notas" element={<CoachNotesPage />} />
               </Route>
               <Route

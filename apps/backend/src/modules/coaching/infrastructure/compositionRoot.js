@@ -5,10 +5,14 @@ import { createGetMyNotes } from '../application/useCases/getMyNotes.js';
 import { createRecordPerformanceSnapshot } from '../application/useCases/recordPerformanceSnapshot.js';
 import { createListPlayerPerformance } from '../application/useCases/listPlayerPerformance.js';
 import { createGetMyPerformance } from '../application/useCases/getMyPerformance.js';
+import { createGetRecentActivity } from '../application/useCases/getRecentActivity.js';
 
 import { createPrismaCoachNoteRepository } from './persistence/prismaCoachNoteRepository.js';
 import { createPrismaPerformanceRatingRepository } from './persistence/prismaPerformanceRatingRepository.js';
-import { createNullPlayerEligibilityProvider } from './adapters/nullAdapters.js';
+import {
+  createNullPlayerEligibilityProvider,
+  createNullPlayerDirectoryProvider,
+} from './adapters/nullAdapters.js';
 
 /**
  * Wires concrete infrastructure adapters to application use cases. Mirrors
@@ -23,6 +27,7 @@ import { createNullPlayerEligibilityProvider } from './adapters/nullAdapters.js'
 export function buildCoachingContainer({
   prismaClient = prisma,
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
+  playerDirectoryProvider = createNullPlayerDirectoryProvider(),
 } = {}) {
   const coachNoteRepository = createPrismaCoachNoteRepository(prismaClient);
   const performanceRatingRepository = createPrismaPerformanceRatingRepository(prismaClient);
@@ -37,5 +42,10 @@ export function buildCoachingContainer({
     }),
     listPlayerPerformance: createListPlayerPerformance({ performanceRatingRepository }),
     getMyPerformance: createGetMyPerformance({ performanceRatingRepository }),
+    getRecentActivity: createGetRecentActivity({
+      coachNoteRepository,
+      performanceRatingRepository,
+      playerDirectoryProvider,
+    }),
   };
 }

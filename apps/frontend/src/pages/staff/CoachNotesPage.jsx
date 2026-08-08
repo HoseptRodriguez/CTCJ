@@ -72,6 +72,7 @@ function LookupForm({ onFound }) {
 function CreateNoteForm({ playerId, onCreated }) {
   const [noteType, setNoteType] = useState('TRAINING');
   const [visibility, setVisibility] = useState('PRIVATE');
+  const [area, setArea] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -81,8 +82,14 @@ function CreateNoteForm({ playerId, onCreated }) {
     setSubmitting(true);
     setError(null);
     try {
-      await coachingClient.createNote(playerId, { noteType, visibility, content: content.trim() });
+      await coachingClient.createNote(playerId, {
+        noteType,
+        visibility,
+        content: content.trim(),
+        area: area || undefined,
+      });
       setContent('');
+      setArea('');
       await onCreated();
     } catch (err) {
       setError(describeCoachingError(err));
@@ -124,6 +131,24 @@ function CreateNoteForm({ playerId, onCreated }) {
             {Object.entries(VISIBILITY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-primary" htmlFor="note-area">
+            Habilidad (opcional)
+          </label>
+          <select
+            id="note-area"
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          >
+            <option value="">Sin habilidad específica</option>
+            {AREA_CODES.map((code) => (
+              <option key={code} value={code}>
+                {AREA_LABELS[code]}
               </option>
             ))}
           </select>
@@ -184,6 +209,14 @@ function NotesList({ playerId }) {
                 <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
                   {NOTE_TYPE_LABELS[note.noteType] ?? note.noteType} ·{' '}
                   {VISIBILITY_LABELS[note.visibility] ?? note.visibility}
+                  {note.area ? (
+                    <>
+                      {' · '}
+                      <span className="rounded-full bg-action px-2 py-0.5 text-on-action">
+                        {describeArea(note.area)}
+                      </span>
+                    </>
+                  ) : null}
                 </span>
                 <span className="text-xs text-tertiary">
                   {DATE_FORMATTER.format(new Date(note.createdAt))}

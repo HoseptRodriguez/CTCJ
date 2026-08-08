@@ -6,6 +6,7 @@ function toRow(record) {
     noteType: record.noteType,
     visibility: record.visibility,
     content: record.content,
+    area: record.area,
     createdAt: record.createdAt,
   };
 }
@@ -16,9 +17,9 @@ function toRow(record) {
  */
 export function createPrismaCoachNoteRepository(prisma) {
   return {
-    async create({ playerId, coachId, noteType, visibility, content }) {
+    async create({ playerId, coachId, noteType, visibility, content, area = null }) {
       const record = await prisma.coachNote.create({
-        data: { playerId, coachId, noteType, visibility, content },
+        data: { playerId, coachId, noteType, visibility, content, area },
       });
       return toRow(record);
     },
@@ -35,6 +36,14 @@ export function createPrismaCoachNoteRepository(prisma) {
       const records = await prisma.coachNote.findMany({
         where: { playerId, visibility: 'PLAYER_VISIBLE' },
         orderBy: { createdAt: 'desc' },
+      });
+      return records.map(toRow);
+    },
+
+    async listRecent(limit) {
+      const records = await prisma.coachNote.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
       });
       return records.map(toRow);
     },

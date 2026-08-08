@@ -41,6 +41,7 @@ import { createCoachingAdminRoutes } from './modules/coaching/infrastructure/htt
 import { createMeController as createCoachingMeController } from './modules/coaching/infrastructure/http/meController.js';
 import { createMeRoutes as createCoachingMeRoutes } from './modules/coaching/infrastructure/http/meRoutes.js';
 import { createIdentityPlayerEligibilityProvider as createCoachingPlayerEligibilityProvider } from './modules/coaching/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createCoachingPlayerDirectoryProvider } from './modules/coaching/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { buildCompetitionContainer } from './modules/competition/infrastructure/compositionRoot.js';
 import { createCompetitionController } from './modules/competition/infrastructure/http/competitionController.js';
 import { createCompetitionRoutes } from './modules/competition/infrastructure/http/competitionRoutes.js';
@@ -137,8 +138,12 @@ export function createApp() {
   const coachingPlayerEligibilityProvider = createCoachingPlayerEligibilityProvider({
     checkIsJugador: identityContainer.checkIsJugador,
   });
+  const coachingPlayerDirectoryProvider = createCoachingPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
   const coachingContainer = buildCoachingContainer({
     playerEligibilityProvider: coachingPlayerEligibilityProvider,
+    playerDirectoryProvider: coachingPlayerDirectoryProvider,
   });
   const coachingAdminController = createCoachingAdminController(coachingContainer);
   const coachingMeController = createCoachingMeController(coachingContainer);

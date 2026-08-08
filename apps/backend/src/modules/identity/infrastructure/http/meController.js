@@ -8,6 +8,11 @@ function asyncHandler(fn) {
 
 /** @param {ReturnType<import('../compositionRoot.js').buildIdentityContainer>} container */
 export function createMeController(container) {
+  const getMyProfile = asyncHandler(async (req, res) => {
+    const result = await container.getMyProfile({ userId: req.user.id });
+    res.status(200).json(result);
+  });
+
   const getMembershipStatus = asyncHandler(async (req, res) => {
     const result = await container.getMembershipStatus({ userId: req.user.id });
     res.status(200).json(result);
@@ -42,6 +47,7 @@ export function createMeController(container) {
   });
 
   return {
+    getMyProfile,
     getMembershipStatus,
     requestAffiliation,
     getMyAffiliationRequests,

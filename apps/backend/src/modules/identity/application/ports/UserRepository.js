@@ -47,4 +47,14 @@ export class UserRepository {
   async addRoleGrant(_userId, _roleCode, _grantedByUserId) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Admin Dashboard support: club-wide JUGADOR count by membership_status,
+   * including JUGADORs with no status set yet (key "NONE"). No new entity --
+   * a grouped count over the existing membership_status column.
+   * @returns {Promise<{ACTIVE: number, PENDING: number, OVERDUE: number, INACTIVE: number, SUSPENDED: number, NONE: number}>}
+   */
+  async countPlayersByMembershipStatus(_clubId) {
+    throw new Error('Not implemented');
+  }
 }

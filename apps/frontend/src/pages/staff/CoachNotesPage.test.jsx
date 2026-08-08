@@ -93,6 +93,27 @@ describe('CoachNotesPage', () => {
     await waitFor(() => expect(coachingClient.listPlayerNotes).toHaveBeenCalledTimes(2));
   });
 
+  it('tags a note with a skill area when one is selected', async () => {
+    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+    coachingClient.createNote.mockResolvedValue({ id: 'note-1' });
+
+    const user = userEvent.setup();
+    render(<CoachNotesPage />);
+    await searchFor(user, PLAYER.email);
+    await waitFor(() => expect(coachingClient.listPlayerNotes).toHaveBeenCalledWith('user-1'));
+
+    await user.selectOptions(screen.getByLabelText('Habilidad (opcional)'), 'SERVE');
+    await user.type(screen.getByLabelText('Nota'), 'Sube más el toss.');
+    await user.click(screen.getByRole('button', { name: 'Agregar nota' }));
+
+    await waitFor(() =>
+      expect(coachingClient.createNote).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ area: 'SERVE' }),
+      ),
+    );
+  });
+
   it('lists existing notes with type/visibility/content', async () => {
     membershipClient.lookupUser.mockResolvedValue(PLAYER);
     coachingClient.listPlayerNotes.mockResolvedValue({

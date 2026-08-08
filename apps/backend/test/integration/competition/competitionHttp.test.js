@@ -247,6 +247,51 @@ describe('Competition HTTP API (real Postgres)', () => {
     expect(winners.sort()).toEqual([p3.id, p4.id].sort());
   });
 
+  it("GET /me/summary: discovers the player's own category/modality and computes rank/win-loss without needing to specify it", async () => {
+    const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+    const p1 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+    const p2 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+    const adminToken = await login(app, admin.email, admin.password);
+    const p1Token = await login(app, p1.email, p1.password);
+    const season = await createOpenSeason(app, adminToken);
+
+    await request(app)
+      .post('/api/competition/matches')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        seasonId: season.id,
+        category: 'CUARTA',
+        modality: 'SINGLES',
+        participantsA: [p1.id],
+        participantsB: [p2.id],
+        winnerSide: 'A',
+        setsWonA: 2,
+        setsWonB: 0,
+        playedAt: '2026-03-01',
+      })
+      .expect(201);
+
+    const res = await request(app)
+      .get('/api/competition/me/summary')
+      .set('Authorization', `Bearer ${p1Token}`)
+      .expect(200);
+
+    expect(res.body.hasSeason).toBe(true);
+    expect(res.body.categories).toHaveLength(1);
+    expect(res.body.categories[0]).toMatchObject({
+      category: 'CUARTA',
+      modality: 'SINGLES',
+      wins: 1,
+      losses: 0,
+      winPercentage: 100,
+    });
+    expect(res.body.recentMatches).toHaveLength(1);
+    expect(res.body.recentMatches[0].won).toBe(true);
+    expect(res.body.recentMatches[0].participantsB[0].playerId).toBe(p2.id);
+
+    await request(app).get('/api/competition/me/summary').expect(401);
+  });
+
   it('DB CHECK constraints reject a malformed insert even bypassing the domain layer', async () => {
     const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
     const p1 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });

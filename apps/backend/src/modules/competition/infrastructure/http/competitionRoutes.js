@@ -39,6 +39,7 @@ export function createCompetitionRoutes(controller) {
     controller.getStandings,
   );
   router.get('/matches', requireAuth, validateQuery(matchesQuerySchema), controller.listMatches);
+  router.get('/me/summary', requireAuth, controller.getMyCompetitionSummary);
 
   router.post(
     '/seasons',

@@ -8,6 +8,7 @@ import { validateBody } from './validators/authValidators.js';
 export function createMeRoutes(controller) {
   const router = Router();
 
+  router.get('/', requireAuth, controller.getMyProfile);
   router.get('/membership-status', requireAuth, controller.getMembershipStatus);
 
   router.post(

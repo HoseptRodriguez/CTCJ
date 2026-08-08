@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import { resolvePostLoginRoute } from '../lib/postLoginRoute.js';
 
 /** @param {{ roles: string[] }} props -- allowed role codes (OR semantics). */
 export function RequireRole({ roles }) {
@@ -19,10 +20,11 @@ export function RequireRole({ roles }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Authenticated but lacking any of the allowed roles -- send them home,
-  // not to login (they're already logged in, just not staff).
+  // Authenticated but lacking any of the allowed roles -- send them to
+  // their own dashboard, not the public homepage (they're already logged
+  // in, just trying to reach a route that isn't theirs).
   if (!roles.some((role) => user.roles.includes(role))) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={resolvePostLoginRoute(user.roles)} replace />;
   }
 
   return <Outlet />;

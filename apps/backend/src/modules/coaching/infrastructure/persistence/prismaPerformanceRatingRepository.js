@@ -33,5 +33,13 @@ export function createPrismaPerformanceRatingRepository(prisma) {
       });
       return records.map(toRow);
     },
+
+    async listRecent(limit) {
+      const records = await prisma.performanceRating.findMany({
+        orderBy: { recordedAt: 'desc' },
+        take: limit,
+      });
+      return records.map(toRow);
+    },
   };
 }

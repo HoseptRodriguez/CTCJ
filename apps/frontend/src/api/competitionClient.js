@@ -51,6 +51,14 @@ export const competitionClient = {
     return request('/api/competition/matches', { method: 'POST', body: payload });
   },
 
+  /**
+   * Player Dashboard support: the caller's own ranking/win-loss across every
+   * category+modality they've played this season, plus recent matches --
+   * no category/modality needed upfront (unlike getStandings/listMatches).
+   * @returns {Promise<{hasSeason: boolean, categories: Array, recentMatches: Array}>}
+   */
+  getMyCompetitionSummary: () => request('/api/competition/me/summary'),
+
   /** @param {string} matchId @param {string} reason */
   voidMatch: (matchId, reason) => {
     voidMatchSchema.parse({ reason });

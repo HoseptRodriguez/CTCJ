@@ -5,6 +5,7 @@ import { loginSchema } from '@ctcj/shared';
 import { authClient } from '../api/authClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { resolvePostLoginRoute } from '../lib/postLoginRoute.js';
 
 const INITIAL_FORM = { email: '', password: '' };
 
@@ -41,7 +42,10 @@ export function Login() {
     try {
       const session = await authClient.login(result.data);
       login(session);
-      const redirectTo = location.state?.from?.pathname ?? '/';
+      // A user bounced to /login from a specific protected route (e.g. a
+      // bookmarked link) returns there; otherwise land on their own
+      // dashboard by role -- never back on the public homepage.
+      const redirectTo = location.state?.from?.pathname ?? resolvePostLoginRoute(session.roles);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setApiError(err.message);

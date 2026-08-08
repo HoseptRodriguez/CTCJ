@@ -25,8 +25,17 @@ export const membershipClient = {
   /** @returns {Promise<{status: string|null}>} the caller's own membership status */
   getMyStatus: () => request('/api/identity/me/membership-status'),
 
+  /** @returns {Promise<{id, firstName, lastName, email}>} the caller's own basic profile */
+  getMyProfile: () => request('/api/identity/me'),
+
   /** @returns {Promise<{enabled: boolean}>} */
   getOverduePolicy: () => request('/api/booking/settings/overdue-policy'),
+
+  /**
+   * Admin Dashboard support: club-wide JUGADOR count by membership status.
+   * @returns {Promise<{ACTIVE: number, PENDING: number, OVERDUE: number, INACTIVE: number, SUSPENDED: number, NONE: number, total: number}>}
+   */
+  getPlayerCounts: () => request('/api/admin/users/counts'),
 
   /** @param {boolean} enabled */
   setOverduePolicy: (enabled) => {

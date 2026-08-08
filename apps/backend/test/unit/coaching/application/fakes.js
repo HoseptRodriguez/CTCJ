@@ -4,9 +4,18 @@ export function createFakeCoachNoteRepository() {
   const byId = new Map();
 
   return {
-    async create({ playerId, coachId, noteType, visibility, content }) {
+    async create({ playerId, coachId, noteType, visibility, content, area = null }) {
       const id = randomUUID();
-      const note = { id, playerId, coachId, noteType, visibility, content, createdAt: new Date() };
+      const note = {
+        id,
+        playerId,
+        coachId,
+        noteType,
+        visibility,
+        content,
+        area,
+        createdAt: new Date(),
+      };
       byId.set(id, note);
       return note;
     },
@@ -19,6 +28,11 @@ export function createFakeCoachNoteRepository() {
       return Array.from(byId.values())
         .filter((note) => note.playerId === playerId && note.visibility === 'PLAYER_VISIBLE')
         .sort((a, b) => b.createdAt - a.createdAt);
+    },
+    async listRecent(limit) {
+      return Array.from(byId.values())
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, limit);
     },
   };
 }
@@ -56,11 +70,32 @@ export function createFakePerformanceRatingRepository() {
         .filter((row) => row.playerId === playerId)
         .sort((a, b) => b.recordedAt - a.recordedAt);
     },
+    async listRecent(limit) {
+      return rows
+        .slice()
+        .sort((a, b) => b.recordedAt - a.recordedAt)
+        .slice(0, limit);
+    },
     // Test-only: seed a row with a controlled timestamp, for ordering/progress
     // tests where relying on real wall-clock gaps between createBatch() calls
     // would be flaky.
     _seed(row) {
       rows.push({ id: randomUUID(), ...row });
+    },
+  };
+}
+
+/** @param {Map<string, {firstName: string, lastName: string, email: string}>} summariesById */
+export function createFakePlayerDirectoryProvider(summariesById = new Map()) {
+  return {
+    async getPlayerSummaries(userIds) {
+      const result = new Map();
+      for (const id of userIds) {
+        if (summariesById.has(id)) {
+          result.set(id, summariesById.get(id));
+        }
+      }
+      return result;
     },
   };
 }

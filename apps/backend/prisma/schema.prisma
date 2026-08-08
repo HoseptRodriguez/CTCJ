@@ -464,13 +464,17 @@ model CoachNote {
   noteType   String   @map("note_type") @db.VarChar(20) // TRAINING|TECHNICAL|TACTICAL|RECOMMENDATION
   visibility String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
   content    String   @db.Text
+  // Optional tie to a specific skill (dashboards phase) -- lets a coach's
+  // feedback point at exactly which rated skill it's about. Nullable: most
+  // notes are still general, not every note needs a skill tag.
+  area       String?  @map("area") @db.VarChar(20)
   createdAt  DateTime @default(now()) @map("created_at")
 
   player User @relation("CoachNoteSubject", fields: [playerId], references: [id], onDelete: Restrict)
 
-  // note_type CHECK + visibility CHECK + index added via raw-SQL migration --
-  // this codebase never declares @@index in schema.prisma, only in the
-  // hand-written migration.
+  // note_type CHECK + visibility CHECK + area CHECK + index added via
+  // raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
   @@map("coach_notes")
 }
 
@@ -488,7 +492,7 @@ model PerformanceRating {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   playerId   String   @map("player_id") @db.Uuid
   coachId    String   @map("coach_id") @db.Uuid // no FK, audit-only
-  area       String   @map("area") @db.VarChar(20) // FOREHAND|BACKHAND|SERVE|RETURN|VOLLEY|OVERHEAD
+  area       String   @map("area") @db.VarChar(20) // FOREHAND|BACKHAND|SERVE|RETURN|VOLLEY|OVERHEAD|SLICE|FOOTWORK|FITNESS|MENTALITY
   rating     Int      @db.SmallInt // 1-10
   recordedAt DateTime @default(now()) @map("recorded_at")
 

@@ -22,6 +22,10 @@ const AREA_COLORS = {
   RETURN: '#7FD455', // green-400
   VOLLEY: '#93A3C3', // navy-200
   OVERHEAD: '#5A606A', // text-secondary
+  SLICE: '#2E4881', // navy-400
+  FOOTWORK: '#63B93B', // green-500
+  FITNESS: '#C9D2E2', // navy-100
+  MENTALITY: '#3A7024', // green-700
 };
 
 /** Groups ratings by exact recordedAt instant -- each snapshot batch shares

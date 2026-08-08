@@ -75,13 +75,19 @@ describe('Coaching HTTP API (real Postgres)', () => {
     const noteRes = await request(app)
       .post(`/api/admin/coaching/players/${player.id}/notes`)
       .set('Authorization', `Bearer ${coachToken}`)
-      .send({ noteType: 'TRAINING', visibility: 'PLAYER_VISIBLE', content: 'Great footwork.' })
+      .send({
+        noteType: 'TRAINING',
+        visibility: 'PLAYER_VISIBLE',
+        content: 'Great footwork.',
+        area: 'FOOTWORK',
+      })
       .expect(201);
     expect(noteRes.body).toMatchObject({
       playerId: player.id,
       coachId: coach.id,
       noteType: 'TRAINING',
       visibility: 'PLAYER_VISIBLE',
+      area: 'FOOTWORK',
     });
 
     await request(app)
@@ -208,6 +214,30 @@ describe('Coaching HTTP API (real Postgres)', () => {
         .expect(403);
     });
 
+    it('accepts the expanded skill areas (SLICE, FOOTWORK, FITNESS, MENTALITY)', async () => {
+      const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const coachToken = await login(app, coach.email, coach.password);
+
+      const recordRes = await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { SLICE: 5, FOOTWORK: 8, FITNESS: 7, MENTALITY: 9 } })
+        .expect(201);
+      expect(recordRes.body.ratings).toHaveLength(4);
+
+      const listRes = await request(app)
+        .get(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .expect(200);
+      expect(listRes.body.summary.latestByArea).toEqual({
+        SLICE: 5,
+        FOOTWORK: 8,
+        FITNESS: 7,
+        MENTALITY: 9,
+      });
+    });
+
     it('rejects recording performance for a non-JUGADOR target with 409', async () => {
       const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
       const notAPlayer = await seedVerifiedUser();
@@ -252,6 +282,56 @@ describe('Coaching HTTP API (real Postgres)', () => {
       await request(app).post(`/api/admin/coaching/players/${player.id}/performance`).expect(401);
       await request(app).get(`/api/admin/coaching/players/${player.id}/performance`).expect(401);
       await request(app).get('/api/coaching/me/performance').expect(401);
+    });
+  });
+
+  describe('GET /api/admin/coaching/recent-activity (Coach Dashboard)', () => {
+    it('merges recent notes and ratings, enriched with player names, newest-first', async () => {
+      const coach = await seedVerifiedUser({ roleCode: ROLE_CODES.ENTRENADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const coachToken = await login(app, coach.email, coach.password);
+
+      await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/notes`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ noteType: 'TRAINING', visibility: 'PLAYER_VISIBLE', content: 'Good session.' })
+        .expect(201);
+      await request(app)
+        .post(`/api/admin/coaching/players/${player.id}/performance`)
+        .set('Authorization', `Bearer ${coachToken}`)
+        .send({ ratings: { SERVE: 7 } })
+        .expect(201);
+
+      const res = await request(app)
+        .get('/api/admin/coaching/recent-activity')
+        .set('Authorization', `Bearer ${coachToken}`)
+        .expect(200);
+
+      expect(res.body.activity).toHaveLength(2);
+      expect(res.body.activity.every((item) => item.playerId === player.id)).toBe(true);
+      expect(res.body.activity.every((item) => item.playerName === 'Test User')).toBe(true);
+      const types = res.body.activity.map((item) => item.type).sort();
+      expect(types).toEqual(['NOTE', 'RATING']);
+    });
+
+    it('RECEPCION and JUGADOR get 403', async () => {
+      const staff = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const staffToken = await login(app, staff.email, staff.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      await request(app)
+        .get('/api/admin/coaching/recent-activity')
+        .set('Authorization', `Bearer ${staffToken}`)
+        .expect(403);
+      await request(app)
+        .get('/api/admin/coaching/recent-activity')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .expect(403);
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      await request(app).get('/api/admin/coaching/recent-activity').expect(401);
     });
   });
 });

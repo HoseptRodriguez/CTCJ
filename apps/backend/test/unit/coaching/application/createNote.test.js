@@ -71,4 +71,27 @@ describe('createNote', () => {
     });
     expect(note.visibility).toBe(visibility);
   });
+
+  it('tags the note with a skill area when provided', async () => {
+    const note = await createNote({
+      playerId: 'player-1',
+      noteType: 'TECHNICAL',
+      visibility: 'PLAYER_VISIBLE',
+      content: 'Work on your toss height.',
+      area: 'SERVE',
+      coachUserId: 'coach-1',
+    });
+    expect(note.area).toBe('SERVE');
+  });
+
+  it('defaults area to null when not provided', async () => {
+    const note = await createNote({
+      playerId: 'player-1',
+      noteType: 'TRAINING',
+      visibility: 'PRIVATE',
+      content: 'x',
+      coachUserId: 'coach-1',
+    });
+    expect(note.area).toBeNull();
+  });
 });

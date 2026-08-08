@@ -191,6 +191,70 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
       .expect(409);
   });
 
+  it("GET /api/identity/me returns the caller's own profile, 401 unauthenticated", async () => {
+    const email = `perfil-${randomUUID()}@example.com`;
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .expect(201);
+    const verificationUrl = await fetchVerificationLinkFor(email);
+    const token = new URL(verificationUrl).searchParams.get('token');
+    await request(app).get('/api/auth/verify').query({ token }).expect(200);
+
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email, password: 'ClaveSegura123' })
+      .expect(200);
+
+    const res = await request(app)
+      .get('/api/identity/me')
+      .set('Authorization', `Bearer ${loginRes.body.accessToken}`)
+      .expect(200);
+    expect(res.body).toMatchObject({ firstName: 'Ana', lastName: 'Gomez', email });
+
+    await request(app).get('/api/identity/me').expect(401);
+  });
+
+  it('GET /api/admin/users/counts: counts JUGADORs by membership status, ADMINISTRADOR/RECEPCION only', async () => {
+    const admin = await seedVerifiedAdmin();
+    const adminToken = (await request(app).post('/api/auth/login').send(admin).expect(200)).body
+      .accessToken;
+
+    const playerEmail = `conteo-${randomUUID()}@example.com`;
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: playerEmail, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .expect(201);
+    const verificationUrl = await fetchVerificationLinkFor(playerEmail);
+    const token = new URL(verificationUrl).searchParams.get('token');
+    await request(app).get('/api/auth/verify').query({ token }).expect(200);
+    const player = await prisma.user.findUniqueOrThrow({
+      where: { clubId_email: { clubId: TEST_CLUB_ID, email: playerEmail } },
+    });
+    const jugadorRole = await prisma.role.findUniqueOrThrow({
+      where: { code: ROLE_CODES.JUGADOR },
+    });
+    await prisma.userRole.create({ data: { userId: player.id, roleId: jugadorRole.id } });
+    await prisma.user.update({ where: { id: player.id }, data: { membershipStatus: 'ACTIVE' } });
+
+    const res = await request(app)
+      .get('/api/admin/users/counts')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(res.body.ACTIVE).toBeGreaterThanOrEqual(1);
+    expect(res.body.total).toBeGreaterThanOrEqual(1);
+
+    const playerLogin = await request(app)
+      .post('/api/auth/login')
+      .send({ email: playerEmail, password: 'ClaveSegura123' })
+      .expect(200);
+    await request(app)
+      .get('/api/admin/users/counts')
+      .set('Authorization', `Bearer ${playerLogin.body.accessToken}`)
+      .expect(403);
+    await request(app).get('/api/admin/users/counts').expect(401);
+  });
+
   it('rejects login with wrong credentials with a generic 401', async () => {
     const res = await request(app)
       .post('/api/auth/login')

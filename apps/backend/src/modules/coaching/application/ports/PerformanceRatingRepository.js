@@ -19,4 +19,11 @@ export class PerformanceRatingRepository {
   async listByPlayer(_playerId) {
     throw new Error('Not implemented');
   }
+
+  /** Coach Dashboard support: most recent ratings club-wide, across every
+   * player -- unlike listByPlayer, not scoped to one player.
+   * @returns {Promise<PerformanceRatingRow[]>} newest first, capped at `limit` */
+  async listRecent(_limit) {
+    throw new Error('Not implemented');
+  }
 }

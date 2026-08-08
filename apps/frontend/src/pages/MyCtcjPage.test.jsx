@@ -8,6 +8,7 @@ import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
+import { competitionClient } from '../api/competitionClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -27,7 +28,11 @@ vi.mock('../api/bookingClient.js', () => ({
 }));
 
 vi.mock('../api/membershipClient.js', () => ({
-  membershipClient: { getMyStatus: vi.fn() },
+  membershipClient: { getMyStatus: vi.fn(), getMyProfile: vi.fn() },
+}));
+
+vi.mock('../api/competitionClient.js', () => ({
+  competitionClient: { getMyCompetitionSummary: vi.fn() },
 }));
 
 vi.mock('../api/affiliationClient.js', () => ({
@@ -76,6 +81,17 @@ describe('MyCtcjPage', () => {
     clinicalClient.getMyNotes.mockResolvedValue({ notes: [] });
     clinicalClient.getMyRecoveryPlans.mockResolvedValue({ plans: [] });
     clinicalClient.getMyMedicalHistory.mockResolvedValue({ entries: [] });
+    membershipClient.getMyProfile.mockResolvedValue({
+      id: 'u1',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      email: 'ana@example.com',
+    });
+    competitionClient.getMyCompetitionSummary.mockResolvedValue({
+      hasSeason: false,
+      categories: [],
+      recentMatches: [],
+    });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -471,5 +487,136 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(clinicalClient.getMyMedicalHistory).not.toHaveBeenCalled();
+  });
+
+  it('greets the user by first name once their profile loads', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    expect(await screen.findByText('Hola, Ana')).toBeInTheDocument();
+  });
+
+  it('highlights the next CLASS-type reservation as "Tu próximo entrenamiento"', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    // Each of the 8 day-queries gets its own (empty, except one) response --
+    // a fixed mockResolvedValue would return the same rows for every call,
+    // duplicating them in the flattened list.
+    bookingClient.getSchedule
+      .mockResolvedValueOnce({ reservations: [] })
+      .mockResolvedValueOnce({
+        reservations: [
+          {
+            id: 'r1',
+            holderUserId: 'u1',
+            reservationType: 'PRIVATE',
+            status: 'CONFIRMED',
+            periodStart: '2026-03-01T15:00:00.000Z',
+            periodEnd: '2026-03-01T16:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        reservations: [
+          {
+            id: 'r2',
+            holderUserId: 'u1',
+            reservationType: 'CLASS',
+            status: 'CONFIRMED',
+            periodStart: '2026-03-02T15:00:00.000Z',
+            periodEnd: '2026-03-02T16:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValue({ reservations: [] });
+
+    renderPage();
+
+    expect(await screen.findByText('Tu próximo entrenamiento')).toBeInTheDocument();
+  });
+
+  it('does not show "Tu próximo entrenamiento" when there is no CLASS reservation', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    bookingClient.getSchedule
+      .mockResolvedValueOnce({
+        reservations: [
+          {
+            id: 'r1',
+            holderUserId: 'u1',
+            reservationType: 'PRIVATE',
+            status: 'CONFIRMED',
+            periodStart: '2026-03-01T15:00:00.000Z',
+            periodEnd: '2026-03-01T16:00:00.000Z',
+          },
+        ],
+      })
+      .mockResolvedValue({ reservations: [] });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(screen.queryByText('Tu próximo entrenamiento')).not.toBeInTheDocument();
+  });
+
+  it('a JUGADOR with ranked matches sees "Ranking interno" with rank, record, and recent matches', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    competitionClient.getMyCompetitionSummary.mockResolvedValue({
+      hasSeason: true,
+      categories: [
+        {
+          category: 'CUARTA',
+          modality: 'SINGLES',
+          rank: 2,
+          points: 6,
+          wins: 3,
+          losses: 1,
+          matchesPlayed: 4,
+          winPercentage: 75,
+          qualifiesForMasters: true,
+        },
+      ],
+      recentMatches: [
+        {
+          id: 'm1',
+          playedAt: '2026-03-01T00:00:00.000Z',
+          won: true,
+          participantsA: [{ playerId: 'u1', firstName: 'Ana', lastName: 'Gomez' }],
+          participantsB: [{ playerId: 'u2', firstName: 'Beto', lastName: 'Ruiz' }],
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Ranking interno')).toBeInTheDocument();
+    expect(screen.getByText('#2')).toBeInTheDocument();
+    expect(screen.getByText('Clasifica al Masters')).toBeInTheDocument();
+    expect(screen.getByText(/3V - 1D/)).toBeInTheDocument();
+    expect(screen.getByText(/vs\. Beto Ruiz/)).toBeInTheDocument();
+    expect(screen.getByText('Victoria')).toBeInTheDocument();
+  });
+
+  it('does not show "Ranking interno" when the player has no ranked matches yet', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(competitionClient.getMyCompetitionSummary).toHaveBeenCalled());
+    expect(screen.queryByText('Ranking interno')).not.toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Ranking interno" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(competitionClient.getMyCompetitionSummary).not.toHaveBeenCalled();
   });
 });

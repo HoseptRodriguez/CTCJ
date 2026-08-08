@@ -8,9 +8,17 @@ import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
  */
 export function createCreateNote({ coachNoteRepository, playerEligibilityProvider }) {
   /**
-   * @param {{ playerId: string, noteType: string, visibility: string, content: string, coachUserId: string }} input
+   * @param {{ playerId: string, noteType: string, visibility: string, content: string,
+   *   area?: string|null, coachUserId: string }} input
    */
-  return async function createNote({ playerId, noteType, visibility, content, coachUserId }) {
+  return async function createNote({
+    playerId,
+    noteType,
+    visibility,
+    content,
+    area = null,
+    coachUserId,
+  }) {
     const eligible = await playerEligibilityProvider.isEligiblePlayer(playerId);
     if (!eligible) {
       throw new PlayerNotEligible();
@@ -22,6 +30,7 @@ export function createCreateNote({ coachNoteRepository, playerEligibilityProvide
       noteType,
       visibility,
       content,
+      area,
     });
   };
 }

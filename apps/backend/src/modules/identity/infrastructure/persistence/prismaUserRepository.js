@@ -115,5 +115,20 @@ export function createPrismaUserRepository(prisma) {
         data: { userId, roleId: role.id, grantedBy: grantedByUserId ?? null },
       });
     },
+
+    async countPlayersByMembershipStatus(clubId) {
+      const rows = await prisma.$queryRaw`
+        SELECT COALESCE(u.membership_status, 'NONE') AS status, COUNT(*)::int AS count
+        FROM "users" u
+        JOIN user_roles_view urv ON urv.user_id = u.id
+        WHERE u.club_id = ${clubId}::uuid AND urv.role_code = 'JUGADOR'
+        GROUP BY COALESCE(u.membership_status, 'NONE')
+      `;
+      const counts = { ACTIVE: 0, PENDING: 0, OVERDUE: 0, INACTIVE: 0, SUSPENDED: 0, NONE: 0 };
+      for (const row of rows) {
+        counts[row.status] = row.count;
+      }
+      return counts;
+    },
   };
 }

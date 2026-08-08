@@ -12,6 +12,8 @@ import { createLogoutUser } from '../application/useCases/logoutUser.js';
 import { createGrantRoleToUser } from '../application/useCases/grantRoleToUser.js';
 import { createSetMembershipStatus } from '../application/useCases/setMembershipStatus.js';
 import { createGetMembershipStatus } from '../application/useCases/getMembershipStatus.js';
+import { createGetMyProfile } from '../application/useCases/getMyProfile.js';
+import { createGetPlayerCounts } from '../application/useCases/getPlayerCounts.js';
 import { createLookupUserByEmail } from '../application/useCases/lookupUserByEmail.js';
 import { createGetSystemSetting } from '../application/useCases/getSystemSetting.js';
 import { createSetSystemSetting } from '../application/useCases/setSystemSetting.js';
@@ -122,6 +124,8 @@ export function buildIdentityContainer({ prismaClient = prisma } = {}) {
     logoutUser: createLogoutUser({ refreshTokenRepository, tokenService }),
     grantRoleToUser: createGrantRoleToUser({ userRepository, roleRepository }),
     setMembershipStatus: createSetMembershipStatus({ userRepository, clock }),
+    getMyProfile: createGetMyProfile({ userRepository }),
+    getPlayerCounts: createGetPlayerCounts({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getMembershipStatus: createGetMembershipStatus({ userRepository }),
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getSystemSetting: createGetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),

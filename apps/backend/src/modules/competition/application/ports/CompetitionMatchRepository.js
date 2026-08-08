@@ -25,4 +25,16 @@ export class CompetitionMatchRepository {
   async list(_filters) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Self-service dashboard support: every non-void match a player took part
+   * in during a season, across every category/modality (unlike list(),
+   * which always requires one specific category+modality) -- the player
+   * doesn't know upfront which categories they've played in, so this
+   * discovers that instead of requiring it as an input.
+   * @returns {Promise<CompetitionMatch[]>} newest played first
+   */
+  async listByPlayer(_seasonId, _playerId) {
+    throw new Error('Not implemented');
+  }
 }

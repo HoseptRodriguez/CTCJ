@@ -68,6 +68,11 @@ export function createCompetitionController(container) {
     res.status(201).json(match);
   });
 
+  const getMyCompetitionSummary = asyncHandler(async (req, res) => {
+    const summary = await container.getMyCompetitionSummary({ playerId: req.user.id });
+    res.status(200).json(summary);
+  });
+
   const voidMatch = asyncHandler(async (req, res) => {
     const match = await container.voidMatch({
       matchId: req.params.id,
@@ -83,6 +88,7 @@ export function createCompetitionController(container) {
     closeSeason,
     getStandings,
     listMatches,
+    getMyCompetitionSummary,
     recordMatch,
     voidMatch,
   };

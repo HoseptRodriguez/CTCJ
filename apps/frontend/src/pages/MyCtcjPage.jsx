@@ -6,6 +6,7 @@ import { billingClient } from '../api/billingClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { clinicalClient } from '../api/clinicalClient.js';
 import { coachingClient } from '../api/coachingClient.js';
+import { competitionClient } from '../api/competitionClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
@@ -75,6 +76,15 @@ const MEDICAL_HISTORY_STATUS_LABELS = {
   ACTIVE: 'Activo',
   RESOLVED: 'Resuelto',
 };
+
+const CATEGORY_LABELS = {
+  SEGUNDA: 'Segunda categoría',
+  TERCERA: 'Tercera categoría',
+  CUARTA: 'Cuarta categoría',
+  QUINTA: 'Quinta categoría',
+};
+const MODALITY_LABELS = { SINGLES: 'Singles', DOBLES: 'Dobles' };
+const MATCH_DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
 
 function AffiliationSection() {
   const [requests, setRequests] = useState(null);
@@ -538,6 +548,94 @@ function MyMedicalHistorySection() {
   );
 }
 
+function MyRankingSection() {
+  const [summary, setSummary] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    competitionClient
+      .getMyCompetitionSummary()
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch(() => {
+        if (!cancelled) setSummary({ hasSeason: false, categories: [], recentMatches: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!summary || !summary.hasSeason || summary.categories.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Ranking interno</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Tu posición y récord de la temporada actual, calculados a partir de tus partidos.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {summary.categories.map((c) => (
+          <div key={`${c.category}-${c.modality}`} className="rounded-md bg-raised p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+              {CATEGORY_LABELS[c.category] ?? c.category} ·{' '}
+              {MODALITY_LABELS[c.modality] ?? c.modality}
+            </p>
+            <p className="mt-1 font-display text-2xl font-semibold text-primary">
+              #{c.rank}
+              {c.qualifiesForMasters ? (
+                <span className="ml-2 rounded-full bg-action px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-on-action">
+                  Clasifica al Masters
+                </span>
+              ) : null}
+            </p>
+            <p className="mt-1 text-sm text-secondary">
+              {c.wins}V - {c.losses}D · {c.winPercentage}% de victorias · {c.points} pts
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {summary.recentMatches.length > 0 ? (
+        <div className="mt-6">
+          <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary">
+            Partidos recientes
+          </h4>
+          <ul className="mt-2 space-y-2">
+            {summary.recentMatches.slice(0, 5).map((match) => {
+              const opponents = (match.won ? match.participantsB : match.participantsA)
+                .map((p) => (p.firstName ? `${p.firstName} ${p.lastName ?? ''}`.trim() : null))
+                .filter(Boolean)
+                .join(' / ');
+              return (
+                <li
+                  key={match.id}
+                  className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+                >
+                  <span className="text-secondary">
+                    vs. {opponents || 'Rival desconocido'} ·{' '}
+                    {MATCH_DATE_FORMATTER.format(new Date(match.playedAt))}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${
+                      match.won ? 'bg-action text-on-action' : 'bg-neutral-200 text-secondary'
+                    }`}
+                  >
+                    {match.won ? 'Victoria' : 'Derrota'}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function MyPerformanceSection() {
   const [data, setData] = useState(null);
 
@@ -626,9 +724,8 @@ const TIME_FORMATTER = new Intl.DateTimeFormat('es-CO', {
 // Real features this platform doesn't have yet -- named specifically, not
 // hidden and not claimed as one click away.
 const UPCOMING_FEATURES = [
-  'Historial de partidos y estadísticas',
+  'Metas personales y seguimiento de progreso',
   'Pago en línea de tus facturas',
-  'Camino a tu Master en el ranking interno',
 ];
 
 function addDaysToKey(baseKey, days) {
@@ -644,6 +741,23 @@ export function MyCtcjPage() {
   const [reservations, setReservations] = useState(null);
   const [error, setError] = useState(null);
   const [membershipStatus, setMembershipStatus] = useState(undefined);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    membershipClient
+      .getMyProfile()
+      .then((data) => {
+        if (!cancelled) setProfile(data);
+      })
+      .catch(() => {
+        // The welcome greeting falls back to a generic title -- not load-bearing.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -691,12 +805,13 @@ export function MyCtcjPage() {
   );
   const isJugador = (user?.roles ?? []).includes(ROLE_CODES.JUGADOR);
   const membershipDisplay = MEMBERSHIP_STATUS_DISPLAY[membershipStatus];
+  const nextTraining = reservations?.find((r) => r.reservationType === 'CLASS') ?? null;
 
   return (
     <Section
       heading={{
         eyebrow: 'Mi CTCJ',
-        title: 'Bienvenido a tu panel',
+        title: profile?.firstName ? `Hola, ${profile.firstName}` : 'Bienvenido a tu panel',
         lede: roleNames.length > 0 ? `Cuenta con rol: ${roleNames.join(', ')}` : undefined,
       }}
     >
@@ -713,6 +828,19 @@ export function MyCtcjPage() {
             {describeMembershipStatus(membershipStatus)}
           </span>
         </p>
+      ) : null}
+
+      {isJugador && nextTraining ? (
+        <div className="mt-6 rounded-lg border border-action bg-raised p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+            Tu próximo entrenamiento
+          </p>
+          <p className="mt-1 font-display text-lg font-semibold text-primary">
+            {DATE_FORMATTER.format(new Date(nextTraining.periodStart))} ·{' '}
+            {TIME_FORMATTER.format(new Date(nextTraining.periodStart))} –{' '}
+            {TIME_FORMATTER.format(new Date(nextTraining.periodEnd))}
+          </p>
+        </div>
       ) : null}
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[2fr_1fr]">
@@ -769,6 +897,7 @@ export function MyCtcjPage() {
       </div>
 
       {!isJugador ? <AffiliationSection /> : null}
+      {isJugador ? <MyRankingSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}
       {isJugador ? <MyPerformanceSection /> : null}

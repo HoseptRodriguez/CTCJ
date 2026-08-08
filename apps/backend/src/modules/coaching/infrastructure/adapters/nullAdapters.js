@@ -10,3 +10,12 @@ export function createNullPlayerEligibilityProvider() {
     },
   };
 }
+
+/** Fails open (empty map) -- this is display enrichment, not an authz gate. */
+export function createNullPlayerDirectoryProvider() {
+  return {
+    async getPlayerSummaries() {
+      return new Map();
+    },
+  };
+}

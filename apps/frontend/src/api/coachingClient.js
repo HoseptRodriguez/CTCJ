@@ -33,4 +33,8 @@ export const coachingClient = {
 
   /** @returns {Promise<{ratings: Array, summary: object}>} the caller's own full history + derived summary */
   getMyPerformance: () => request('/api/coaching/me/performance'),
+
+  /** @param {{limit?: number}} [params] @returns {Promise<{activity: Array}>} club-wide recent notes + ratings, newest-first */
+  getRecentActivity: ({ limit } = {}) =>
+    request(`/api/admin/coaching/recent-activity${limit ? `?limit=${limit}` : ''}`),
 };

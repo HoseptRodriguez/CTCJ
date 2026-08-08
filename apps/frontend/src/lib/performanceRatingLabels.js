@@ -1,4 +1,5 @@
-/** Spanish label per skill area (Phase 11's performance ratings). */
+/** Spanish label per skill area (Phase 11's performance ratings, expanded
+ * for the dashboards phase with SLICE/FOOTWORK/FITNESS/MENTALITY). */
 export const AREA_LABELS = {
   FOREHAND: 'Derecha',
   BACKHAND: 'Revés',
@@ -6,6 +7,10 @@ export const AREA_LABELS = {
   RETURN: 'Resto',
   VOLLEY: 'Volea',
   OVERHEAD: 'Remate',
+  SLICE: 'Slice',
+  FOOTWORK: 'Juego de pies',
+  FITNESS: 'Condición física',
+  MENTALITY: 'Mentalidad',
 };
 
 export function describeArea(area) {

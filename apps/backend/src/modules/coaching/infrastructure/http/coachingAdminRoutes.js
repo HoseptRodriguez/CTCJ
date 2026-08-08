@@ -40,5 +40,12 @@ export function createCoachingAdminRoutes(controller) {
     controller.listPlayerPerformance,
   );
 
+  router.get(
+    '/recent-activity',
+    requireAuth,
+    requireRole(COACH_STAFF_ROLES),
+    controller.getRecentActivity,
+  );
+
   return router;
 }

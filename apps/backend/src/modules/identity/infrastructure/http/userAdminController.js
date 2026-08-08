@@ -22,5 +22,10 @@ export function createUserAdminController(container) {
     res.status(200).json(result);
   });
 
-  return { lookup, setMembershipStatus };
+  const getPlayerCounts = asyncHandler(async (req, res) => {
+    const result = await container.getPlayerCounts();
+    res.status(200).json(result);
+  });
+
+  return { lookup, setMembershipStatus, getPlayerCounts };
 }

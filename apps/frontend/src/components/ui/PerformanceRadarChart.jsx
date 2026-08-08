@@ -11,7 +11,18 @@ import {
 
 import { describeArea } from '../../lib/performanceRatingLabels.js';
 
-const ALL_AREAS = ['FOREHAND', 'BACKHAND', 'SERVE', 'RETURN', 'VOLLEY', 'OVERHEAD'];
+const ALL_AREAS = [
+  'FOREHAND',
+  'BACKHAND',
+  'SERVE',
+  'RETURN',
+  'VOLLEY',
+  'OVERHEAD',
+  'SLICE',
+  'FOOTWORK',
+  'FITNESS',
+  'MENTALITY',
+];
 
 /**
  * Current strengths/weaknesses profile across the 6 skill axes. Areas with

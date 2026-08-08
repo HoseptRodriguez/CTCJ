@@ -20,6 +20,7 @@ function renderWithAuth(auth) {
         </Route>
         <Route path="/login" element={<div>Pagina de login</div>} />
         <Route path="/" element={<div>Inicio</div>} />
+        <Route path="/mi-ctcj" element={<div>Mi CTCJ</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -37,9 +38,10 @@ describe('RequireRole', () => {
     expect(screen.getByText('Pagina de login')).toBeInTheDocument();
   });
 
-  it('redirects home when authenticated but lacking any allowed role', () => {
+  it('redirects to their own dashboard (never the public homepage) when authenticated but lacking any allowed role', () => {
     renderWithAuth({ status: 'authenticated', user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
-    expect(screen.getByText('Inicio')).toBeInTheDocument();
+    expect(screen.getByText('Mi CTCJ')).toBeInTheDocument();
+    expect(screen.queryByText('Inicio')).not.toBeInTheDocument();
   });
 
   it('renders the protected route when the user has one of the allowed roles', () => {
