@@ -11,6 +11,7 @@ import { competitionClient } from '../api/competitionClient.js';
 import { goalsClient } from '../api/goalsClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
+import { tournamentClient } from '../api/tournamentClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { PerformanceLineChart } from '../components/ui/PerformanceLineChart.jsx';
@@ -1023,6 +1024,92 @@ function MyChallengesSection() {
   );
 }
 
+const ACTIVITY_DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
+
+function playerLabel(participant) {
+  return participant.firstName
+    ? `${participant.firstName} ${participant.lastName ?? ''}`.trim()
+    : null;
+}
+
+function participantsLabel(participants) {
+  return participants.map(playerLabel).filter(Boolean).join(' / ') || 'Jugador';
+}
+
+/** "Follow club activity" (Phase 3b) -- club-wide, not per-player, so
+ * there's nothing to fetch "for me" here; merges two already-public
+ * sources client-side, same shape as AdminDashboard.jsx's
+ * RecentActivitySection, since both sources are reachable directly with
+ * zero new cross-module backend coupling. */
+function ClubActivitySection() {
+  const [items, setItems] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([competitionClient.getRecentClubMatches(), tournamentClient.listTournaments()])
+      .then(([matchesData, tournamentsData]) => {
+        if (cancelled) return;
+        const matchItems = matchesData.matches.map((m) => {
+          const winners = m.winnerSide === 'A' ? m.participantsA : m.participantsB;
+          const losers = m.winnerSide === 'A' ? m.participantsB : m.participantsA;
+          return {
+            id: `match-${m.id}`,
+            at: m.playedAt,
+            text: `Resultado: ${participantsLabel(winners)} venció a ${participantsLabel(losers)} · ${
+              CATEGORY_LABELS[m.category] ?? m.category
+            } / ${MODALITY_LABELS[m.modality] ?? m.modality}`,
+          };
+        });
+        const tournamentItems = tournamentsData.tournaments
+          .filter((t) => t.status === 'COMPLETED')
+          .map((t) => ({
+            id: `tournament-${t.id}`,
+            at: t.completedAt,
+            text: `Torneo finalizado: ${t.name}`,
+          }));
+        const feed = [...matchItems, ...tournamentItems]
+          .sort((a, b) => new Date(b.at) - new Date(a.at))
+          .slice(0, 15);
+        setItems(feed);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
+      <h3 className="font-display text-lg font-semibold text-primary">Actividad del club</h3>
+      <p className="mt-1 text-sm text-secondary">
+        Resultados recientes y torneos finalizados en el club.
+      </p>
+
+      {items === null ? <p className="mt-3 text-sm text-secondary">Cargando...</p> : null}
+      {items?.length === 0 ? (
+        <p className="mt-3 text-sm text-secondary">Sin actividad reciente.</p>
+      ) : null}
+      {items?.length > 0 ? (
+        <ul className="mt-3 space-y-2">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center justify-between gap-2 rounded-md bg-raised px-4 py-2 text-sm"
+            >
+              <span className="text-secondary">{item.text}</span>
+              <span className="text-xs text-tertiary">
+                {ACTIVITY_DATE_FORMATTER.format(new Date(item.at))}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 // today + MAX_ADVANCE_DAYS (7 -- bookingPolicy.js): nothing can be booked
 // further out, so this covers every reservation the user could possibly have.
 const UPCOMING_DAYS = 8;
@@ -1221,6 +1308,7 @@ export function MyCtcjPage() {
       {!isJugador ? <AffiliationSection /> : null}
       {isJugador ? <MyGoalsSection /> : null}
       {isJugador ? <MyChallengesSection /> : null}
+      {isJugador ? <ClubActivitySection /> : null}
       {isJugador ? <MyRankingSection /> : null}
       {isJugador ? <MyPlanSection /> : null}
       {isJugador ? <MyNotesSection /> : null}

@@ -51,6 +51,12 @@ export function createCompetitionController(container) {
     res.status(200).json({ matches });
   });
 
+  const getRecentClubMatches = asyncHandler(async (req, res) => {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const result = await container.getRecentClubMatches({ limit });
+    res.status(200).json(result);
+  });
+
   const recordMatch = asyncHandler(async (req, res) => {
     const match = await container.recordMatch({
       seasonId: req.body.seasonId,
@@ -93,6 +99,7 @@ export function createCompetitionController(container) {
     getStandings,
     listMatches,
     getMyCompetitionSummary,
+    getRecentClubMatches,
     recordMatch,
     voidMatch,
   };

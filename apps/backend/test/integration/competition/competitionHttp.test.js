@@ -449,4 +449,91 @@ describe('Competition HTTP API (real Postgres)', () => {
       .expect(409);
     expect(res.body.code).toBe('player_not_eligible');
   });
+
+  describe('GET /api/competition/matches/recent (Club Activity, Phase 3b)', () => {
+    it('returns club-wide matches across categories/modalities without requiring either param', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const p1 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const p2 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const season = await createOpenSeason(app, adminToken);
+
+      await request(app)
+        .post('/api/competition/matches')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          seasonId: season.id,
+          category: 'CUARTA',
+          modality: 'SINGLES',
+          participantsA: [p1.id],
+          participantsB: [p2.id],
+          winnerSide: 'A',
+          setsWonA: 2,
+          setsWonB: 0,
+          playedAt: '2026-03-01',
+        })
+        .expect(201);
+      await request(app)
+        .post('/api/competition/matches')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          seasonId: season.id,
+          category: 'TERCERA',
+          modality: 'SINGLES',
+          participantsA: [p2.id],
+          participantsB: [p1.id],
+          winnerSide: 'B',
+          setsWonA: 0,
+          setsWonB: 2,
+          playedAt: '2026-03-10',
+        })
+        .expect(201);
+
+      const res = await request(app)
+        .get('/api/competition/matches/recent')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(res.body.matches).toHaveLength(2);
+      expect(res.body.matches[0].category).toBe('TERCERA'); // newest first
+    });
+
+    it('excludes VOID matches', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const p1 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const p2 = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const season = await createOpenSeason(app, adminToken);
+
+      const matchRes = await request(app)
+        .post('/api/competition/matches')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          seasonId: season.id,
+          category: 'CUARTA',
+          modality: 'SINGLES',
+          participantsA: [p1.id],
+          participantsB: [p2.id],
+          winnerSide: 'A',
+          setsWonA: 2,
+          setsWonB: 0,
+          playedAt: '2026-03-01',
+        })
+        .expect(201);
+      await request(app)
+        .post(`/api/competition/matches/${matchRes.body.id}/void`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ reason: 'Error de registro' })
+        .expect(200);
+
+      const res = await request(app)
+        .get('/api/competition/matches/recent')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(res.body.matches).toHaveLength(0);
+    });
+
+    it('unauthenticated requests get 401', async () => {
+      await request(app).get('/api/competition/matches/recent').expect(401);
+    });
+  });
 });

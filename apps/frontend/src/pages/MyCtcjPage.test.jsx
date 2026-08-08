@@ -13,6 +13,7 @@ import { competitionClient } from '../api/competitionClient.js';
 import { goalsClient } from '../api/goalsClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
+import { tournamentClient } from '../api/tournamentClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 import { MyCtcjPage } from './MyCtcjPage.jsx';
@@ -44,7 +45,11 @@ vi.mock('../api/challengesClient.js', () => ({
 }));
 
 vi.mock('../api/competitionClient.js', () => ({
-  competitionClient: { getMyCompetitionSummary: vi.fn() },
+  competitionClient: { getMyCompetitionSummary: vi.fn(), getRecentClubMatches: vi.fn() },
+}));
+
+vi.mock('../api/tournamentClient.js', () => ({
+  tournamentClient: { listTournaments: vi.fn() },
 }));
 
 vi.mock('../api/goalsClient.js', () => ({
@@ -110,6 +115,8 @@ describe('MyCtcjPage', () => {
     });
     goalsClient.getMyGoals.mockResolvedValue({ goals: [] });
     challengesClient.getMyChallenges.mockResolvedValue({ challenges: [] });
+    competitionClient.getRecentClubMatches.mockResolvedValue({ matches: [] });
+    tournamentClient.listTournaments.mockResolvedValue({ tournaments: [] });
   });
 
   it('shows a JUGADOR their own membership status', async () => {
@@ -778,5 +785,61 @@ describe('MyCtcjPage', () => {
 
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
     expect(challengesClient.getMyChallenges).not.toHaveBeenCalled();
+  });
+
+  it('a JUGADOR sees the club activity feed merging match results and completed tournaments', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+    competitionClient.getRecentClubMatches.mockResolvedValue({
+      matches: [
+        {
+          id: 'm1',
+          category: 'CUARTA',
+          modality: 'SINGLES',
+          winnerSide: 'A',
+          participantsA: [{ playerId: 'p1', firstName: 'Ana', lastName: 'Gomez' }],
+          participantsB: [{ playerId: 'p2', firstName: 'Luis', lastName: 'Perez' }],
+          playedAt: '2026-03-01T10:00:00.000Z',
+        },
+      ],
+    });
+    tournamentClient.listTournaments.mockResolvedValue({
+      tournaments: [
+        {
+          id: 't1',
+          name: 'Copa Verano',
+          status: 'COMPLETED',
+          completedAt: '2026-03-05T10:00:00.000Z',
+        },
+        { id: 't2', name: 'Copa Invierno', status: 'DRAFT', completedAt: null },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Actividad del club')).toBeInTheDocument();
+    expect(screen.getByText(/Resultado: Ana Gomez venció a Luis Perez/)).toBeInTheDocument();
+    expect(screen.getByText('Torneo finalizado: Copa Verano')).toBeInTheDocument();
+    expect(screen.queryByText(/Copa Invierno/)).not.toBeInTheDocument();
+  });
+
+  it('shows the empty state when there is no club activity', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', 'JUGADOR'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    expect(await screen.findByText('Sin actividad reciente.')).toBeInTheDocument();
+  });
+
+  it('a plain USUARIO never sees "Actividad del club" (never fetched)', async () => {
+    useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO'] } });
+    membershipClient.getMyStatus.mockResolvedValue({ status: null });
+
+    renderPage();
+
+    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+    expect(competitionClient.getRecentClubMatches).not.toHaveBeenCalled();
+    expect(tournamentClient.listTournaments).not.toHaveBeenCalled();
   });
 });

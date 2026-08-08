@@ -9,6 +9,7 @@ import { createVoidMatch } from '../application/useCases/voidMatch.js';
 import { createListMatches } from '../application/useCases/listMatches.js';
 import { createGetStandings } from '../application/useCases/getStandings.js';
 import { createGetMyCompetitionSummary } from '../application/useCases/getMyCompetitionSummary.js';
+import { createGetRecentClubMatches } from '../application/useCases/getRecentClubMatches.js';
 
 import { createPrismaSeasonRepository } from './persistence/prismaSeasonRepository.js';
 import { createPrismaCompetitionMatchRepository } from './persistence/prismaCompetitionMatchRepository.js';
@@ -61,6 +62,12 @@ export function buildCompetitionContainer({
       clubId,
     }),
     getMyCompetitionSummary: createGetMyCompetitionSummary({
+      competitionMatchRepository,
+      playerDirectoryProvider,
+      seasonRepository,
+      clubId,
+    }),
+    getRecentClubMatches: createGetRecentClubMatches({
       competitionMatchRepository,
       playerDirectoryProvider,
       seasonRepository,

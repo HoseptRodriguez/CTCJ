@@ -37,4 +37,15 @@ export class CompetitionMatchRepository {
   async listByPlayer(_seasonId, _playerId) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Club Activity feed support (Phase 3b): every non-void match played in
+   * a season, across every category/modality (unlike list(), which always
+   * requires one specific category+modality) -- club-wide, not
+   * player-scoped.
+   * @returns {Promise<CompetitionMatch[]>} newest played first
+   */
+  async listRecentByClub(_seasonId, _limit) {
+    throw new Error('Not implemented');
+  }
 }

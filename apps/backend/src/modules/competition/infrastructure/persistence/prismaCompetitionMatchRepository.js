@@ -109,5 +109,15 @@ export function createPrismaCompetitionMatchRepository(prisma) {
       });
       return records.map(toDomain);
     },
+
+    async listRecentByClub(seasonId, limit) {
+      const records = await prisma.competitionMatch.findMany({
+        where: { seasonId, status: { not: 'VOID' } },
+        include: { participants: true },
+        orderBy: { playedAt: 'desc' },
+        take: limit,
+      });
+      return records.map(toDomain);
+    },
   };
 }

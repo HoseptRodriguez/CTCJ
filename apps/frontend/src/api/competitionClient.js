@@ -61,6 +61,16 @@ export const competitionClient = {
   getMyCompetitionSummary: ({ matchLimit } = {}) =>
     request('/api/competition/me/summary', { params: matchLimit ? { matchLimit } : undefined }),
 
+  /**
+   * Club Activity feed support (Phase 3b): recent match results club-wide,
+   * across every category/modality -- no category/modality needed upfront
+   * (unlike getStandings/listMatches).
+   * @param {{limit?: number}} [params]
+   * @returns {Promise<{matches: Array}>}
+   */
+  getRecentClubMatches: ({ limit } = {}) =>
+    request('/api/competition/matches/recent', { params: limit ? { limit } : undefined }),
+
   /** @param {string} matchId @param {string} reason */
   voidMatch: (matchId, reason) => {
     voidMatchSchema.parse({ reason });
