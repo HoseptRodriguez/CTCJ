@@ -1380,6 +1380,12 @@ export function MyCtcjPage() {
         </Button>
       ) : null}
 
+      {isJugador ? (
+        <Button to="/mi-ctcj/comunidad" variant="ghost" className="mt-1 block px-0">
+          Ver comunidad
+        </Button>
+      ) : null}
+
       {isJugador && nextTraining ? (
         <div className="mt-6 rounded-lg border border-action bg-raised p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">

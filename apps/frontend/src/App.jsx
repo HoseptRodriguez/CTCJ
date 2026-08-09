@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { PublicLayout } from './layout/PublicLayout.jsx';
 import { StaffLayout } from './layout/StaffLayout.jsx';
+import { CommunityPage } from './pages/CommunityPage.jsx';
 import { ForgotPassword } from './pages/ForgotPassword.jsx';
 import { HomePage } from './pages/HomePage.jsx';
 import { Login } from './pages/Login.jsx';
@@ -16,6 +17,7 @@ import { AdminDashboard } from './pages/staff/AdminDashboard.jsx';
 import { ClinicalPage } from './pages/staff/ClinicalPage.jsx';
 import { CoachDashboard } from './pages/staff/CoachDashboard.jsx';
 import { CoachNotesPage } from './pages/staff/CoachNotesPage.jsx';
+import { CommunityModerationPage } from './pages/staff/CommunityModerationPage.jsx';
 import { CompetitionPage } from './pages/staff/CompetitionPage.jsx';
 import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
 import { FinancePage } from './pages/staff/FinancePage.jsx';
@@ -53,6 +55,7 @@ export function App() {
             <Route element={<RequireAuth />}>
               <Route path="/mi-ctcj" element={<MyCtcjPage />} />
               <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
+              <Route path="/mi-ctcj/comunidad" element={<CommunityPage />} />
             </Route>
           </Route>
 
@@ -80,6 +83,7 @@ export function App() {
                 <Route path="/staff/panel" element={<AdminDashboard />} />
                 <Route path="/staff/pagos" element={<PaymentsQueuePage />} />
                 <Route path="/staff/membresias" element={<MembershipStatusPage />} />
+                <Route path="/staff/comunidad" element={<CommunityModerationPage />} />
               </Route>
               <Route
                 element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.ENTRENADOR]} />}

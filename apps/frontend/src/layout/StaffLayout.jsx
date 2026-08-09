@@ -56,6 +56,14 @@ export function StaffLayout() {
                   Notas
                 </Link>
               ) : null}
+              {canSeePagos ? (
+                <Link
+                  to="/staff/comunidad"
+                  className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+                >
+                  Comunidad
+                </Link>
+              ) : null}
               <Link
                 to="/staff/competicion"
                 className="font-display text-sm font-semibold uppercase tracking-wide text-secondary"

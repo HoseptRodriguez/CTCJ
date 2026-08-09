@@ -41,6 +41,14 @@ import { createIdentityPlayerEligibilityProvider as createChallengesPlayerEligib
 import { createIdentityPlayerDirectoryProvider as createChallengesPlayerDirectoryProvider } from './modules/challenges/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createNotificationsSenderAdapter as createChallengesNotificationSender } from './modules/challenges/infrastructure/adapters/notificationSenderAdapter.js';
 import { createMatchRecorderAdapter as createChallengesMatchRecorder } from './modules/challenges/infrastructure/adapters/matchRecorderAdapter.js';
+import { buildCommunityContainer } from './modules/community/infrastructure/compositionRoot.js';
+import { createCommunityController } from './modules/community/infrastructure/http/communityController.js';
+import { createCommunityRoutes } from './modules/community/infrastructure/http/communityRoutes.js';
+import { createAdminController as createCommunityAdminController } from './modules/community/infrastructure/http/adminController.js';
+import { createAdminRoutes as createCommunityAdminRoutes } from './modules/community/infrastructure/http/adminRoutes.js';
+import { createIdentityPlayerEligibilityProvider as createCommunityPlayerEligibilityProvider } from './modules/community/infrastructure/adapters/playerEligibilityProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createCommunityPlayerDirectoryProvider } from './modules/community/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { createNotificationsSenderAdapter as createCommunityNotificationSender } from './modules/community/infrastructure/adapters/notificationSenderAdapter.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
 import { createBookingController } from './modules/booking/infrastructure/http/bookingController.js';
 import { createBookingRoutes } from './modules/booking/infrastructure/http/bookingRoutes.js';
@@ -165,6 +173,32 @@ export function createApp() {
   });
   const challengesMeController = createChallengesMeController(challengesContainer);
   app.use('/api/challenges/me', createChallengesMeRoutes(challengesMeController));
+
+  // Community (Phase 3c) -- posts/comments/likes/reports. Needs identity
+  // (eligibility/directory) and notifications (createNotification), both
+  // already built above -- unlike challenges' MatchRecorder, nothing here
+  // needs a build-then-patch step. Mounted at /api/community directly (no
+  // /me suffix), matching competition's/booking's naming convention: this
+  // router mixes club-wide feed reads with self-scoped writes under one
+  // gate, not a "my own resources" me-controller like challenges/billing/goals.
+  const communityPlayerEligibilityProvider = createCommunityPlayerEligibilityProvider({
+    checkIsJugador: identityContainer.checkIsJugador,
+  });
+  const communityPlayerDirectoryProvider = createCommunityPlayerDirectoryProvider({
+    getUserSummaries: identityContainer.getUserSummaries,
+  });
+  const communityNotificationSender = createCommunityNotificationSender({
+    createNotification: notificationsContainer.createNotification,
+  });
+  const communityContainer = buildCommunityContainer({
+    playerEligibilityProvider: communityPlayerEligibilityProvider,
+    playerDirectoryProvider: communityPlayerDirectoryProvider,
+    notificationSender: communityNotificationSender,
+  });
+  const communityController = createCommunityController(communityContainer);
+  app.use('/api/community', createCommunityRoutes(communityController));
+  const communityAdminController = createCommunityAdminController(communityContainer);
+  app.use('/api/admin/community', createCommunityAdminRoutes(communityAdminController));
 
   // Cross-module wiring (Phase 5/6): booking owns narrow, single-purpose
   // ports; these adapters are the only bridge to identity, and app.js is the

@@ -136,6 +136,12 @@ model User {
   challengesAsChallenger Challenge[] @relation("ChallengeAsChallenger")
   challengesAsOpponent   Challenge[] @relation("ChallengeAsOpponent")
 
+  // Community (Phase 3c) -- posts/comments/likes/reports this user authored
+  communityPosts       CommunityPost[]       @relation("CommunityPostAuthor")
+  communityComments    CommunityComment[]    @relation("CommunityCommentAuthor")
+  communityPostLikes   CommunityPostLike[]   @relation("CommunityPostLikeUser")
+  communityReportsMade CommunityReport[]     @relation("CommunityReportReporter")
+
   @@unique([clubId, email])
   @@map("users")
 }
@@ -1041,4 +1047,75 @@ model ChallengeMatchResult {
   // never declares @@index in schema.prisma, only in the hand-written
   // migration.
   @@map("challenge_match_results")
+}
+
+// Community (Phase 3c) -----------------------------------------------------
+// The only module in this codebase where a record can be hard-deleted --
+// see the raw-SQL migration's own comment for why.
+
+model CommunityPost {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  content   String   @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author   User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  // Real relation fields (unlike ChallengeMatchResult's plain-scalar
+  // precedent) -- needed for Prisma's `_count` aggregation in
+  // listPosts.js, which nothing in the challenges module ever required.
+  comments CommunityComment[]
+  likes    CommunityPostLike[]
+
+  // content-not-blank CHECK + created_at index added via raw-SQL migration.
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User          @relation("CommunityCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // content-not-blank CHECK + post_id index added via raw-SQL migration.
+  @@map("community_comments")
+}
+
+model CommunityPostLike {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation("CommunityPostLikeUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  // The underlying unique index is hand-named
+  // community_post_likes_post_user_unique in the raw-SQL migration (already
+  // created there) -- this @@unique only teaches the generated client the
+  // postId_userId compound-key selector, used for an atomic upsert()-based
+  // toggle in likePost.js.
+  @@unique([postId, userId])
+  @@map("community_post_likes")
+}
+
+model CommunityReport {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType String    @map("target_type") @db.VarChar(10) // POST|COMMENT
+  targetId   String    @map("target_id") @db.Uuid // no FK -- points into posts or comments
+  reporterId String    @map("reporter_id") @db.Uuid
+  reason     String?   @db.VarChar(300)
+  status     String    @default("PENDING") @db.VarChar(20) // PENDING|DISMISSED
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+  resolvedBy String?   @map("resolved_by") @db.Uuid // no FK, audit-only
+
+  reporter User @relation("CommunityReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  // target_type/status CHECKs + resolved-coherence CHECK + pending-unique
+  // index + status/target indexes added via raw-SQL migration.
+  @@map("community_reports")
 }
