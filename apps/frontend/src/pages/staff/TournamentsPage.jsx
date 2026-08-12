@@ -215,7 +215,7 @@ function ParticipantsPanel({ tournament, participants, onChanged }) {
           {participants.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between rounded-md bg-raised px-3 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-3 py-2 text-sm"
             >
               <span className="text-primary">
                 {participantLabel(p)}
@@ -272,7 +272,10 @@ function RecordResultForm({ tournamentId, match, onRecorded }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-2 space-y-2">
-      <div className="flex items-end gap-2">
+      {/* flex-wrap: this form lives inside a 180px-minimum bracket column
+          (see BracketView's overflow-x-auto wrapper) -- three inputs side
+          by side would otherwise overflow that column's own width. */}
+      <div className="flex flex-wrap items-end gap-2">
         <div>
           <label className="sr-only" htmlFor={`sets-a-${match.id}`}>
             Sets lado A
@@ -374,31 +377,38 @@ function BracketView({ tournamentId, participants, matches, onChanged }) {
   return (
     <div className="mt-6">
       <h4 className="font-display font-semibold text-primary">Cuadro</h4>
-      <div
-        className="mt-3 grid gap-4"
-        style={{ gridTemplateColumns: `repeat(${rounds.length}, minmax(180px, 1fr))` }}
-      >
-        {rounds.map((round) => (
-          <div key={round}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
-              Ronda {round}
-            </p>
-            <div className="mt-2 space-y-3">
-              {matches
-                .filter((m) => m.round === round)
-                .sort((a, b) => a.slot - b.slot)
-                .map((m) => (
-                  <MatchCard
-                    key={m.id}
-                    tournamentId={tournamentId}
-                    match={m}
-                    participantById={participantById}
-                    onChanged={onChanged}
-                  />
-                ))}
+      {/* A bracket is inherently as wide as it has rounds -- minmax(180px, 1fr)
+          per round means N rounds never fit a phone screen. Scroll it
+          horizontally within its own container instead of letting it force
+          the whole page to scroll (same pattern as BookingGrid.jsx's court
+          grid), rather than shrinking columns into illegibility. */}
+      <div className="mt-3 overflow-x-auto">
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: `repeat(${rounds.length}, minmax(180px, 1fr))` }}
+        >
+          {rounds.map((round) => (
+            <div key={round}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
+                Ronda {round}
+              </p>
+              <div className="mt-2 space-y-3">
+                {matches
+                  .filter((m) => m.round === round)
+                  .sort((a, b) => a.slot - b.slot)
+                  .map((m) => (
+                    <MatchCard
+                      key={m.id}
+                      tournamentId={tournamentId}
+                      match={m}
+                      participantById={participantById}
+                      onChanged={onChanged}
+                    />
+                  ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

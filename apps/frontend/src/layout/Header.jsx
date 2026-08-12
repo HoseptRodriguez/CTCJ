@@ -83,15 +83,24 @@ export function Header() {
           </Button>
         </div>
 
-        <button
-          type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-md text-primary lg:hidden"
-          aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((open) => !open)}
-        >
-          {mobileOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
-        </button>
+        {/* Notifications live inside the desktop-only block above -- a
+            logged-in user on a phone would otherwise have no way to reach
+            their own inbox at all. Keep the bell reachable here too,
+            alongside the hamburger, rather than burying it inside the menu
+            panel (matches StaffLayout.jsx's identical fix). */}
+        <div className="flex items-center gap-2 lg:hidden">
+          {status === 'authenticated' ? <NotificationBell /> : null}
+          <button
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-primary"
+            aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+          </button>
+        </div>
       </Container>
 
       {mobileOpen ? <MobileMenu isHome={isHome} onNavigate={() => setMobileOpen(false)} /> : null}

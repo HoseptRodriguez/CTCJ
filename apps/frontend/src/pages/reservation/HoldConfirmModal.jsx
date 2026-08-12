@@ -116,7 +116,7 @@ export function HoldConfirmModal({ slot, holderUserId, onClose, onConfirmed }) {
             <div className="mt-3">
               <Badge>Pago en línea: próximamente</Badge>
             </div>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="primary" onClick={handleConfirm} disabled={phase === 'confirming'}>
                 {phase === 'confirming' ? 'Confirmando...' : 'Confirmar reserva'}
               </Button>

@@ -146,7 +146,7 @@ function UpcomingClassesSection() {
           {classes.map((c, i) => (
             <li
               key={`${c.courtId}-${c.periodStart}-${i}`}
-              className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-1 rounded-md bg-raised px-4 py-2 text-sm"
             >
               <span className="text-secondary">
                 {DATE_TIME_FORMATTER.format(new Date(c.periodStart))} –{' '}
@@ -216,7 +216,7 @@ function QuickLookupSection() {
       {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
 
       {found ? (
-        <div className="mt-4 flex items-center justify-between rounded-md bg-raised px-4 py-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-raised px-4 py-3">
           <div>
             <p className="font-semibold text-primary">
               {found.firstName} {found.lastName}

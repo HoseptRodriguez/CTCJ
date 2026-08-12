@@ -211,7 +211,7 @@ function AchievementsSection() {
   return (
     <div className="mt-8 rounded-lg border border-neutral-200 bg-canvas p-6">
       <h3 className="font-display text-lg font-semibold text-primary">Logros</h3>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {badges.map((badge) => (
           <div
             key={badge.code}

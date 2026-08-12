@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { requestPasswordResetSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
+import { Button } from '../components/ui/Button.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 export function ForgotPassword() {
@@ -36,7 +37,7 @@ export function ForgotPassword() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold text-brand">Revisa tu correo</h1>
         <p className="mt-3 text-slate-600">
           Si <strong>{email}</strong> tiene una cuenta con nosotros, te enviamos un enlace para
@@ -50,7 +51,7 @@ export function ForgotPassword() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-16">
+    <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-semibold text-brand">Restablecer clave</h1>
       <p className="mt-2 text-sm text-slate-600">
         Ingresa tu correo y te enviaremos un enlace para crear una nueva clave.
@@ -73,13 +74,9 @@ export function ForgotPassword() {
 
         {apiError && <p className="text-sm text-red-600">{apiError}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-brand px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" disabled={submitting} className="w-full">
           {submitting ? 'Enviando...' : 'Enviar enlace'}
-        </button>
+        </Button>
       </form>
       <p className="mt-4 text-sm text-slate-600">
         <Link to="/login" className="font-medium text-brand-accent">

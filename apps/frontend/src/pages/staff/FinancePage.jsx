@@ -225,7 +225,7 @@ function CarteraSection({ data, error }) {
               {data.invoices.map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center justify-between rounded-md bg-raised px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-3 py-2"
                 >
                   <span>
                     {i.playerFirstName ?? 'Jugador desconocido'} {i.playerLastName ?? ''} · vence{' '}

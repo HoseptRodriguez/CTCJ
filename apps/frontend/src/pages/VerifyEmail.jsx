@@ -38,7 +38,7 @@ export function VerifyEmail() {
   }, [token]);
 
   return (
-    <div className="mx-auto max-w-md py-16 text-center">
+    <div className="mx-auto max-w-md px-4 py-16 text-center">
       {status === 'pending' && <p className="text-slate-600">Verificando tu correo...</p>}
 
       {status === 'success' && (

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loginSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
+import { Button } from '../components/ui/Button.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { resolvePostLoginRoute } from '../lib/postLoginRoute.js';
@@ -55,7 +56,7 @@ export function Login() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-16">
+    <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-semibold text-brand">Iniciar sesion</h1>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         <div>
@@ -94,13 +95,9 @@ export function Login() {
 
         {apiError && <p className="text-sm text-red-600">{apiError}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-brand px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" disabled={submitting} className="w-full">
           {submitting ? 'Ingresando...' : 'Ingresar'}
-        </button>
+        </Button>
       </form>
       <p className="mt-4 text-sm text-slate-600">
         No tienes cuenta?{' '}

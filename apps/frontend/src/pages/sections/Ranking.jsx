@@ -190,46 +190,48 @@ export function Ranking() {
               </p>
             ) : null}
             {!error && standings?.length > 0 ? (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr>
-                    <th className="pb-2 font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
-                      #
-                    </th>
-                    <th className="pb-2 font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
-                      Jugador
-                    </th>
-                    <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
-                      Puntos
-                    </th>
-                    <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
-                      Dif. sets
-                    </th>
-                    <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
-                      Master
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standings.map((row) => (
-                    <tr key={row.playerId} className="border-t border-neutral-200">
-                      <td className="py-2 text-secondary">{row.rank}</td>
-                      <td className="py-2 font-semibold text-primary">
-                        {row.playerName ?? 'Jugador'}
-                      </td>
-                      <td className="py-2 text-right text-secondary">{row.points}</td>
-                      <td className="py-2 text-right text-secondary">{row.setDiff}</td>
-                      <td className="py-2 text-right">
-                        {row.qualifiesForMasters ? (
-                          <span className="text-xs font-semibold uppercase tracking-wide text-green-600">
-                            Clasifica
-                          </span>
-                        ) : null}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-left text-sm">
+                  <thead>
+                    <tr>
+                      <th className="pb-2 font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        #
+                      </th>
+                      <th className="pb-2 font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        Jugador
+                      </th>
+                      <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        Puntos
+                      </th>
+                      <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        Dif. sets
+                      </th>
+                      <th className="pb-2 text-right font-display text-xs font-semibold uppercase tracking-wide text-tertiary">
+                        Master
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {standings.map((row) => (
+                      <tr key={row.playerId} className="border-t border-neutral-200">
+                        <td className="py-2 text-secondary">{row.rank}</td>
+                        <td className="py-2 font-semibold text-primary">
+                          {row.playerName ?? 'Jugador'}
+                        </td>
+                        <td className="py-2 text-right text-secondary">{row.points}</td>
+                        <td className="py-2 text-right text-secondary">{row.setDiff}</td>
+                        <td className="py-2 text-right">
+                          {row.qualifiesForMasters ? (
+                            <span className="text-xs font-semibold uppercase tracking-wide text-green-600">
+                              Clasifica
+                            </span>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : null}
           </div>
         ) : null}

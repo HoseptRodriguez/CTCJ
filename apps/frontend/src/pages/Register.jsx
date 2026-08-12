@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { registerSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
+import { Button } from '../components/ui/Button.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 const INITIAL_FORM = { email: '', password: '', firstName: '', lastName: '' };
@@ -47,7 +48,7 @@ export function Register() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold text-brand">Revisa tu correo</h1>
         <p className="mt-3 text-slate-600">
           Te enviamos un enlace de verificacion a <strong>{form.email}</strong>. Ábrelo para activar
@@ -58,7 +59,7 @@ export function Register() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-16">
+    <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-semibold text-brand">Crear cuenta</h1>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         <Field
@@ -95,13 +96,9 @@ export function Register() {
 
         {apiError && <p className="text-sm text-red-600">{apiError}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-brand px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" disabled={submitting} className="w-full">
           {submitting ? 'Creando cuenta...' : 'Crear cuenta'}
-        </button>
+        </Button>
       </form>
       <p className="mt-4 text-sm text-slate-600">
         Ya tienes cuenta?{' '}

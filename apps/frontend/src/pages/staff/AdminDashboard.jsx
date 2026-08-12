@@ -307,7 +307,7 @@ function RecentActivitySection() {
           {items.map((item) => (
             <li
               key={item.id}
-              className="flex items-center justify-between rounded-md bg-raised px-4 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-1 rounded-md bg-raised px-4 py-2 text-sm"
             >
               <span className="text-secondary">{item.text}</span>
               <span className="text-xs text-tertiary">

@@ -68,7 +68,7 @@ function ReportRow({ report, onResolved }) {
             <p className="mt-1 text-sm text-secondary">&ldquo;{report.reason}&rdquo;</p>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="primary"
             onClick={handleDeleteContent}
