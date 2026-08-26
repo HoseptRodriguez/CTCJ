@@ -106,7 +106,9 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: config.corsOrigin,
+      // Comma-separated in .env so a LAN IP (e.g. for testing on a phone)
+      // can be allowed alongside localhost without a schema change.
+      origin: config.corsOrigin.split(',').map((o) => o.trim()),
       credentials: true,
     }),
   );
@@ -363,6 +365,22 @@ export function createApp() {
   app.use('/api/clinical/me', createClinicalMeRoutes(clinicalMeController));
 
   // Other module routers are mounted here as each module is implemented.
+
+  // Production only: the frontend's built assets are served by this same
+  // process (single Render web service, same origin as /api -- no CORS,
+  // no LAN-IP drift). Dev keeps using Vite's own server + proxy instead.
+  // The GET-only, /api-and-/uploads-excluding fallback lets React Router
+  // handle any other path client-side (e.g. a deep link or a page refresh).
+  if (config.isProduction) {
+    const FRONTEND_DIST_DIR = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../../frontend/dist',
+    );
+    app.use(express.static(FRONTEND_DIST_DIR));
+    app.get(/^(?!\/api|\/uploads).*/, (_req, res) => {
+      res.sendFile(path.join(FRONTEND_DIST_DIR, 'index.html'));
+    });
+  }
 
   app.use((req, res) => {
     res.status(404).json({
