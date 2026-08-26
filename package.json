@@ -16,7 +16,7 @@
     "prisma:migrate": "npm run prisma:migrate -w apps/backend",
     "prisma:seed": "npm run prisma:seed -w apps/backend",
     "build": "npm run build -w apps/frontend && npm run prisma:generate -w apps/backend",
-    "start": "npm run prisma:deploy -w apps/backend && npm run start -w apps/backend",
+    "start": "npm run prisma:deploy -w apps/backend && npm run prisma:seed -w apps/backend && npm run start -w apps/backend",
     "test": "npm run test -w apps/backend && npm run test -w apps/frontend --if-present",
     "lint": "eslint . --ext .js,.jsx",
     "lint:arch": "depcruise apps/backend/src --config .dependency-cruiser.js",
