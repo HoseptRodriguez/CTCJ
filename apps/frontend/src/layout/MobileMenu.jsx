@@ -1,51 +1,64 @@
 import { Link } from 'react-router-dom';
 
-import { Button } from '../components/ui/LegacyButton.jsx';
+import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 import { NAV_LINKS } from './Header.jsx';
 
-export function MobileMenu({ isHome, onNavigate }) {
-  const { status, logout } = useAuth();
+/** Phone menu of the public header: big links, then the account actions. */
+export function MobileMenu({ account, onNavigate, onLogout }) {
+  const { status } = useAuth();
 
   return (
-    <div className="border-t border-neutral-200 bg-canvas lg:hidden" id="mobile-menu">
-      <nav className="flex flex-col px-4 py-4" aria-label="Principal, móvil">
+    <div className="border-t border-white/20 bg-navy-500 lg:hidden" id="mobile-menu">
+      <nav className="flex flex-col px-4 py-2" aria-label="Principal, móvil">
         {NAV_LINKS.map((link) => (
           <Link
-            key={link.hash}
-            to={isHome ? link.hash : `/${link.hash}`}
+            key={link.to}
+            to={link.to}
             onClick={onNavigate}
-            className="border-b border-neutral-100 py-3 font-display text-sm font-semibold uppercase tracking-wide text-secondary"
+            className="focus-ring flex min-h-btn-lg items-center border-b border-white/15 px-2 text-lead font-semibold text-white"
           >
             {link.label}
           </Link>
         ))}
       </nav>
-      <div className="flex flex-col gap-3 px-4 pb-6">
+      <div className="flex flex-col gap-3 px-4 pb-6 pt-2">
+        <Button
+          tone="dark"
+          size="lg"
+          to="/canchas"
+          icon={<CalendarIcon />}
+          onClick={onNavigate}
+          fullWidth
+        >
+          Reservar cancha
+        </Button>
         {status === 'authenticated' ? (
           <>
-            <Button to="/mi-ctcj" variant="ghost" onClick={onNavigate}>
-              Mi CTCJ
+            <Button tone="dark" variant="secondary" to={account.to} onClick={onNavigate} fullWidth>
+              {account.label}
             </Button>
             <Button
-              variant="outline"
+              tone="dark"
+              variant="ghost"
+              fullWidth
               onClick={() => {
                 onNavigate();
-                logout();
+                onLogout();
               }}
             >
               Cerrar sesión
             </Button>
           </>
         ) : (
-          <Button to="/login" variant="ghost" onClick={onNavigate}>
-            Ingresar
+          <Button tone="dark" variant="secondary" to="/login" onClick={onNavigate} fullWidth>
+            Entrar
           </Button>
         )}
-        <Button to="/canchas" variant="primary" onClick={onNavigate}>
-          Reservar cancha
-        </Button>
+        <FontSizeToggle tone="dark" className="justify-center" />
       </div>
     </div>
   );

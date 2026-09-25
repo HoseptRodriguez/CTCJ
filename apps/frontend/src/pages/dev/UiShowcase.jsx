@@ -237,7 +237,7 @@ function CardsSection() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card
           title="Próxima reserva"
-          description="Cancha 2 · Sábado 27 de septiembre"
+          description="Cancha 2 · Sábado 26 de septiembre"
           actions={<StatusBadge status="al-dia" label="Confirmada" />}
           footer={
             <div className="flex flex-wrap gap-3">
@@ -395,7 +395,7 @@ function FeedbackSection() {
       <ConfirmDialog
         open={open}
         title="¿Cancelar la reserva?"
-        description="Cancha 2, sábado 27 de septiembre a las 7:00 a. m. Si cancela, otra persona podrá reservar ese horario."
+        description="Cancha 2, sábado 26 de septiembre a las 7:00 a. m. Si cancela, otra persona podrá reservar ese horario."
         confirmLabel="Sí, cancelar reserva"
         loading={deleting}
         onConfirm={confirmDelete}

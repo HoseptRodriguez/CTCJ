@@ -56,7 +56,7 @@ export function SegmentedControl({
         onKeyDown={onKeyDown}
         className={cn(
           'inline-flex flex-wrap gap-1 rounded-xl bg-muted p-1',
-          fullWidth && 'flex w-full',
+          fullWidth && 'flex w-full flex-nowrap',
         )}
       >
         {options.map((option, i) => {
@@ -76,7 +76,7 @@ export function SegmentedControl({
               onClick={() => onChange(option.value)}
               className={cn(
                 'focus-ring inline-flex min-h-btn items-center justify-center gap-2 rounded-lg px-5 text-body transition-colors duration-fast',
-                fullWidth && 'flex-1',
+                fullWidth && 'flex-1 px-2',
                 checked
                   ? 'bg-lime font-bold text-navy-500 shadow-sm'
                   : 'font-semibold text-ink-soft hover:bg-surface hover:text-ink',

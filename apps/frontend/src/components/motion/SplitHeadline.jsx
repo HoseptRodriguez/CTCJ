@@ -17,7 +17,14 @@ const STAGGER_S = 0.12;
  * @param {{ lines: string[], as?: string, delay?: number, className?: string,
  *   lineClassName?: string }} props
  */
-export function SplitHeadline({ lines, as: Tag = 'h1', delay = 0, className, lineClassName }) {
+export function SplitHeadline({
+  lines,
+  as: Tag = 'h1',
+  delay = 0,
+  className,
+  lineClassName,
+  ...headingProps
+}) {
   const reduced = useReducedMotion();
   const root = useRef(null);
 
@@ -37,13 +44,16 @@ export function SplitHeadline({ lines, as: Tag = 'h1', delay = 0, className, lin
   );
 
   return (
-    <Tag ref={root} className={className}>
+    <Tag ref={root} className={className} {...headingProps}>
       {lines.map((line, i) => (
         // The clip gets a little vertical room so accents (Í, Ñ) and
         // descenders aren't cut off by the tight display line-height.
         <span key={i} className="-my-[0.1em] block overflow-hidden py-[0.1em]">
           <span data-line className={cn('block', lineClassName)}>
             {line}
+            {/* Keeps words apart in the heading's text ("montaña y"), which
+                block spans alone don't: textContent would run them together. */}
+            {i < lines.length - 1 ? ' ' : null}
           </span>
         </span>
       ))}

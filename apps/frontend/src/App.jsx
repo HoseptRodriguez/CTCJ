@@ -2,35 +2,68 @@ import { ROLE_CODES } from '@ctcj/shared';
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { ToastProvider } from './components/ui/Toast.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { PublicLayout } from './layout/PublicLayout.jsx';
 import { StaffLayout } from './layout/StaffLayout.jsx';
-import { CommunityPage } from './pages/CommunityPage.jsx';
 import { ForgotPassword } from './pages/ForgotPassword.jsx';
-import { HomePage } from './pages/HomePage.jsx';
 import { Login } from './pages/Login.jsx';
-import { MyCtcjPage } from './pages/MyCtcjPage.jsx';
-import { PlayerProfilePage } from './pages/PlayerProfilePage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
-import { AdminDashboard } from './pages/staff/AdminDashboard.jsx';
-import { ClinicalPage } from './pages/staff/ClinicalPage.jsx';
-import { CoachDashboard } from './pages/staff/CoachDashboard.jsx';
-import { CoachNotesPage } from './pages/staff/CoachNotesPage.jsx';
-import { CommunityModerationPage } from './pages/staff/CommunityModerationPage.jsx';
-import { CompetitionPage } from './pages/staff/CompetitionPage.jsx';
-import { CourtPricingPage } from './pages/staff/CourtPricingPage.jsx';
-import { FinancePage } from './pages/staff/FinancePage.jsx';
-import { MembershipStatusPage } from './pages/staff/MembershipStatusPage.jsx';
-import { PaymentsQueuePage } from './pages/staff/PaymentsQueuePage.jsx';
-import { PlansPage } from './pages/staff/PlansPage.jsx';
-import { RequestsPage } from './pages/staff/RequestsPage.jsx';
-import { TournamentsPage } from './pages/staff/TournamentsPage.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
 import { resolvePostLoginRoute } from './lib/postLoginRoute.js';
+
+/**
+ * Route-level code splitting: each heavy screen is its own chunk, so the
+ * public site never downloads the staff console's charts (recharts) and the
+ * console never downloads the home page's GSAP animations. Layouts show a
+ * loading state inside their <Outlet> while a chunk arrives.
+ */
+function lazyPage(load, name) {
+  return lazy(() => load().then((m) => ({ default: m[name] })));
+}
+
+const CommunityPage = lazyPage(() => import('./pages/CommunityPage.jsx'), 'CommunityPage');
+const HomePage = lazyPage(() => import('./pages/HomePage.jsx'), 'HomePage');
+const MyCtcjPage = lazyPage(() => import('./pages/MyCtcjPage.jsx'), 'MyCtcjPage');
+const PlayerProfilePage = lazyPage(
+  () => import('./pages/PlayerProfilePage.jsx'),
+  'PlayerProfilePage',
+);
+const AdminDashboard = lazyPage(() => import('./pages/staff/AdminDashboard.jsx'), 'AdminDashboard');
+const ClinicalPage = lazyPage(() => import('./pages/staff/ClinicalPage.jsx'), 'ClinicalPage');
+const CoachDashboard = lazyPage(() => import('./pages/staff/CoachDashboard.jsx'), 'CoachDashboard');
+const CoachNotesPage = lazyPage(() => import('./pages/staff/CoachNotesPage.jsx'), 'CoachNotesPage');
+const CommunityModerationPage = lazyPage(
+  () => import('./pages/staff/CommunityModerationPage.jsx'),
+  'CommunityModerationPage',
+);
+const CompetitionPage = lazyPage(
+  () => import('./pages/staff/CompetitionPage.jsx'),
+  'CompetitionPage',
+);
+const CourtPricingPage = lazyPage(
+  () => import('./pages/staff/CourtPricingPage.jsx'),
+  'CourtPricingPage',
+);
+const FinancePage = lazyPage(() => import('./pages/staff/FinancePage.jsx'), 'FinancePage');
+const MembershipStatusPage = lazyPage(
+  () => import('./pages/staff/MembershipStatusPage.jsx'),
+  'MembershipStatusPage',
+);
+const PaymentsQueuePage = lazyPage(
+  () => import('./pages/staff/PaymentsQueuePage.jsx'),
+  'PaymentsQueuePage',
+);
+const PlansPage = lazyPage(() => import('./pages/staff/PlansPage.jsx'), 'PlansPage');
+const RequestsPage = lazyPage(() => import('./pages/staff/RequestsPage.jsx'), 'RequestsPage');
+const TournamentsPage = lazyPage(
+  () => import('./pages/staff/TournamentsPage.jsx'),
+  'TournamentsPage',
+);
 
 // Design-system catalogue (/dev/ui). import.meta.env.DEV is statically false
 // in production builds, so Vite drops this branch and the lazy chunk entirely.
@@ -49,93 +82,97 @@ function StaffHome() {
 export function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/canchas" element={<ReservationPage />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route element={<RequireAuth />}>
-              <Route path="/mi-ctcj" element={<MyCtcjPage />} />
-              <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
-              <Route path="/mi-ctcj/comunidad" element={<CommunityPage />} />
-            </Route>
-          </Route>
-
-          <Route
-            element={
-              <RequireRole
-                roles={[
-                  ROLE_CODES.ADMINISTRADOR,
-                  ROLE_CODES.RECEPCION,
-                  ROLE_CODES.ENTRENADOR,
-                  ROLE_CODES.PSICOLOGO,
-                  ROLE_CODES.NEUROPSICOLOGO,
-                  ROLE_CODES.FISIOTERAPEUTA,
-                ]}
-              />
-            }
-          >
-            <Route element={<StaffLayout />}>
-              <Route path="/staff" element={<StaffHome />} />
-              <Route path="/staff/competicion" element={<CompetitionPage />} />
-              <Route path="/staff/torneos" element={<TournamentsPage />} />
-              <Route
-                element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
-              >
-                <Route path="/staff/panel" element={<AdminDashboard />} />
-                <Route path="/staff/pagos" element={<PaymentsQueuePage />} />
-                <Route path="/staff/membresias" element={<MembershipStatusPage />} />
-                <Route path="/staff/comunidad" element={<CommunityModerationPage />} />
-              </Route>
-              <Route
-                element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.ENTRENADOR]} />}
-              >
-                <Route path="/staff/panel-entrenador" element={<CoachDashboard />} />
-                <Route path="/staff/notas" element={<CoachNotesPage />} />
-              </Route>
-              <Route
-                element={
-                  <RequireRole
-                    roles={[
-                      ROLE_CODES.ADMINISTRADOR,
-                      ROLE_CODES.RECEPCION,
-                      ROLE_CODES.PSICOLOGO,
-                      ROLE_CODES.NEUROPSICOLOGO,
-                      ROLE_CODES.FISIOTERAPEUTA,
-                    ]}
-                  />
-                }
-              >
-                <Route path="/staff/clinico" element={<ClinicalPage />} />
-              </Route>
-              <Route element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR]} />}>
-                <Route path="/staff/precios" element={<CourtPricingPage />} />
-                <Route path="/staff/solicitudes" element={<RequestsPage />} />
-                <Route path="/staff/planes" element={<PlansPage />} />
-                <Route path="/staff/finanzas" element={<FinancePage />} />
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/canchas" element={<ReservationPage />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route element={<RequireAuth />}>
+                <Route path="/mi-ctcj" element={<MyCtcjPage />} />
+                <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
+                <Route path="/mi-ctcj/comunidad" element={<CommunityPage />} />
               </Route>
             </Route>
-          </Route>
 
-          {UiShowcase && (
             <Route
-              path="/dev/ui"
               element={
-                <Suspense fallback={null}>
-                  <UiShowcase />
-                </Suspense>
+                <RequireRole
+                  roles={[
+                    ROLE_CODES.ADMINISTRADOR,
+                    ROLE_CODES.RECEPCION,
+                    ROLE_CODES.ENTRENADOR,
+                    ROLE_CODES.PSICOLOGO,
+                    ROLE_CODES.NEUROPSICOLOGO,
+                    ROLE_CODES.FISIOTERAPEUTA,
+                  ]}
+                />
               }
-            />
-          )}
+            >
+              <Route element={<StaffLayout />}>
+                <Route path="/staff" element={<StaffHome />} />
+                <Route path="/staff/competicion" element={<CompetitionPage />} />
+                <Route path="/staff/torneos" element={<TournamentsPage />} />
+                <Route
+                  element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
+                >
+                  <Route path="/staff/panel" element={<AdminDashboard />} />
+                  <Route path="/staff/pagos" element={<PaymentsQueuePage />} />
+                  <Route path="/staff/membresias" element={<MembershipStatusPage />} />
+                  <Route path="/staff/comunidad" element={<CommunityModerationPage />} />
+                </Route>
+                <Route
+                  element={
+                    <RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.ENTRENADOR]} />
+                  }
+                >
+                  <Route path="/staff/panel-entrenador" element={<CoachDashboard />} />
+                  <Route path="/staff/notas" element={<CoachNotesPage />} />
+                </Route>
+                <Route
+                  element={
+                    <RequireRole
+                      roles={[
+                        ROLE_CODES.ADMINISTRADOR,
+                        ROLE_CODES.RECEPCION,
+                        ROLE_CODES.PSICOLOGO,
+                        ROLE_CODES.NEUROPSICOLOGO,
+                        ROLE_CODES.FISIOTERAPEUTA,
+                      ]}
+                    />
+                  }
+                >
+                  <Route path="/staff/clinico" element={<ClinicalPage />} />
+                </Route>
+                <Route element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR]} />}>
+                  <Route path="/staff/precios" element={<CourtPricingPage />} />
+                  <Route path="/staff/solicitudes" element={<RequestsPage />} />
+                  <Route path="/staff/planes" element={<PlansPage />} />
+                  <Route path="/staff/finanzas" element={<FinancePage />} />
+                </Route>
+              </Route>
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {UiShowcase && (
+              <Route
+                path="/dev/ui"
+                element={
+                  <Suspense fallback={null}>
+                    <UiShowcase />
+                  </Suspense>
+                }
+              />
+            )}
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }

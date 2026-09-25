@@ -3,15 +3,24 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loginSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
-import { Button } from '../components/ui/LegacyButton.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { PasswordField, TextField } from '../components/ui/Field.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { describeIdentityError } from '../lib/identityErrorMessages.js';
 import { resolvePostLoginRoute } from '../lib/postLoginRoute.js';
+
+import { AuthSplit, FormError } from './auth/AuthSplit.jsx';
 
 const INITIAL_FORM = { email: '', password: '' };
 
+const FIELD_MESSAGES = {
+  email: 'Escribe tu correo completo, por ejemplo nombre@correo.com.',
+  password: 'Escribe tu contraseña.',
+};
+
 export function Login() {
-  useDocumentTitle('Iniciar sesión');
+  useDocumentTitle('Entrar');
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [apiError, setApiError] = useState(null);
@@ -19,6 +28,8 @@ export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const from = location.state?.from;
+  const comingFromBooking = from?.pathname === '/canchas';
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -33,7 +44,7 @@ export function Login() {
     if (!result.success) {
       const errors = {};
       for (const issue of result.error.issues) {
-        errors[issue.path[0]] = issue.message;
+        errors[issue.path[0]] = FIELD_MESSAGES[issue.path[0]] ?? issue.message;
       }
       setFieldErrors(errors);
       return;
@@ -43,68 +54,72 @@ export function Login() {
     try {
       const session = await authClient.login(result.data);
       login(session);
-      // A user bounced to /login from a specific protected route (e.g. a
-      // bookmarked link) returns there; otherwise land on their own
-      // dashboard by role -- never back on the public homepage.
-      const redirectTo = location.state?.from?.pathname ?? resolvePostLoginRoute(session.roles);
+      // Back to where the person was sent from (including the chosen hour
+      // on /canchas?fecha=…&hora=…); otherwise their own area by role.
+      const redirectTo = from
+        ? `${from.pathname}${from.search ?? ''}`
+        : resolvePostLoginRoute(session.roles);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setApiError(err.message);
+      setApiError(describeIdentityError(err));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-2xl font-semibold text-brand">Iniciar sesion</h1>
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Correo
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:border-brand-accent focus:outline-none"
-          />
-          {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-            Contrasena
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:border-brand-accent focus:outline-none"
-          />
-          {fieldErrors.password && (
-            <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
-          )}
-          <Link to="/forgot-password" className="mt-1 inline-block text-xs text-brand-accent">
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
-
-        {apiError && <p className="text-sm text-red-600">{apiError}</p>}
-
-        <Button type="submit" variant="primary" disabled={submitting} className="w-full">
-          {submitting ? 'Ingresando...' : 'Ingresar'}
+    <AuthSplit
+      title="Entrar"
+      description={
+        comingFromBooking
+          ? 'Entra para reservar la hora que elegiste. Te llevamos de vuelta enseguida.'
+          : 'Usa el correo y la contraseña con los que te registraste.'
+      }
+    >
+      <FormError>{apiError}</FormError>
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <TextField
+          label="Correo"
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          value={form.email}
+          onChange={handleChange}
+          error={fieldErrors.email}
+        />
+        <PasswordField
+          label="Contraseña"
+          name="password"
+          autoComplete="current-password"
+          value={form.password}
+          onChange={handleChange}
+          error={fieldErrors.password}
+        />
+        <Button type="submit" size="lg" fullWidth loading={submitting} loadingText="Entrando…">
+          Entrar
         </Button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">
-        No tienes cuenta?{' '}
-        <Link to="/register" className="font-medium text-brand-accent">
-          Registrate
-        </Link>
-      </p>
-    </div>
+      <div className="mt-8 space-y-3 text-body">
+        <p>
+          <Link
+            to="/forgot-password"
+            className="focus-ring rounded font-semibold text-navy-500 underline underline-offset-4"
+          >
+            Olvidé mi contraseña
+          </Link>
+        </p>
+        <p className="text-ink-soft">
+          ¿No tienes cuenta?{' '}
+          <Link
+            to="/register"
+            state={from ? { from } : undefined}
+            className="focus-ring rounded font-semibold text-navy-500 underline underline-offset-4"
+          >
+            Crea una cuenta
+          </Link>
+        </p>
+      </div>
+    </AuthSplit>
   );
 }

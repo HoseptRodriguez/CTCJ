@@ -11,7 +11,7 @@ import { cn } from './cn.js';
  */
 export function ErrorState({
   title = 'No pudimos cargar esta información',
-  description = 'Revise su conexión a internet e intente de nuevo. Si el problema sigue, avise en recepción.',
+  description = 'Revisa tu conexión a internet e intenta de nuevo. Si el problema sigue, avisa en recepción.',
   onRetry,
   retryLabel = 'Intentar de nuevo',
   retrying = false,

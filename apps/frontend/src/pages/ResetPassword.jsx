@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { confirmPasswordResetSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
-import { Button } from '../components/ui/LegacyButton.jsx';
+import { AnimatedCheck } from '../components/motion/AnimatedCheck.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { PasswordField } from '../components/ui/Field.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { describeIdentityError } from '../lib/identityErrorMessages.js';
+
+import { AuthSplit, FormError } from './auth/AuthSplit.jsx';
+import { PasswordRules } from './Register.jsx';
 
 export function ResetPassword() {
-  useDocumentTitle('Nueva clave');
+  useDocumentTitle('Contraseña nueva');
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const [newPassword, setNewPassword] = useState('');
@@ -22,13 +28,13 @@ export function ResetPassword() {
     setApiError(null);
 
     if (newPassword !== confirmPassword) {
-      setFieldError('Las claves no coinciden.');
+      setFieldError('Las contraseñas no coinciden. Escribe la misma en los dos campos.');
       return;
     }
 
     const result = confirmPasswordResetSchema.safeParse({ token, newPassword });
     if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? 'Clave inválida.');
+      setFieldError(result.error.issues[0]?.message ?? 'Revisa la contraseña.');
       return;
     }
     setFieldError(null);
@@ -37,7 +43,7 @@ export function ResetPassword() {
       await authClient.confirmPasswordReset(result.data);
       setSubmitted(true);
     } catch (err) {
-      setApiError(err.message);
+      setApiError(describeIdentityError(err));
     } finally {
       setSubmitting(false);
     }
@@ -45,75 +51,55 @@ export function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-red-600">Enlace inválido</h1>
-        <p className="mt-3 text-slate-600">Falta el token en el enlace.</p>
-        <Link to="/forgot-password" className="mt-6 inline-block font-medium text-brand-accent">
-          Solicitar un nuevo enlace
-        </Link>
-      </div>
+      <AuthSplit title="Enlace inválido">
+        <FormError>
+          Al enlace le falta una parte. Pide uno nuevo para cambiar tu contraseña.
+        </FormError>
+        <Button to="/forgot-password" variant="secondary" size="lg">
+          Pedir un enlace nuevo
+        </Button>
+      </AuthSplit>
     );
   }
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-brand">Clave restablecida</h1>
-        <p className="mt-3 text-slate-600">
-          Ya puedes iniciar sesión con tu nueva clave. Cerramos todas tus sesiones activas por
-          seguridad.
-        </p>
-        <Link
-          to="/login"
-          className="mt-6 inline-block rounded bg-brand px-4 py-2 font-medium text-white"
-        >
-          Ir a iniciar sesión
-        </Link>
-      </div>
+      <AuthSplit title="Contraseña cambiada">
+        <div className="flex items-center gap-4">
+          <AnimatedCheck label="Contraseña cambiada" />
+          <p className="text-lead text-ink">Ya puedes entrar con tu contraseña nueva.</p>
+        </div>
+        <Button to="/login" size="lg" className="mt-8">
+          Entrar
+        </Button>
+      </AuthSplit>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-2xl font-semibold text-brand">Crea tu nueva clave</h1>
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+    <AuthSplit title="Contraseña nueva" description="Escríbela dos veces para evitar errores.">
+      <FormError>{apiError}</FormError>
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
         <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700">
-            Nueva clave
-          </label>
-          <input
-            id="newPassword"
-            name="newPassword"
-            type="password"
+          <PasswordField
+            label="Contraseña nueva"
+            autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:border-brand-accent focus:outline-none"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Entre 10 y 100 caracteres, con al menos una letra y un número.
-          </p>
+          <PasswordRules value={newPassword} />
         </div>
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
-            Confirma la nueva clave
-          </label>
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:border-brand-accent focus:outline-none"
-          />
-        </div>
-
-        {fieldError && <p className="text-sm text-red-600">{fieldError}</p>}
-        {apiError && <p className="text-sm text-red-600">{apiError}</p>}
-
-        <Button type="submit" variant="primary" disabled={submitting} className="w-full">
-          {submitting ? 'Guardando...' : 'Restablecer clave'}
+        <PasswordField
+          label="Repite la contraseña nueva"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          error={fieldError}
+        />
+        <Button type="submit" size="lg" fullWidth loading={submitting} loadingText="Guardando…">
+          Guardar contraseña
         </Button>
       </form>
-    </div>
+    </AuthSplit>
   );
 }

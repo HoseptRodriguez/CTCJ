@@ -170,7 +170,7 @@ function SlidePanelDemo() {
         open={open}
         onClose={() => setOpen(false)}
         title="Cobrar"
-        description="Cancha 2 · sábado 27 de septiembre, 7:00 a. m."
+        description="Cancha 2 · sábado 26 de septiembre, 7:00 a. m."
         footer={
           paid ? (
             <Button fullWidth size="lg" variant="secondary" onClick={() => setOpen(false)}>
@@ -266,7 +266,7 @@ function ListDemo() {
 }
 
 const TAB_CONTENT = {
-  proximas: 'Sábado 27 · Cancha 2 · 7:00 a. m.',
+  proximas: 'Sábado 26 · Cancha 2 · 7:00 a. m.',
   pasadas: 'Miércoles 17 · Cancha 1 · 6:00 p. m.',
   canceladas: 'No tiene reservas canceladas.',
 };

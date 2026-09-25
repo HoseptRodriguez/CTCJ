@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { authClient } from '../api/authClient.js';
+import { AnimatedCheck } from '../components/motion/AnimatedCheck.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Skeleton, SkeletonGroup } from '../components/ui/Skeleton.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { describeIdentityError } from '../lib/identityErrorMessages.js';
+
+import { AuthSplit, FormError } from './auth/AuthSplit.jsx';
 
 export function VerifyEmail() {
-  useDocumentTitle('Verificar correo');
+  useDocumentTitle('Confirmar correo');
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const [status, setStatus] = useState('pending'); // 'pending' | 'success' | 'error'
@@ -20,7 +26,9 @@ export function VerifyEmail() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setErrorMessage('Falta el token de verificacion en el enlace.');
+      setErrorMessage(
+        'Al enlace le falta una parte. Ábrelo de nuevo desde el correo que te enviamos.',
+      );
       return;
     }
     if (requestedTokenRef.current === token) {
@@ -33,33 +41,40 @@ export function VerifyEmail() {
       .then(() => setStatus('success'))
       .catch((err) => {
         setStatus('error');
-        setErrorMessage(err.message);
+        setErrorMessage(describeIdentityError(err));
       });
   }, [token]);
 
+  if (status === 'success') {
+    return (
+      <AuthSplit title="Correo confirmado">
+        <div className="flex items-center gap-4">
+          <AnimatedCheck label="Correo confirmado" />
+          <p className="text-lead text-ink">Tu cuenta está activa. Ya puedes entrar.</p>
+        </div>
+        <Button to="/login" size="lg" className="mt-8">
+          Entrar
+        </Button>
+      </AuthSplit>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AuthSplit title="No pudimos confirmar tu correo">
+        <FormError>{errorMessage}</FormError>
+        <Button to="/register" variant="secondary" size="lg">
+          Registrarme de nuevo
+        </Button>
+      </AuthSplit>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-md px-4 py-16 text-center">
-      {status === 'pending' && <p className="text-slate-600">Verificando tu correo...</p>}
-
-      {status === 'success' && (
-        <>
-          <h1 className="text-2xl font-semibold text-brand">Correo verificado</h1>
-          <p className="mt-3 text-slate-600">Ya puedes iniciar sesion.</p>
-          <Link
-            to="/login"
-            className="mt-6 inline-block rounded bg-brand px-4 py-2 font-medium text-white"
-          >
-            Ir a iniciar sesion
-          </Link>
-        </>
-      )}
-
-      {status === 'error' && (
-        <>
-          <h1 className="text-2xl font-semibold text-red-600">No se pudo verificar</h1>
-          <p className="mt-3 text-slate-600">{errorMessage}</p>
-        </>
-      )}
-    </div>
+    <AuthSplit title="Confirmando tu correo…">
+      <SkeletonGroup label="Confirmando tu correo…">
+        <Skeleton className="h-6 w-2/3" />
+      </SkeletonGroup>
+    </AuthSplit>
   );
 }

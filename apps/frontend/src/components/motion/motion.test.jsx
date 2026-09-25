@@ -59,7 +59,7 @@ describe('with prefers-reduced-motion: everything shows its final state, unanima
     setReducedMotion(true);
     render(<SplitHeadline lines={['Su club.', 'Su cancha.']} />);
     const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('Su club.Su cancha.');
+    expect(heading.textContent).toBe('Su club. Su cancha.');
     heading.querySelectorAll('[data-line]').forEach(expectAtRest);
   });
 

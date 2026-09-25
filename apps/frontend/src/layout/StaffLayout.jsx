@@ -1,5 +1,5 @@
+import { Suspense, useState } from 'react';
 import { ROLE_CODES } from '@ctcj/shared';
-import { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 
 import { Button } from '../components/ui/LegacyButton.jsx';
@@ -8,6 +8,7 @@ import { CloseIcon } from '../components/icons/CloseIcon.jsx';
 import { MenuIcon } from '../components/icons/MenuIcon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
+import { RouteLoading } from './RouteLoading.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
 import { StaffMobileMenu } from './StaffMobileMenu.jsx';
 
@@ -109,7 +110,9 @@ export function StaffLayout() {
 
       <main className="flex-1">
         <Container className="py-10">
-          <Outlet />
+          <Suspense fallback={<RouteLoading />}>
+            <Outlet />
+          </Suspense>
         </Container>
       </main>
     </div>
