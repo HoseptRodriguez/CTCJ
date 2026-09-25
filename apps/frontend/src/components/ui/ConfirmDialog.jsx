@@ -1,7 +1,10 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { AlertTriangleIcon } from '../icons/AlertTriangleIcon.jsx';
+import { DURATION, EASE, motionTransition, useReducedMotion } from '../../lib/motion.js';
+import { trapTabKey, useModalPageEffects } from '../../lib/useModal.js';
 
 import { Button } from './Button.jsx';
 
@@ -14,9 +17,24 @@ import { Button } from './Button.jsx';
  * (cancel), Tab stays inside, Escape cancels, focus returns to whatever
  * opened it. `onConfirm` may be async: the button shows progress and the
  * dialog stays open until it resolves.
+ *
+ * Enters with a short fade + rise and leaves slightly faster; instant under
+ * prefers-reduced-motion.
  */
-export function ConfirmDialog({
-  open,
+export function ConfirmDialog(props) {
+  const reduced = useReducedMotion();
+  useModalPageEffects(props.open);
+
+  return createPortal(
+    <AnimatePresence>
+      {props.open && <DialogContent key="confirm-dialog" reduced={reduced} {...props} />}
+    </AnimatePresence>,
+    document.body,
+  );
+}
+
+function DialogContent({
+  reduced,
   title,
   description,
   confirmLabel,
@@ -32,18 +50,8 @@ export function ConfirmDialog({
   const cancelRef = useRef(null);
 
   useEffect(() => {
-    if (!open) return undefined;
-    const previouslyFocused = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     cancelRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus?.();
-    };
-  }, [open]);
-
-  if (!open) return null;
+  }, []);
 
   function onKeyDown(event) {
     if (event.key === 'Escape' && !loading) {
@@ -51,22 +59,18 @@ export function ConfirmDialog({
       onCancel();
       return;
     }
-    if (event.key !== 'Tab') return;
-    const focusables = dialogRef.current.querySelectorAll('button:not([disabled])');
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    trapTabKey(event, dialogRef.current);
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-modal flex items-end justify-center bg-navy-900/60 p-4 sm:items-center">
-      <div
+  return (
+    <motion.div
+      className="fixed inset-0 z-modal flex items-end justify-center bg-navy-900/60 p-4 sm:items-center"
+      initial={reduced ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={motionTransition(reduced, { duration: DURATION.base })}
+    >
+      <motion.div
         ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
@@ -74,6 +78,14 @@ export function ConfirmDialog({
         aria-describedby={descriptionId}
         onKeyDown={onKeyDown}
         className="w-full max-w-lg rounded-xl bg-surface p-6 text-ink shadow-lg md:p-8"
+        initial={reduced ? false : { opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={
+          reduced
+            ? { opacity: 0, transition: { duration: 0 } }
+            : { opacity: 0, y: 8, transition: { duration: DURATION.fast, ease: EASE.exit } }
+        }
+        transition={motionTransition(reduced, { duration: DURATION.slow })}
       >
         <div className="flex items-start gap-4">
           {tone === 'danger' && (
@@ -103,8 +115,7 @@ export function ConfirmDialog({
             {confirmLabel}
           </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+      </motion.div>
+    </motion.div>
   );
 }

@@ -19,6 +19,8 @@ import { Tabs } from '../../components/ui/Tabs.jsx';
 import { ToastProvider, useToast } from '../../components/ui/Toast.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
+import { AnimationsShowcase } from './AnimationsShowcase.jsx';
+
 /**
  * /dev/ui -- development-only catalogue of the v2 design system. Mounted in
  * App.jsx behind import.meta.env.DEV and lazy-loaded, so it is never part of
@@ -60,6 +62,7 @@ export function UiShowcase() {
             <StatesSection />
             <NavigationSection />
             <FeedbackSection />
+            <AnimationsShowcase />
             <PhotosSection />
           </div>
         </main>

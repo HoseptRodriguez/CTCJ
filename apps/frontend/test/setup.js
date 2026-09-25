@@ -43,3 +43,20 @@ Element.prototype.getBoundingClientRect = () => ({
   y: 0,
   toJSON() {},
 });
+
+// jsdom doesn't implement matchMedia, which lib/motion.js's
+// useReducedMotion (and GSAP's ScrollTrigger) query. Default: no media query
+// matches, i.e. motion allowed. Tests that need reduced motion override it
+// with vi.spyOn(window, 'matchMedia') -- see components/motion/motion.test.jsx.
+if (typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  });
+}

@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   createContext,
   useCallback,
@@ -12,6 +13,7 @@ import { AlertTriangleIcon } from '../icons/AlertTriangleIcon.jsx';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon.jsx';
 import { CloseIcon } from '../icons/CloseIcon.jsx';
 import { InfoIcon } from '../icons/InfoIcon.jsx';
+import { DURATION, EASE, motionTransition, useReducedMotion } from '../../lib/motion.js';
 
 import { cn } from './cn.js';
 
@@ -59,18 +61,22 @@ export function ToastProvider({ children }) {
       {/* Two live regions: polite for confirmations, assertive for errors. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-toast flex flex-col items-center gap-3 p-4 sm:items-end">
         <div aria-live="polite" className="flex w-full flex-col items-center gap-3 sm:items-end">
-          {toasts
-            .filter((t) => t.tone !== 'error')
-            .map((t) => (
-              <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
-            ))}
+          <AnimatePresence initial={false}>
+            {toasts
+              .filter((t) => t.tone !== 'error')
+              .map((t) => (
+                <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
+              ))}
+          </AnimatePresence>
         </div>
         <div aria-live="assertive" className="flex w-full flex-col items-center gap-3 sm:items-end">
-          {toasts
-            .filter((t) => t.tone === 'error')
-            .map((t) => (
-              <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
-            ))}
+          <AnimatePresence initial={false}>
+            {toasts
+              .filter((t) => t.tone === 'error')
+              .map((t) => (
+                <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
+              ))}
+          </AnimatePresence>
         </div>
       </div>
     </ToastContext.Provider>
@@ -79,6 +85,7 @@ export function ToastProvider({ children }) {
 
 function ToastItem({ toast, onDismiss }) {
   const { Icon, className } = TONES[toast.tone] ?? TONES.info;
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (toast.tone === 'error') return undefined;
@@ -89,7 +96,18 @@ function ToastItem({ toast, onDismiss }) {
   return (
     // No role here: the aria-live containers above already exist before a
     // toast arrives, which is what makes screen readers announce it once.
-    <div
+    // Enters rising a little, leaves sideways faster; the rest of the stack
+    // slides into place (layout = transform). Instant with reduced motion.
+    <motion.div
+      layout={!reduced}
+      initial={reduced ? false : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={
+        reduced
+          ? { opacity: 0, transition: { duration: 0 } }
+          : { opacity: 0, x: 24, transition: { duration: DURATION.fast, ease: EASE.exit } }
+      }
+      transition={motionTransition(reduced, { duration: DURATION.base })}
       className={cn(
         'pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border-l-8 p-4 shadow-lg',
         className,
@@ -108,7 +126,7 @@ function ToastItem({ toast, onDismiss }) {
         <CloseIcon className="h-4 w-4" />
         Cerrar
       </button>
-    </div>
+    </motion.div>
   );
 }
 

@@ -1,5 +1,5 @@
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -12,6 +12,8 @@ function renderShowcase() {
     </MemoryRouter>,
   );
 }
+
+const region = (name) => within(screen.getByRole('region', { name }));
 
 describe('UiShowcase (/dev/ui)', () => {
   it('renders every design-system section without crashing', () => {
@@ -26,6 +28,7 @@ describe('UiShowcase (/dev/ui)', () => {
       'Vacío, error y carga',
       'Pestañas y selector',
       'Confirmación y avisos',
+      'Animaciones',
       'Fotos del club',
     ]) {
       expect(screen.getByRole('heading', { level: 2, name: section })).toBeInTheDocument();
@@ -34,7 +37,7 @@ describe('UiShowcase (/dev/ui)', () => {
 
   it('renders the club photos lazily except the first, with Spanish alt text', () => {
     renderShowcase();
-    const photos = screen
+    const photos = region('Fotos del club')
       .getAllByRole('img')
       .filter((img) => img.getAttribute('src')?.startsWith('/img/'));
     expect(photos).toHaveLength(6);
@@ -46,8 +49,9 @@ describe('UiShowcase (/dev/ui)', () => {
   it('confirm dialog: focuses the safe button, closes on Escape and returns focus', async () => {
     const user = userEvent.setup();
     renderShowcase();
-    const section = screen.getByRole('region', { name: 'Confirmación y avisos' });
-    const trigger = within(section).getByRole('button', { name: 'Cancelar reserva' });
+    const trigger = region('Confirmación y avisos').getByRole('button', {
+      name: 'Cancelar reserva',
+    });
 
     await user.click(trigger);
     const dialog = screen.getByRole('alertdialog', { name: '¿Cancelar la reserva?' });
@@ -57,23 +61,24 @@ describe('UiShowcase (/dev/ui)', () => {
     ).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    // Focus returns at once -- it doesn't wait for the exit animation.
     expect(trigger).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 
   it('tabs and segmented control move with the arrow keys', async () => {
     const user = userEvent.setup();
     renderShowcase();
+    const section = region('Pestañas y selector');
 
-    const proximas = screen.getByRole('tab', { name: 'Próximas' });
-    await user.click(proximas);
+    await user.click(section.getByRole('tab', { name: 'Próximas' }));
     await user.keyboard('{ArrowRight}');
-    expect(screen.getByRole('tab', { name: 'Pasadas' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: 'Pasadas' })).toHaveFocus();
+    expect(section.getByRole('tab', { name: 'Pasadas' })).toHaveAttribute('aria-selected', 'true');
+    expect(section.getByRole('tab', { name: 'Pasadas' })).toHaveFocus();
 
-    await user.click(screen.getByRole('radio', { name: 'Hoy' }));
+    await user.click(section.getByRole('radio', { name: 'Hoy' }));
     await user.keyboard('{ArrowRight}');
-    expect(screen.getByRole('radio', { name: 'Mañana' })).toHaveAttribute('aria-checked', 'true');
+    expect(section.getByRole('radio', { name: 'Mañana' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('error toasts stay until closed with the visible "Cerrar" button', async () => {
@@ -84,6 +89,43 @@ describe('UiShowcase (/dev/ui)', () => {
     expect(screen.getByText('No se pudo guardar el pago')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Cerrar' }));
-    expect(screen.queryByText('No se pudo guardar el pago')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText('No se pudo guardar el pago')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('animations section: every demo has a "Repetir" button', () => {
+    renderShowcase();
+    const section = region('Animaciones');
+    const demos = [
+      'HeroBallTrajectory',
+      'SplitHeadline',
+      'CountUp',
+      'AnimatedCheck',
+      'SlidePanel',
+      'AnimatedList',
+      'TabTransition',
+      'Toast y ConfirmDialog',
+      'ParallaxPhoto',
+    ];
+    for (const demo of demos) {
+      expect(section.getByRole('heading', { level: 3, name: demo })).toBeInTheDocument();
+    }
+    expect(section.getAllByRole('button', { name: 'Repetir' })).toHaveLength(demos.length);
+  });
+
+  it('animated list demo: "Marcar como pagada" moves the item to "Pagadas"', async () => {
+    const user = userEvent.setup();
+    renderShowcase();
+    const section = region('Animaciones');
+    const pending = () => within(section.getByRole('list', { name: 'Sin pagar' }));
+    const paid = () => within(section.getByRole('list', { name: 'Pagadas' }));
+
+    await user.click(pending().getAllByRole('button', { name: 'Marcar como pagada' })[0]);
+
+    await waitFor(() => expect(paid().getByText('Cancha 1 · 6:00 a. m.')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(pending().queryByText('Cancha 1 · 6:00 a. m.')).not.toBeInTheDocument(),
+    );
   });
 });
