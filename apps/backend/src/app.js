@@ -102,6 +102,14 @@ const UPLOADS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export function createApp() {
   const app = express();
 
+  // Render sits behind one reverse-proxy hop; without this, req.ip (used
+  // for both audit logging in authController and rate limiting below)
+  // would resolve to the proxy's address for every request instead of the
+  // real client.
+  if (config.isProduction) {
+    app.set('trust proxy', 1);
+  }
+
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(
