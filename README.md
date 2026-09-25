@@ -35,7 +35,7 @@ are recorded by staff at the front desk; permission-level RBAC (the
 `permissions` tables are seeded but authorization is role-based via
 `requireRole`); writes to `audit_logs`/`outbox_events` (see ADR-0007).
 
-`AUDITORIA.md` has the full audit: every frontend route and the endpoints
+`docs/AUDITORIA.md` has the full audit: every frontend route and the endpoints
 it calls, every Prisma model and migration, and deploy blockers.
 
 ## Prerequisites
@@ -134,7 +134,7 @@ client; `npm run start` applies migrations, seeds reference data
 (idempotent), and starts the API, which also serves `apps/frontend/dist`
 from the same origin. Serving both from one origin avoids CORS and keeps the
 `SameSite=Strict` refresh cookie working. Deploying to a serverless host
-such as Vercel needs more work — see §4 of `AUDITORIA.md`.
+such as Vercel needs more work — see §4 of `docs/AUDITORIA.md`.
 
 ## Project structure
 
