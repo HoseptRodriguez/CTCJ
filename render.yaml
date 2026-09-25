@@ -33,15 +33,9 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false
-      # Real transactional email provider (e.g. Resend) -- Mailhog was
-      # dev-only. Fill these in from the provider's dashboard.
-      - key: SMTP_HOST
+      # Production email goes through Resend (Mailhog is dev-only). The
+      # server refuses to boot without these -- see src/config/env.js.
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_FROM
+      - key: MAIL_FROM
         sync: false

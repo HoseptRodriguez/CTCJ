@@ -48,6 +48,7 @@ import { createPrismaGuardianshipRepository } from './persistence/prismaGuardian
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
+import { createResendEmailSender } from './email/resendEmailSender.js';
 import { createLocalDiskAvatarStorage } from './storage/localDiskAvatarStorage.js';
 import {
   createNullCompetitionProgressProvider,
@@ -85,13 +86,17 @@ export function buildIdentityContainer({
     accessSecret: config.jwt.accessSecret,
     accessTtlSeconds: config.jwt.accessTtlSeconds,
   });
-  const emailSender = createNodemailerEmailSender({
-    host: config.smtp.host,
-    port: config.smtp.port,
-    user: config.smtp.user,
-    password: config.smtp.password,
-    from: config.smtp.from,
-  });
+  // Production always has a Resend key (env.js refuses to boot without
+  // one); dev/test keep using SMTP -> Mailhog.
+  const emailSender = config.resend.apiKey
+    ? createResendEmailSender({ apiKey: config.resend.apiKey, from: config.resend.from })
+    : createNodemailerEmailSender({
+        host: config.smtp.host,
+        port: config.smtp.port,
+        user: config.smtp.user,
+        password: config.smtp.password,
+        from: config.smtp.from,
+      });
   const avatarStorage = createLocalDiskAvatarStorage({
     uploadsDir: AVATAR_UPLOADS_DIR,
     publicPath: '/uploads/avatars',
