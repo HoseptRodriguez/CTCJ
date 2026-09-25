@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { communityClient } from '../api/communityClient.js';
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { affiliationClient } from '../../api/affiliationClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', {

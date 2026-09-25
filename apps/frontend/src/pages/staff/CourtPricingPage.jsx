@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 
 function CourtRow({ court, onSaved }) {

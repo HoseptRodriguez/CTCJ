@@ -1,5 +1,5 @@
 import { Badge } from '../../components/ui/Badge.jsx';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { Section } from '../../components/ui/Section.jsx';
 
 const FEATURES = [

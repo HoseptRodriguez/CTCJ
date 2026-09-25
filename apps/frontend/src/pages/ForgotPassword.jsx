@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { requestPasswordResetSchema } from '@ctcj/shared';
 
 import { authClient } from '../api/authClient.js';
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 export function ForgotPassword() {

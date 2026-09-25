@@ -5,7 +5,7 @@ import { billingClient } from '../../api/billingClient.js';
 import { bookingClient } from '../../api/bookingClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { bogotaTodayKey } from '../reservation/DatePicker.jsx';
 
 const COP_FORMATTER = new Intl.NumberFormat('es-CO', {

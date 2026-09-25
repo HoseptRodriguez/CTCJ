@@ -3,7 +3,7 @@ import { PAYMENT_METHOD } from '@ctcj/shared';
 
 import { billingClient } from '../../api/billingClient.js';
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { CashFlowChart } from '../../components/ui/CashFlowChart.jsx';
 import { describeBillingError } from '../../lib/billingErrorMessages.js';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';

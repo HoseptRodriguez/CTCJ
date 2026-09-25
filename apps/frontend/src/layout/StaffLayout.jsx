@@ -2,7 +2,7 @@ import { ROLE_CODES } from '@ctcj/shared';
 import { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { Container } from '../components/ui/Container.jsx';
 import { CloseIcon } from '../components/icons/CloseIcon.jsx';
 import { MenuIcon } from '../components/icons/MenuIcon.jsx';

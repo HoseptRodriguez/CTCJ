@@ -9,12 +9,64 @@
  * Two things remain genuinely unresolved by the club (not this project's
  * call to make): a vector logo source, and horizontal hero photography.
  * Everything else here (colors, typography, spacing) is real and confirmed.
+ *
+ * REDESIGN (2026-09, "rediseno" branch): the tokens under "Design system v2"
+ * below are the accessible-for-adults system used by src/components/ui/*.
+ * The older tokens further down stay only until each existing page is
+ * migrated -- new code uses the v2 names. See src/styles/tokens.css for the
+ * measured contrast of every pair.
  */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
+        // --- Design system v2 ------------------------------------------------
+        // Every text/background pair used by the v2 components meets WCAG AA
+        // (ratios measured, see tokens.css). Brand colors are the club's.
+        page: '#F4F6F9', // app background
+        muted: '#E3E7EE', // skeletons, neutral tracks
+        surface: '#FFFFFF', // cards, dialogs, inputs
+        ink: {
+          DEFAULT: '#0E1A33', // body text -- 15.97:1 on page, 17.29:1 on surface
+          soft: '#4A5363', // secondary text -- 7.16:1 on page
+        },
+        line: {
+          DEFAULT: '#D5DBE4', // decorative dividers/card borders only
+          strong: '#8A93A3', // form field borders -- 3.10:1, the non-text minimum
+        },
+        lime: {
+          DEFAULT: '#9EE67C', // primary button on navy + active selection; navy text only (11.21:1)
+          hover: '#8AD968',
+        },
+        clay: {
+          DEFAULT: '#B8532A', // free courts, accents, fills -- 4.87:1 with white; only 4.50 on page, so use clay-dark for text
+          soft: '#F3E1D6',
+          dark: '#8A3A17',
+        },
+        amber: {
+          DEFAULT: '#F5B44A', // notices, notification counters -- navy text (9.17:1)
+          soft: '#FFF1CC',
+          dark: '#6B4600',
+        },
+        danger: {
+          DEFAULT: '#B3261E', // irreversible actions -- 6.54:1 with white
+          hover: '#9A2019',
+          soft: '#FBE9E7',
+        },
+        // Membership/payment states -- ALWAYS rendered with a text label
+        // (StatusBadge), never color alone.
+        status: {
+          'ok-bg': '#E4F7DA',
+          'ok-fg': '#2C5E17', // 6.84:1
+          'pending-bg': '#FFF1CC',
+          'pending-fg': '#6B4600', // 7.48:1
+          'overdue-bg': '#F3E1D6',
+          'overdue-fg': '#8A3A17', // 6.13:1
+          'suspended-bg': '#E3E7EE',
+          'suspended-fg': '#4A5363', // 6.25:1
+        },
+        // --- Legacy tokens (pre-redesign pages) ------------------------------
         navy: {
           50: '#E8ECF3',
           100: '#C9D2E2',
@@ -70,7 +122,7 @@ export default {
         'warning-fill': '#FFA500', // fill only, paired with navy text, never text-on-white
         info: '#2E4881',
         court: {
-          clay: '#B25B3C', // editorial/public-site use only, pending club approval
+          clay: '#B8532A', // aligned with the v2 brand clay
           clayLight: '#D98F72',
         },
         // Booking status tokens -- must match apps/backend's RESERVATION_STATUS
@@ -114,6 +166,17 @@ export default {
         sans: ['Archivo', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
       fontSize: {
+        // v2 semantic sizes (18px body; nothing under 16px). Rem-based, so
+        // FontSizeToggle's 115% root scale enlarges all of them together.
+        'body-sm': ['1rem', { lineHeight: '1.5' }], // 16px -- the floor
+        body: ['1.125rem', { lineHeight: '1.6' }], // 18px -- default text
+        lead: ['1.25rem', { lineHeight: '1.55' }], // 20px -- lg buttons, intros
+        h3: ['1.5rem', { lineHeight: '1.25' }], // 24px
+        h2: ['2rem', { lineHeight: '1.15' }], // 32px
+        title: ['3rem', { lineHeight: '1.05' }], // 48px -- page title (mobile). Not 'page': that's a color, and text-page would set both
+        'title-lg': ['3.5rem', { lineHeight: '1.05' }], // 56px -- page title (md+)
+        stat: ['2.75rem', { lineHeight: '1' }], // big numbers in StatCard
+        // Legacy scale
         xs: '0.8125rem',
         sm: '0.875rem',
         base: '1rem',
@@ -145,6 +208,7 @@ export default {
         sm: '2px',
         md: '4px',
         lg: '8px',
+        xl: '12px', // v2 cards and dialogs
         full: '9999px',
       },
       boxShadow: {
@@ -152,6 +216,10 @@ export default {
         sm: '0 1px 2px rgba(0, 26, 77, 0.06)',
         md: '0 2px 8px rgba(0, 26, 77, 0.08)',
         lg: '0 8px 24px rgba(0, 26, 77, 0.10)',
+        // v2 keyboard focus: 3px lime ring + 2px navy outer ring. Lime alone
+        // is only 1.49:1 on white (focus indicators need 3:1); the navy edge
+        // (16.73:1) makes it visible on light surfaces, the lime on navy.
+        focus: '0 0 0 3px #9EE67C, 0 0 0 5px #001A4D',
       },
       // Tailwind's default screens (640/768/1024/1280/1536) already match
       // the token breakpoints exactly -- no override needed.
@@ -178,10 +246,16 @@ export default {
         exit: 'cubic-bezier(0.3, 0, 1, 1)',
       },
       minHeight: {
+        btn: '48px', // v2 minimum for every control
+        'btn-lg': '64px', // v2 primary actions
         touch: '44px',
         court: '48px', // touch target for on-court, one-handed, in-sunlight use
       },
+      minWidth: {
+        btn: '48px',
+      },
       maxWidth: {
+        prose: '68ch',
         container: '1280px',
         editorial: '1440px',
       },

@@ -10,6 +10,34 @@
  * prefer the Tailwind utility classes over reading these directly.
  */
 :root {
+  /* --- Design system v2 (accessible for adults) ---------------------------
+     Measured WCAG contrast of every pair the v2 components use:
+       ink #0E1A33 on page #F4F6F9 ........ 15.97  | on surface #FFF ... 17.29
+       ink-soft #4A5363 on page ........... 7.16   | on surface ........ 7.75
+       white on navy #001A4D (primary btn)  16.73
+       navy on lime #9EE67C (btn on navy) . 11.21
+       white on clay #B8532A .............. 4.87   | navy on amber ..... 9.17
+       Al dia #2C5E17/#E4F7DA 6.84 · Pendiente #6B4600/#FFF1CC 7.48
+       Vencida #8A3A17/#F3E1D6 6.13 · Suspendida #4A5363/#E3E7EE 6.25
+       danger #B3261E / white ............. 6.54
+       field border #8A93A3 / white ....... 3.10 (non-text minimum 3:1)
+       lime / white ....................... 1.49 -> never alone: the focus
+       ring pairs it with a navy outer ring. */
+  --ds-navy: #001a4d;
+  --ds-lime: #9ee67c;
+  --ds-clay: #b8532a;
+  --ds-clay-soft: #f3e1d6;
+  --ds-amber: #f5b44a;
+  --ds-page: #f4f6f9;
+  --ds-surface: #ffffff;
+  --ds-ink: #0e1a33;
+  --ds-ink-soft: #4a5363;
+  --ds-line: #d5dbe4;
+  --ds-line-strong: #8a93a3;
+  --ds-danger: #b3261e;
+  --ds-focus-ring: 0 0 0 3px var(--ds-lime), 0 0 0 5px var(--ds-navy);
+
+  /* --- Legacy tokens (pre-redesign pages) --- */
   --color-navy-500: #001a4d;
   --color-navy-600: #001642;
   --color-green-300: #9ee67c;
@@ -31,8 +59,17 @@
   --color-brand-accent: #9ee67c;
 }
 
+/* "A+ Letra grande" (FontSizeToggle): every size in the app is rem-based,
+   so scaling the root scales all text together -- and is persisted in
+   localStorage, applied before first render by lib/fontScale.js. */
+html[data-font-scale='large'] {
+  font-size: 115%;
+}
+
 body {
   font-family: var(--font-body);
+  font-size: 1.125rem; /* 18px base text */
+  line-height: 1.6;
   color: var(--color-text-primary);
 }
 
@@ -41,6 +78,14 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
+}
+
+@layer components {
+  /* v2 keyboard focus: visible 3px lime + navy ring, keyboard only. */
+  .focus-ring:focus-visible {
+    outline: 2px solid transparent; /* keeps a ring in Windows high-contrast mode */
+    box-shadow: var(--ds-focus-ring);
+  }
 }
 
 /* RNF-A-08: motion communicates orientation, never spectacle -- respect

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { communityAdminClient } from '../../api/communityAdminClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeCommunityError } from '../../lib/communityErrorMessages.js';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', {

@@ -1,4 +1,4 @@
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { Section } from '../../components/ui/Section.jsx';
 
 const WHATSAPP_NUMBER = '+57 310 864 6361';

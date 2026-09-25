@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 
 /**
  * Mirrors the public site's MobileMenu.jsx pattern (same breakpoint, same

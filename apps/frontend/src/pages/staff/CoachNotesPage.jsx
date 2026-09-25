@@ -3,7 +3,7 @@ import { ROLE_CODES } from '@ctcj/shared';
 
 import { coachingClient } from '../../api/coachingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { PerformanceLineChart } from '../../components/ui/PerformanceLineChart.jsx';
 import { PerformanceRadarChart } from '../../components/ui/PerformanceRadarChart.jsx';
 import { describeCoachingError } from '../../lib/coachingErrorMessages.js';

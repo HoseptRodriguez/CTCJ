@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { bookingClient } from '../../api/bookingClient.js';
 import { coachingClient } from '../../api/coachingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { describeArea } from '../../lib/performanceRatingLabels.js';
 import { bogotaTodayKey } from '../reservation/DatePicker.jsx';

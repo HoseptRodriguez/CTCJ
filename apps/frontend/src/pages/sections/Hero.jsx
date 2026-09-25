@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { Container } from '../../components/ui/Container.jsx';
 
 const STATS = [

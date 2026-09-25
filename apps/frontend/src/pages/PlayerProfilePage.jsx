@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { goalsClient } from '../api/goalsClient.js';
 import { membershipClient } from '../api/membershipClient.js';
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { Section } from '../components/ui/Section.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { describeGoalsError } from '../lib/goalsErrorMessages.js';

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { PAYMENT_METHOD } from '@ctcj/shared';
 
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 import {
   MEMBERSHIP_STATUS_DISPLAY,

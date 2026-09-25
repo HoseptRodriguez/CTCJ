@@ -3,7 +3,7 @@ import { ROLE_CODES } from '@ctcj/shared';
 
 import { membershipClient } from '../../api/membershipClient.js';
 import { tournamentClient } from '../../api/tournamentClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { describeTournamentError } from '../../lib/tournamentErrorMessages.js';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { billingClient } from '../../api/billingClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeBillingError } from '../../lib/billingErrorMessages.js';
 
 const COP_FORMATTER = new Intl.NumberFormat('es-CO', {

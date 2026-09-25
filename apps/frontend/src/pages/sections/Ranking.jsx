@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { competitionClient } from '../../api/competitionClient.js';
 import { Badge } from '../../components/ui/Badge.jsx';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { cn } from '../../components/ui/cn.js';
 import { Section } from '../../components/ui/Section.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';

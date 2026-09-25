@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
 import { Badge } from '../../components/ui/Badge.jsx';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 
 // Explicit timeZone -- slot.start/end are UTC instants representing a

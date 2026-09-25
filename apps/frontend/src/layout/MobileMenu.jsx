@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 import { NAV_LINKS } from './Header.jsx';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { Section } from '../../components/ui/Section.jsx';
 
 export function ReservationPreview() {

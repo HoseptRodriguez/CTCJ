@@ -13,7 +13,7 @@ import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { tournamentClient } from '../api/tournamentClient.js';
 import { Badge } from '../components/ui/Badge.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button } from '../components/ui/LegacyButton.jsx';
 import { PerformanceLineChart } from '../components/ui/PerformanceLineChart.jsx';
 import { PerformanceRadarChart } from '../components/ui/PerformanceRadarChart.jsx';
 import { Section } from '../components/ui/Section.jsx';

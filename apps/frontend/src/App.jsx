@@ -1,4 +1,5 @@
 import { ROLE_CODES } from '@ctcj/shared';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
@@ -30,6 +31,12 @@ import { VerifyEmail } from './pages/VerifyEmail.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
 import { resolvePostLoginRoute } from './lib/postLoginRoute.js';
+
+// Design-system catalogue (/dev/ui). import.meta.env.DEV is statically false
+// in production builds, so Vite drops this branch and the lazy chunk entirely.
+const UiShowcase = import.meta.env.DEV
+  ? lazy(() => import('./pages/dev/UiShowcase.jsx').then((m) => ({ default: m.UiShowcase })))
+  : null;
 
 // The bare /staff route has no content of its own -- land every role on
 // their own dashboard, the same place login itself sends them
@@ -114,6 +121,17 @@ export function App() {
               </Route>
             </Route>
           </Route>
+
+          {UiShowcase && (
+            <Route
+              path="/dev/ui"
+              element={
+                <Suspense fallback={null}>
+                  <UiShowcase />
+                </Suspense>
+              }
+            />
+          )}
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

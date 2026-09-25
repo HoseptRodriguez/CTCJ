@@ -3,7 +3,7 @@ import { MEMBERSHIP_STATUS, ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
 
 import { billingClient } from '../../api/billingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button } from '../../components/ui/LegacyButton.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { describeBillingError } from '../../lib/billingErrorMessages.js';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
