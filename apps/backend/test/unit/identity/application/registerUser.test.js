@@ -64,13 +64,16 @@ describe('registerUser', () => {
     expect(deps.emailSender.sent[0].verificationUrl).toContain('/verify-email?token=');
   });
 
-  it('rejects registration with an email already in use', async () => {
-    await registerUser({
+  it('rejects registration with an email that belongs to a verified account', async () => {
+    const { userId } = await registerUser({
       email: 'jugador@example.com',
       password: 'ClaveSegura123',
       firstName: 'Ana',
       lastName: 'Gomez',
     });
+    const user = await deps.userRepository.findById(userId);
+    user.verifyEmail(new Date('2026-08-01T11:00:00Z'));
+    await deps.userRepository.update(user);
 
     await expect(
       registerUser({
@@ -80,5 +83,97 @@ describe('registerUser', () => {
         lastName: 'Usuario',
       }),
     ).rejects.toThrow(EmailAlreadyRegistered);
+  });
+
+  it('resends the verification email when the address belongs to a never-verified account', async () => {
+    const first = await registerUser({
+      email: 'jugador@example.com',
+      password: 'ClaveSegura123',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+    });
+
+    const second = await registerUser({
+      email: 'JUGADOR@example.com',
+      password: 'OtraClaveSegura1',
+      firstName: 'Otro',
+      lastName: 'Usuario',
+    });
+
+    expect(second.userId).toBe(first.userId);
+    expect(deps.emailSender.sent).toHaveLength(2);
+    expect(deps.emailSender.sent[1].toEmail).toBe('jugador@example.com');
+    expect(deps.emailSender.sent[1].verificationUrl).toContain('/verify-email?token=');
+    expect(deps.emailSender.sent[1].verificationUrl).not.toBe(
+      deps.emailSender.sent[0].verificationUrl,
+    );
+  });
+
+  it('never overwrites the credentials of the unverified account it resends for', async () => {
+    const { userId } = await registerUser({
+      email: 'jugador@example.com',
+      password: 'ClaveSegura123',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+    });
+
+    await registerUser({
+      email: 'jugador@example.com',
+      password: 'ClaveDelAtacante1',
+      firstName: 'Otro',
+      lastName: 'Usuario',
+    });
+
+    const user = await deps.userRepository.findById(userId);
+    expect(user.passwordHash).toBe('hashed:ClaveSegura123');
+    expect(user.firstName).toBe('Ana');
+  });
+
+  it('lets a registration whose verification email failed to send be retried', async () => {
+    const realSend = deps.emailSender.sendVerificationEmail;
+    deps.emailSender.sendVerificationEmail = async () => {
+      throw new Error('SMTP connection refused');
+    };
+    await expect(
+      registerUser({
+        email: 'jugador@example.com',
+        password: 'ClaveSegura123',
+        firstName: 'Ana',
+        lastName: 'Gomez',
+      }),
+    ).rejects.toThrow('SMTP connection refused');
+
+    deps.emailSender.sendVerificationEmail = realSend;
+    await expect(
+      registerUser({
+        email: 'jugador@example.com',
+        password: 'ClaveSegura123',
+        firstName: 'Ana',
+        lastName: 'Gomez',
+      }),
+    ).resolves.toEqual({ userId: expect.any(String) });
+    expect(deps.emailSender.sent).toHaveLength(1);
+  });
+
+  it('rejects an unverified address whose account is no longer pending (e.g. suspended)', async () => {
+    const { userId } = await registerUser({
+      email: 'jugador@example.com',
+      password: 'ClaveSegura123',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+    });
+    const user = await deps.userRepository.findById(userId);
+    user.status = 'SUSPENDED';
+    await deps.userRepository.update(user);
+
+    await expect(
+      registerUser({
+        email: 'jugador@example.com',
+        password: 'ClaveSegura123',
+        firstName: 'Ana',
+        lastName: 'Gomez',
+      }),
+    ).rejects.toThrow(EmailAlreadyRegistered);
+    expect(deps.emailSender.sent).toHaveLength(1);
   });
 });

@@ -178,17 +178,44 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
       .expect(400);
   });
 
-  it('rejects duplicate registration with 409', async () => {
+  it('rejects duplicate registration of a verified account with 409', async () => {
     const email = `dup-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
       .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
       .expect(201);
+    const verificationUrl = await fetchVerificationLinkFor(email);
+    const token = new URL(verificationUrl).searchParams.get('token');
+    await request(app).get('/api/auth/verify').query({ token }).expect(200);
 
     await request(app)
       .post('/api/auth/register')
       .send({ email, password: 'OtraClaveSegura1', firstName: 'Otra', lastName: 'Persona' })
       .expect(409);
+  });
+
+  it('re-registering a never-verified account resends verification and keeps the original password', async () => {
+    const email = `reenvio-${randomUUID()}@example.com`;
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .expect(201);
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email, password: 'OtraClaveSegura1', firstName: 'Otra', lastName: 'Persona' })
+      .expect(201);
+
+    const verificationUrl = await fetchVerificationLinkFor(email);
+    const token = new URL(verificationUrl).searchParams.get('token');
+    await request(app).get('/api/auth/verify').query({ token }).expect(200);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email, password: 'ClaveSegura123' })
+      .expect(200);
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email, password: 'OtraClaveSegura1' })
+      .expect(401);
   });
 
   it("GET /api/identity/me returns the caller's own profile, 401 unauthenticated", async () => {
