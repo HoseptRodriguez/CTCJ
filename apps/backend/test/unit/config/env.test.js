@@ -12,23 +12,26 @@ const PRODUCTION = {
   NODE_ENV: 'production',
   RESEND_API_KEY: 're_test_key',
   MAIL_FROM: 'CTCJ <no-reply@ctcj.co>',
+  BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_test',
 };
 
 describe('parseEnv', () => {
-  it('boots in development without any email config (Mailhog)', () => {
+  it('boots in development without any email/blob config (Mailhog + local disk)', () => {
     const config = parseEnv({ ...BASE, NODE_ENV: 'development' });
     expect(config.smtp.host).toBe('localhost');
     expect(config.smtp.port).toBe(1025);
     expect(config.resend.apiKey).toBe('');
+    expect(config.blob.readWriteToken).toBe('');
   });
 
-  it('boots in production when Resend is configured', () => {
+  it('boots in production when Resend and Blob are configured', () => {
     const config = parseEnv(PRODUCTION);
     expect(config.isProduction).toBe(true);
     expect(config.resend).toEqual({ apiKey: 're_test_key', from: 'CTCJ <no-reply@ctcj.co>' });
+    expect(config.blob.readWriteToken).toBe('vercel_blob_rw_test');
   });
 
-  it.each(['RESEND_API_KEY', 'MAIL_FROM'])(
+  it.each(['RESEND_API_KEY', 'MAIL_FROM', 'BLOB_READ_WRITE_TOKEN'])(
     'refuses to boot in production without %s, naming the variable',
     (key) => {
       const env = { ...PRODUCTION };
@@ -50,5 +53,6 @@ describe('parseEnv', () => {
     }
     expect(message).toContain('RESEND_API_KEY');
     expect(message).toContain('MAIL_FROM');
+    expect(message).toContain('BLOB_READ_WRITE_TOKEN');
   });
 });

@@ -50,6 +50,7 @@ import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
 import { createResendEmailSender } from './email/resendEmailSender.js';
 import { createLocalDiskAvatarStorage } from './storage/localDiskAvatarStorage.js';
+import { createVercelBlobAvatarStorage } from './storage/vercelBlobAvatarStorage.js';
 import {
   createNullCompetitionProgressProvider,
   createNullPerformanceProgressProvider,
@@ -97,10 +98,14 @@ export function buildIdentityContainer({
         password: config.smtp.password,
         from: config.smtp.from,
       });
-  const avatarStorage = createLocalDiskAvatarStorage({
-    uploadsDir: AVATAR_UPLOADS_DIR,
-    publicPath: '/uploads/avatars',
-  });
+  // Same shape: Vercel Blob whenever a token is configured (always in
+  // production -- env.js requires it), local disk in dev without one.
+  const avatarStorage = config.blob.readWriteToken
+    ? createVercelBlobAvatarStorage({ token: config.blob.readWriteToken })
+    : createLocalDiskAvatarStorage({
+        uploadsDir: AVATAR_UPLOADS_DIR,
+        publicPath: '/uploads/avatars',
+      });
   const clock = systemClock;
   const refreshTokenTtlMs = config.refreshToken.ttlDays * 24 * 60 * 60 * 1000;
 

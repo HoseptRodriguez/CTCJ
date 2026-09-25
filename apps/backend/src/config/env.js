@@ -28,6 +28,10 @@ const envSchema = z
     RESEND_API_KEY: z.string().optional().default(''),
     MAIL_FROM: z.string().optional().default(''),
 
+    // Avatar storage: Vercel Blob when set, local disk otherwise. Required
+    // in production, where local disk doesn't survive a redeploy.
+    BLOB_READ_WRITE_TOKEN: z.string().optional().default(''),
+
     // Only read by scripts/bootstrapAdmin.js in production.
     BOOTSTRAP_TOKEN: z.string().optional().default(''),
 
@@ -39,6 +43,8 @@ const envSchema = z
     const requiredInProduction = {
       RESEND_API_KEY: 'RESEND_API_KEY is required in production (email is sent through Resend)',
       MAIL_FROM: 'MAIL_FROM is required in production, e.g. "CTCJ <no-reply@your-domain>"',
+      BLOB_READ_WRITE_TOKEN:
+        'BLOB_READ_WRITE_TOKEN is required in production (avatars are stored in Vercel Blob)',
     };
     for (const [key, message] of Object.entries(requiredInProduction)) {
       if (!env[key].trim()) {
@@ -94,6 +100,10 @@ export function parseEnv(source) {
     resend: Object.freeze({
       apiKey: env.RESEND_API_KEY,
       from: env.MAIL_FROM,
+    }),
+
+    blob: Object.freeze({
+      readWriteToken: env.BLOB_READ_WRITE_TOKEN,
     }),
 
     bootstrapToken: env.BOOTSTRAP_TOKEN,

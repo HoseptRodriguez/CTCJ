@@ -39,6 +39,9 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      # Avatars go to Vercel Blob (Render's disk is wiped on every deploy).
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false
       # Only needed once, to run scripts/bootstrapAdmin.js from the Render
       # shell; delete it after the first administrator exists.
       - key: BOOTSTRAP_TOKEN

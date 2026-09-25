@@ -111,7 +111,18 @@ export function createApp() {
   }
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          // Avatars live in Vercel Blob (an absolute URL on its own CDN host)
+          // whenever BLOB_READ_WRITE_TOKEN is set -- helmet's default img-src
+          // ('self' data:) would block them on the production-served frontend.
+          'img-src': ["'self'", 'data:', 'https://*.public.blob.vercel-storage.com'],
+        },
+      },
+    }),
+  );
   app.use(
     cors({
       // Comma-separated in .env so a LAN IP (e.g. for testing on a phone)

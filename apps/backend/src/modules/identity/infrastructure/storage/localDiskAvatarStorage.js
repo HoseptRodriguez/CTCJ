@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const EXTENSION_BY_MIME_TYPE = {
+export const EXTENSION_BY_MIME_TYPE = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',

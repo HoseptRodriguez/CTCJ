@@ -20,6 +20,7 @@
   "dependencies": {
     "@ctcj/shared": "*",
     "@prisma/client": "^5.19.1",
+    "@vercel/blob": "^2.8.0",
     "argon2": "^0.41.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
