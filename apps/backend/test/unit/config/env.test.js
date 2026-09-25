@@ -13,6 +13,7 @@ const PRODUCTION = {
   RESEND_API_KEY: 're_test_key',
   MAIL_FROM: 'CTCJ <no-reply@ctcj.co>',
   BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_test',
+  APP_PUBLIC_URL: 'https://ctcj.co',
 };
 
 describe('parseEnv', () => {
@@ -40,6 +41,34 @@ describe('parseEnv', () => {
     },
   );
 
+  it('refuses to boot in production when APP_PUBLIC_URL is unset (localhost default)', () => {
+    const env = { ...PRODUCTION };
+    delete env.APP_PUBLIC_URL;
+    expect(() => parseEnv(env)).toThrow(/APP_PUBLIC_URL: .*required in production.*not localhost/);
+  });
+
+  it.each([
+    'http://localhost:5173',
+    'https://ctcj.localhost',
+    'http://127.0.0.1:3000',
+    'http://0.0.0.0',
+    'http://[::1]:5173',
+  ])('refuses to boot in production when APP_PUBLIC_URL is local (%s)', (url) => {
+    expect(() => parseEnv({ ...PRODUCTION, APP_PUBLIC_URL: url })).toThrow(/APP_PUBLIC_URL/);
+  });
+
+  it('accepts a localhost APP_PUBLIC_URL outside production', () => {
+    expect(parseEnv({ ...BASE, NODE_ENV: 'development' }).appPublicUrl).toBe(
+      'http://localhost:5173',
+    );
+  });
+
+  it('does not mistake a public host containing "localhost" for a local one', () => {
+    expect(
+      parseEnv({ ...PRODUCTION, APP_PUBLIC_URL: 'https://localhost-club.co' }).appPublicUrl,
+    ).toBe('https://localhost-club.co');
+  });
+
   it('treats a whitespace-only value as missing in production', () => {
     expect(() => parseEnv({ ...PRODUCTION, RESEND_API_KEY: '   ' })).toThrow(/RESEND_API_KEY/);
   });
@@ -54,5 +83,6 @@ describe('parseEnv', () => {
     expect(message).toContain('RESEND_API_KEY');
     expect(message).toContain('MAIL_FROM');
     expect(message).toContain('BLOB_READ_WRITE_TOKEN');
+    expect(message).toContain('APP_PUBLIC_URL');
   });
 });

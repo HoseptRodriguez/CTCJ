@@ -1,7 +1,7 @@
 # Auditoría técnica — CTCJ (`ctcj-platform`)
 
 **Auditoría inicial:** 2026-09-25, sobre HEAD `25b169a`, en solo lectura.
-**Última actualización:** 2026-09-25, estado tras el commit `273f061` y los arreglos de la tabla siguiente.
+**Última actualización:** 2026-09-25, estado tras el commit «Require a public APP_PUBLIC_URL in production» y los arreglos de la tabla siguiente.
 **Repositorio:** `C:\Users\KTFUS\ctcj-platform`, rama `main`.
 
 ## Historial de arreglos
@@ -16,6 +16,7 @@
 | `275298a` | Avatares en Vercel Blob (disco solo en desarrollo sin token); CSP `img-src` ampliada                                                    | §4, punto 3                                        |
 | `5dcba18` | README reescrito con los 11 módulos; se elimina `VITE_API_BASE_URL`, que nada usaba                                                     | README desactualizado / §4, punto 7                |
 | `273f061` | Parches de seguridad: nodemailer, express, body-parser, qs, react-router(-dom)                                                          | 4 de los 6 paquetes vulnerables (quedan 2, ver §6) |
+| (último)  | `APP_PUBLIC_URL` obligatoria en producción y distinta de localhost; el servidor no arranca si falta                                     | §4.3, punto 10                                     |
 
 **Otros cambios:**
 
@@ -28,7 +29,7 @@
 
 1. **Los 11 módulos existen, están montados en `app.js`, tienen tests y tienen UI.** El README ya lo refleja (`5dcba18`).
 2. **Tests: todo en verde.**
-   - `npm test`: 954 de 954 (backend 717 y frontend 237).
+   - `npm test`: 962 de 962 (backend 725 y frontend 237).
    - Integración contra `ctcj_test`: 201 de 201.
 3. **Brechas funcionales que siguen abiertas:**
    - no hay pasarela de pago en línea;
@@ -263,18 +264,20 @@ Todo lo que era común a cualquier destino ya está resuelto. Lo pendiente son i
 | 15  | **`argon2` nativo**                                                                                                                  | `identity/infrastructure/security/`                                   | Probar en un preview; alternativa `@node-rs/argon2`                                                                                               |
 | 16  | **Build de monorepo** (`@ctcj/shared`)                                                                                               | workspaces                                                            | `npm ci` en la raíz                                                                                                                               |
 
-### 4.3 Configuración que sigue sin validarse
+### 4.3 Configuración validada al arrancar
 
-| #   | Problema                                                                                                                                                                                              | Qué haría falta                                                                                             |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 10  | `APP_PUBLIC_URL` vale `http://localhost:5173` por defecto y con él se construyen los enlaces de verificación y de reset. En producción, olvidarlo produce correos con enlaces rotos sin ningún error. | Hacerlo obligatorio y distinto de localhost cuando `NODE_ENV=production`, igual que las variables de correo |
+| #   | Problema                                                                                                                                                                                               | Estado                                                                                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10  | `APP_PUBLIC_URL` vale `http://localhost:5173` por defecto y con él se construyen los enlaces de verificación y de reset. En producción, olvidarlo producía correos con enlaces rotos sin ningún error. | ✅ **Resuelta** (commit «Require a public APP_PUBLIC_URL in production»). Con `NODE_ENV=production`, `parseEnv` rechaza el arranque si falta (cae en el valor por defecto) o si apunta a un host local: `localhost`, `*.localhost`, `127.x.x.x`, `0.0.0.0` o `[::1]`. Cubierto con 8 tests nuevos en `config/env.test.js`. |
+
+Con esto, todas las variables que el arranque en producción exige (`RESEND_API_KEY`, `MAIL_FROM`, `BLOB_READ_WRITE_TOKEN` y `APP_PUBLIC_URL`) fallan de forma temprana y con un mensaje que nombra cada una.
 
 ### 4.4 Checklist para desplegar en Render hoy
 
 1. En el dashboard de Render, configurar:
    - `RESEND_API_KEY` y `MAIL_FROM` (dominio verificado en Resend);
    - `BLOB_READ_WRITE_TOKEN` (store de Vercel Blob);
-   - `APP_PUBLIC_URL` y `CORS_ORIGIN`, con la URL real;
+   - `APP_PUBLIC_URL` (obligatoria: el servidor no arranca sin ella o con localhost) y `CORS_ORIGIN`, con la URL real;
    - `BOOTSTRAP_TOKEN`, un secreto de 24+ caracteres.
 2. Registrar la cuenta del administrador y verificar el correo.
 3. Desde el shell de Render: `node apps/backend/scripts/bootstrapAdmin.js <email> --confirm --token "$BOOTSTRAP_TOKEN"`.
@@ -288,14 +291,14 @@ Todo lo que era común a cualquier destino ya está resuelto. Lo pendiente son i
 
 | Suite        | Archivos | Tests   | Resultado                  |
 | ------------ | -------- | ------- | -------------------------- |
-| Backend unit | 151      | 717     | ✅ 717 / 717               |
+| Backend unit | 151      | 725     | ✅ 725 / 725               |
 | Frontend     | 34       | 237     | ✅ 237 / 237               |
-| **Total**    | **185**  | **954** | **✅ 954 pasan, 0 fallan** |
+| **Total**    | **185**  | **962** | **✅ 962 pasan, 0 fallan** |
 
-**Tests unitarios nuevos respecto a la auditoría inicial (+27):**
+**Tests unitarios nuevos respecto a la auditoría inicial (+35):**
 
 - `registerUser`: +4 (reenvío, no sobrescribe credenciales, reintento tras fallo del SMTP, cuenta suspendida);
-- `config/env`: 7 (arranque en producción);
+- `config/env`: 15 (arranque en producción, incluidos 8 de `APP_PUBLIC_URL`);
 - `resendEmailSender`: 3;
 - `vercelBlobAvatarStorage`: 2;
 - `bootstrapAdminPolicy`: 11.

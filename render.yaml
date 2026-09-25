@@ -27,8 +27,10 @@ services:
         value: '30'
       - key: REFRESH_COOKIE_NAME
         value: ctcj_refresh
-      # Set after the service's first deploy, once its real onrender.com
-      # URL (or a custom domain) is known -- see the Render dashboard.
+      # REQUIRED: the server refuses to boot if this is unset or localhost
+      # (it builds the links in verification/reset emails). Use the
+      # service's onrender.com URL (e.g. https://ctcj-platform.onrender.com)
+      # or the custom domain.
       - key: APP_PUBLIC_URL
         sync: false
       - key: CORS_ORIGIN

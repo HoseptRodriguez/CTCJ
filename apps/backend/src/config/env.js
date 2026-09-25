@@ -35,6 +35,8 @@ const envSchema = z
     // Only read by scripts/bootstrapAdmin.js in production.
     BOOTSTRAP_TOKEN: z.string().optional().default(''),
 
+    // Base of the links in verification/password-reset emails. The localhost
+    // default only makes sense in development -- see superRefine below.
     APP_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   })
@@ -51,7 +53,30 @@ const envSchema = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message });
       }
     }
+    // Unset falls back to the localhost default, so one check covers both
+    // "missing" and "pointing at localhost" -- either way every emailed link
+    // would be broken without any error.
+    if (isLocalUrl(env.APP_PUBLIC_URL)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['APP_PUBLIC_URL'],
+        message:
+          'APP_PUBLIC_URL is required in production and must be the public site URL, not localhost ' +
+          '(it builds the links in verification and password-reset emails)',
+      });
+    }
   });
+
+function isLocalUrl(url) {
+  const { hostname } = new URL(url);
+  return (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '0.0.0.0' ||
+    hostname === '[::1]' ||
+    /^127\.\d+\.\d+\.\d+$/.test(hostname)
+  );
+}
 
 /**
  * Validates an environment object and returns the frozen app config. Throws
