@@ -2,9 +2,10 @@ node_modules/
 dist/
 build/
 
-# env -- every .env variant is ignored except the checked-in template
+# env -- every .env variant is ignored except the checked-in templates
 .env*
 !.env.example
+!apps/backend/.env.test.example
 
 # logs
 *.log
