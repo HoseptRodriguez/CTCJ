@@ -39,3 +39,7 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      # Only needed once, to run scripts/bootstrapAdmin.js from the Render
+      # shell; delete it after the first administrator exists.
+      - key: BOOTSTRAP_TOKEN
+        sync: false

@@ -1,20 +1,24 @@
 /**
- * Dev-only bootstrap: grants ADMINISTRADOR to an already-registered user.
+ * Bootstrap: grants ADMINISTRADOR to an already-registered, verified user.
  *
- * Solves a real chicken-and-egg gap in Phase 1's RBAC design: granting a
- * role requires an existing ADMINISTRADOR (POST /api/admin/roles/grant is
- * itself gated by requireRole(ADMINISTRADOR)), so the very first admin can
- * never be created through the normal API. This script is the one place
- * that gap is closed -- and only in development.
+ * Solves a real chicken-and-egg gap in the RBAC design: granting a role
+ * requires an existing ADMINISTRADOR (POST /api/admin/roles/grant is itself
+ * gated by requireRole(ADMINISTRADOR)), so the very first admin can never be
+ * created through the normal API. This script is the one place that gap is
+ * closed.
  *
  * NOT a backdoor: it doesn't touch auth, doesn't accept or set a password,
- * and grants nothing to an account that doesn't already exist. The target
- * user must have already registered and verified their email through the
- * normal /register + /verify flow; this script only adds a UserRole row,
- * the exact same effect POST /api/admin/roles/grant has -- just usable once,
- * by a developer with DB access, before any admin exists yet.
+ * and grants nothing to an account that doesn't already exist and hasn't
+ * verified its email through the normal /register + /verify flow. It only
+ * adds a UserRole row -- the same effect POST /api/admin/roles/grant has.
  *
- * Usage: node scripts/bootstrapAdmin.js <email>
+ * Usage:
+ *   development: node scripts/bootstrapAdmin.js <email>
+ *   production:  BOOTSTRAP_TOKEN=<secret> node scripts/bootstrapAdmin.js <email> --confirm --token <secret>
+ *
+ * In production the token must match BOOTSTRAP_TOKEN (>= 24 chars, compared
+ * in constant time). Unset BOOTSTRAP_TOKEN again once the first admin
+ * exists; later admins are granted from the API by an existing admin.
  */
 import { randomUUID } from 'node:crypto';
 
@@ -23,29 +27,32 @@ import { ROLE_CODES } from '@ctcj/shared';
 
 import { config } from '../src/config/env.js';
 
-if (config.isProduction) {
+import {
+  authorizeBootstrap,
+  checkBootstrapTarget,
+  parseBootstrapArgs,
+} from './bootstrapAdminPolicy.js';
+
+const args = parseBootstrapArgs(process.argv.slice(2));
+const authorization = authorizeBootstrap({
+  isProduction: config.isProduction,
+  bootstrapToken: config.bootstrapToken,
+  args,
+});
+if (!authorization.ok) {
   // eslint-disable-next-line no-console
-  console.error(
-    'bootstrapAdmin.js refuses to run with NODE_ENV=production. This is a dev-only tool.',
-  );
+  console.error(authorization.reason);
   process.exit(1);
 }
 
-const email = process.argv[2];
-if (!email) {
-  // eslint-disable-next-line no-console
-  console.error('Usage: node scripts/bootstrapAdmin.js <email>');
-  process.exit(1);
-}
-
+const { email } = args;
 const prisma = new PrismaClient();
 
 async function main() {
   const user = await prisma.user.findFirst({ where: { email } });
-  if (!user) {
-    throw new Error(
-      `No user found with email "${email}". Register through /register (and verify the email) first, then run this script.`,
-    );
+  const refusal = checkBootstrapTarget(user, email);
+  if (refusal) {
+    throw new Error(refusal);
   }
 
   const adminRole = await prisma.role.findUniqueOrThrow({
@@ -62,7 +69,12 @@ async function main() {
   }
 
   await prisma.userRole.create({
-    data: { id: randomUUID(), userId: user.id, roleId: adminRole.id },
+    data: {
+      id: randomUUID(),
+      userId: user.id,
+      roleId: adminRole.id,
+      reason: `bootstrapAdmin.js (${config.nodeEnv})`,
+    },
   });
 
   // eslint-disable-next-line no-console

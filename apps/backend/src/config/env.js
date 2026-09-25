@@ -28,6 +28,9 @@ const envSchema = z
     RESEND_API_KEY: z.string().optional().default(''),
     MAIL_FROM: z.string().optional().default(''),
 
+    // Only read by scripts/bootstrapAdmin.js in production.
+    BOOTSTRAP_TOKEN: z.string().optional().default(''),
+
     APP_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   })
@@ -92,6 +95,8 @@ export function parseEnv(source) {
       apiKey: env.RESEND_API_KEY,
       from: env.MAIL_FROM,
     }),
+
+    bootstrapToken: env.BOOTSTRAP_TOKEN,
 
     appPublicUrl: env.APP_PUBLIC_URL,
     corsOrigin: env.CORS_ORIGIN,
