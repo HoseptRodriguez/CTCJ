@@ -60,3 +60,6 @@ if (typeof window.matchMedia !== 'function') {
     dispatchEvent: () => false,
   });
 }
+
+// jsdom does not implement scrolling; layouts scroll to top on navigation.
+window.scrollTo = () => {};

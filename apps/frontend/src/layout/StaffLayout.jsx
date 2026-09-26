@@ -1,120 +1,333 @@
-import { Suspense, useState } from 'react';
 import { ROLE_CODES } from '@ctcj/shared';
-import { Link, Outlet } from 'react-router-dom';
+import { Suspense, useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { Button } from '../components/ui/LegacyButton.jsx';
-import { Container } from '../components/ui/Container.jsx';
-import { CloseIcon } from '../components/icons/CloseIcon.jsx';
-import { MenuIcon } from '../components/icons/MenuIcon.jsx';
+import { affiliationClient } from '../api/affiliationClient.js';
+import { bookingClient } from '../api/bookingClient.js';
+import { communityAdminClient } from '../api/communityAdminClient.js';
+import { guardianshipClient } from '../api/guardianshipClient.js';
+import { membershipClient } from '../api/membershipClient.js';
+import { BarChartIcon } from '../components/icons/BarChartIcon.jsx';
+import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
+import { ClipboardIcon } from '../components/icons/ClipboardIcon.jsx';
+import { HeartIcon } from '../components/icons/HeartIcon.jsx';
+import { HomeIcon } from '../components/icons/HomeIcon.jsx';
+import { LogOutIcon } from '../components/icons/LogOutIcon.jsx';
+import { MoreIcon } from '../components/icons/MoreIcon.jsx';
+import { NoteIcon } from '../components/icons/NoteIcon.jsx';
+import { ShieldIcon } from '../components/icons/ShieldIcon.jsx';
+import { TagIcon } from '../components/icons/TagIcon.jsx';
+import { TrophyIcon } from '../components/icons/TrophyIcon.jsx';
+import { UsersIcon } from '../components/icons/UsersIcon.jsx';
+import { WalletIcon } from '../components/icons/WalletIcon.jsx';
+import { SlidePanel } from '../components/motion/SlidePanel.jsx';
+import { ClubLogo } from '../components/ui/ClubLogo.jsx';
+import { cn } from '../components/ui/cn.js';
+import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { isUnpaid } from '../lib/booking.js';
+import { clubTodayKey } from '../lib/clubTime.js';
+import { splitForBottomBar, staffNavFor } from '../lib/staffNav.js';
 
-import { RouteLoading } from './RouteLoading.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
-import { StaffMobileMenu } from './StaffMobileMenu.jsx';
+import { RouteLoading } from './RouteLoading.jsx';
+import { StaffSearch } from './StaffSearch.jsx';
 
-const NAV_LINK_CLASS = 'font-display text-sm font-semibold uppercase tracking-wide text-secondary';
+const ICONS = {
+  home: HomeIcon,
+  wallet: WalletIcon,
+  calendar: CalendarIcon,
+  heart: HeartIcon,
+  users: UsersIcon,
+  clipboard: ClipboardIcon,
+  note: NoteIcon,
+  trophy: TrophyIcon,
+  chart: BarChartIcon,
+  tag: TagIcon,
+  shield: ShieldIcon,
+};
 
-// Minimal chrome for the internal staff area -- deliberately not the public
-// marketing Header/Footer/PublicLayout, which are a different product surface.
+/**
+ * Pending counts for the amber badges, fetched only for the roles that may
+ * see each page (the others would get 403s). Refreshed on every navigation
+ * inside the console, so a count drops right after the work is done.
+ */
+function useStaffCounters(roles, pathname) {
+  const [counts, setCounts] = useState({});
+  const isAdmin = roles.includes(ROLE_CODES.ADMINISTRADOR);
+  const isDesk = isAdmin || roles.includes(ROLE_CODES.RECEPCION);
+
+  useEffect(() => {
+    let cancelled = false;
+    const jobs = [];
+    if (isDesk) {
+      jobs.push(
+        bookingClient.getSchedule(clubTodayKey()).then((s) => ({
+          unpaid: s.reservations.filter(isUnpaid).length,
+        })),
+        communityAdminClient.listReports().then((d) => ({ reports: d.reports.length })),
+      );
+    }
+    if (isAdmin) {
+      jobs.push(
+        Promise.all([
+          affiliationClient.listRequests(),
+          guardianshipClient.listGuardianships(),
+        ]).then(([a, g]) => ({
+          requests: a.requests.length + g.guardianships.length,
+        })),
+      );
+    }
+    Promise.allSettled(jobs).then((results) => {
+      if (cancelled) return;
+      setCounts(
+        Object.assign({}, ...results.filter((r) => r.status === 'fulfilled').map((r) => r.value)),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, isDesk, pathname]);
+
+  return counts;
+}
+
+function Counter({ value, label }) {
+  if (!value) return null;
+  return (
+    <span className="ml-auto flex h-7 min-w-7 items-center justify-center rounded-full bg-amber px-2 text-body-sm font-bold text-navy-500">
+      {value}
+      <span className="sr-only"> {label}</span>
+    </span>
+  );
+}
+
+function NavItem({ item, counts, onNavigate, compact = false, light = false }) {
+  const Icon = ICONS[item.icon] ?? HomeIcon;
+  return (
+    <NavLink
+      to={item.to}
+      end={item.key === 'inicio'}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          'focus-ring flex min-h-btn items-center gap-3 rounded-lg px-3 text-body font-semibold',
+          compact && 'min-h-btn-lg flex-col justify-center gap-1 px-1 text-body-sm',
+          isActive
+            ? 'bg-lime text-navy-500'
+            : light
+              ? 'text-navy-500 hover:bg-navy-50'
+              : 'text-white hover:bg-white/10',
+        )
+      }
+    >
+      <Icon className="h-6 w-6 shrink-0" />
+      <span className={compact ? 'text-center leading-tight' : undefined}>{item.label}</span>
+      {!compact && <Counter value={counts[item.counter]} label="pendientes" />}
+      {compact && counts[item.counter] ? (
+        <span className="sr-only">{counts[item.counter]} pendientes</span>
+      ) : null}
+    </NavLink>
+  );
+}
+
+function Sidebar({ groups, counts, onNavigate }) {
+  return (
+    <nav aria-label="Consola del club" className="space-y-6">
+      {groups.map(({ group, items }) => (
+        <div key={group}>
+          <p className="mb-2 px-3 text-body-sm font-bold uppercase tracking-eyebrow text-white/80">
+            {group}
+          </p>
+          <ul className="space-y-1">
+            {items.map((item) => (
+              <li key={item.key}>
+                <NavItem item={item} counts={counts} onNavigate={onNavigate} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function StaffAvatar() {
+  const [profile, setProfile] = useState(null);
+  useEffect(() => {
+    membershipClient
+      .getMyProfile()
+      .then(setProfile)
+      .catch(() => {});
+  }, []);
+  const initial = profile?.firstName?.[0]?.toUpperCase() ?? '?';
+  return (
+    <span className="flex items-center gap-2">
+      {profile?.avatarUrl ? (
+        <img src={profile.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-500 font-display text-h3 font-bold text-white"
+        >
+          {initial}
+        </span>
+      )}
+      <span className="hidden text-body font-semibold text-ink xl:inline">
+        {profile?.firstName ?? ''}
+      </span>
+    </span>
+  );
+}
+
 export function StaffLayout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
-  const isAdmin = user?.roles?.includes(ROLE_CODES.ADMINISTRADOR);
-  const isRecepcion = user?.roles?.includes(ROLE_CODES.RECEPCION);
-  const isEntrenador = user?.roles?.includes(ROLE_CODES.ENTRENADOR);
-  const isPsicologo = user?.roles?.includes(ROLE_CODES.PSICOLOGO);
-  const isNeuropsicologo = user?.roles?.includes(ROLE_CODES.NEUROPSICOLOGO);
-  const isFisioterapeuta = user?.roles?.includes(ROLE_CODES.FISIOTERAPEUTA);
-  const canSeePagos = isAdmin || isRecepcion;
-  const canSeeNotas = isAdmin || isEntrenador;
-  const canSeeClinical =
-    isAdmin || isRecepcion || isPsicologo || isNeuropsicologo || isFisioterapeuta;
-  const homeTarget = canSeePagos ? '/staff/pagos' : canSeeNotas ? '/staff/notas' : '/staff/clinico';
+  const location = useLocation();
+  const roles = user?.roles ?? [];
+  const groups = staffNavFor(roles);
+  const counts = useStaffCounters(roles, location.pathname);
+  const { primary, more } = splitForBottomBar(groups);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreCount = more.reduce((sum, item) => sum + (counts[item.counter] ?? 0), 0);
 
-  // Computed once, shared by both the desktop row and the mobile panel below
-  // -- one role-gating source of truth instead of duplicating the same
-  // conditionals in two places (see StaffMobileMenu.jsx, which stays purely
-  // presentational as a result).
-  const navItems = [
-    canSeePagos && { to: '/staff/pagos', label: 'Pagos' },
-    canSeePagos && { to: '/staff/membresias', label: 'Membresías' },
-    canSeeNotas && { to: '/staff/notas', label: 'Notas' },
-    canSeePagos && { to: '/staff/comunidad', label: 'Comunidad' },
-    { to: '/staff/competicion', label: 'Competición' },
-    { to: '/staff/torneos', label: 'Torneos' },
-    canSeeClinical && { to: '/staff/clinico', label: 'Salud y bienestar' },
-    isAdmin && { to: '/staff/precios', label: 'Precios' },
-    isAdmin && { to: '/staff/solicitudes', label: 'Solicitudes' },
-    isAdmin && { to: '/staff/planes', label: 'Planes' },
-    isAdmin && { to: '/staff/finanzas', label: 'Finanzas' },
-  ].filter(Boolean);
+  useEffect(() => {
+    setMoreOpen(false);
+    window.scrollTo({ top: 0 });
+  }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-sunken">
-      <header className="border-b border-neutral-200 bg-canvas">
-        <Container className="flex h-16 items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-6">
+    <div className="min-h-screen bg-page">
+      <a
+        href="#contenido"
+        className="focus-ring sr-only z-toast rounded-lg bg-lime px-4 py-3 font-semibold text-navy-500 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Saltar al contenido
+      </a>
+
+      {/* Desktop: fixed 300px navy sidebar. */}
+      <aside className="fixed inset-y-0 left-0 z-header hidden w-[300px] flex-col overflow-y-auto bg-navy-500 px-4 py-5 lg:flex">
+        <Link
+          to={groups[0]?.items[0]?.to ?? '/staff'}
+          className="focus-ring mb-6 flex items-center gap-3 rounded-lg px-2"
+        >
+          <ClubLogo onDark decorative />
+          <span className="font-display text-h3 font-bold leading-tight text-white">
+            Consola
+            <br />
+            del club
+          </span>
+        </Link>
+        <Sidebar groups={groups} counts={counts} />
+        <div className="mt-auto space-y-1 border-t border-white/20 pt-4">
+          <Link
+            to="/"
+            className="focus-ring flex min-h-btn items-center rounded-lg px-3 text-body font-semibold text-white hover:bg-white/10"
+          >
+            Ir al sitio del club
+          </Link>
+          <button
+            type="button"
+            onClick={logout}
+            className="focus-ring flex min-h-btn w-full items-center gap-3 rounded-lg px-3 text-body font-semibold text-white hover:bg-white/10"
+          >
+            <LogOutIcon className="h-6 w-6" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+
+      <div className="lg:pl-[300px]">
+        <header className="sticky top-0 z-sticky border-b border-line bg-surface">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-8">
             <Link
-              to={homeTarget}
-              className="shrink-0 font-display text-lg font-semibold text-primary"
+              to={groups[0]?.items[0]?.to ?? '/staff'}
+              className="focus-ring rounded-lg lg:hidden"
+              aria-label="Inicio de la consola"
             >
-              Ciudad Jardín · Staff
+              <ClubLogo decorative />
             </Link>
-            <nav className="hidden items-center gap-4 lg:flex" aria-label="Staff">
-              {navItems.map((item) => (
-                <Link key={item.to} to={item.to} className={NAV_LINK_CLASS}>
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="hidden items-center gap-3 lg:flex">
-            <Link to="/" className="text-sm text-tertiary">
-              Ir al sitio público
-            </Link>
+            {/* Phones: logo, bell and avatar on top; the search gets its own full-width row. */}
+            <span aria-hidden="true" className="flex-1 md:hidden" />
+            <div className="order-last w-full md:order-none md:w-auto md:min-w-0 md:flex-1">
+              <StaffSearch roles={roles} />
+            </div>
+            <FontSizeToggle className="hidden md:inline-flex" />
             <NotificationBell />
-            <Button variant="outline" onClick={logout}>
-              Cerrar sesión
-            </Button>
+            <StaffAvatar />
           </div>
+        </header>
 
-          {/* Below `lg`, the full link row (up to 11 items) has nowhere to
-              go -- collapse to a hamburger + panel, exactly mirroring the
-              public site's Header.jsx/MobileMenu.jsx pattern. Notifications
-              stay reachable at all times (unlike the public header, which
-              hides its bell on mobile too) -- there's no reason to bury a
-              staff member's own inbox behind an extra tap. */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <NotificationBell />
-            <button
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-md text-primary"
-              aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
-              aria-expanded={mobileOpen}
-              aria-controls="staff-mobile-menu"
-              onClick={() => setMobileOpen((open) => !open)}
-            >
-              {mobileOpen ? <CloseIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
-            </button>
-          </div>
-        </Container>
-
-        {mobileOpen ? (
-          <StaffMobileMenu
-            navItems={navItems}
-            onNavigate={() => setMobileOpen(false)}
-            onLogout={logout}
-          />
-        ) : null}
-      </header>
-
-      <main className="flex-1">
-        <Container className="py-10">
+        <main id="contenido" className="mx-auto max-w-editorial px-4 pb-32 pt-8 md:px-8 lg:pb-12">
           <Suspense fallback={<RouteLoading />}>
             <Outlet />
           </Suspense>
-        </Container>
-      </main>
+        </main>
+      </div>
+
+      {/* Phones: 4 main destinations + "Más". */}
+      <nav
+        aria-label="Consola, accesos principales"
+        className="fixed inset-x-0 bottom-0 z-header border-t border-white/20 bg-navy-500 px-2 pb-[env(safe-area-inset-bottom)] lg:hidden"
+      >
+        <ul className="grid grid-cols-5 gap-1 py-1">
+          {primary.map((item) => (
+            <li key={item.key} className="relative">
+              <NavItem item={item} counts={counts} compact />
+              {counts[item.counter] ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute right-2 top-1 h-3 w-3 rounded-full bg-amber ring-2 ring-navy-500"
+                />
+              ) : null}
+            </li>
+          ))}
+          <li className="relative">
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-expanded={moreOpen}
+              className="focus-ring flex min-h-btn-lg w-full flex-col items-center justify-center gap-1 rounded-lg text-body-sm font-semibold text-white hover:bg-white/10"
+            >
+              <MoreIcon className="h-6 w-6" />
+              Más
+              {moreCount > 0 && <span className="sr-only">, {moreCount} pendientes</span>}
+            </button>
+            {moreCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute right-2 top-1 h-3 w-3 rounded-full bg-amber ring-2 ring-navy-500"
+              />
+            )}
+          </li>
+        </ul>
+      </nav>
+
+      <SlidePanel open={moreOpen} onClose={() => setMoreOpen(false)} title="Más opciones">
+        <ul className="space-y-1">
+          {more.map((item) => (
+            <li key={item.key}>
+              <NavItem item={item} counts={counts} light onNavigate={() => setMoreOpen(false)} />
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 space-y-3 border-t border-line pt-4">
+          <FontSizeToggle />
+          <Link
+            to="/"
+            className="focus-ring flex min-h-btn items-center rounded-lg px-3 text-body font-semibold text-navy-500 hover:bg-navy-50"
+          >
+            Ir al sitio del club
+          </Link>
+          <button
+            type="button"
+            onClick={logout}
+            className="focus-ring flex min-h-btn w-full items-center gap-3 rounded-lg px-3 text-body font-semibold text-navy-500 hover:bg-navy-50"
+          >
+            <LogOutIcon className="h-6 w-6" />
+            Cerrar sesión
+          </button>
+        </div>
+      </SlidePanel>
     </div>
   );
 }

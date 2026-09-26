@@ -1,27 +1,36 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { billingClient } from '../../api/billingClient.js';
-import { Button } from '../../components/ui/LegacyButton.jsx';
+import { PlusIcon } from '../../components/icons/PlusIcon.jsx';
+import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
+import { TextAreaField, TextField } from '../../components/ui/Field.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
+import { useToast } from '../../components/ui/Toast.jsx';
 import { describeBillingError } from '../../lib/billingErrorMessages.js';
+import { clubTodayKey } from '../../lib/clubTime.js';
+import { formatCop } from '../../lib/format.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { DATE_MEDIUM, SectionCard } from '../mictcj/shared.jsx';
 
-const COP_FORMATTER = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-});
+import { FormAlert, StaffRow } from './staffShared.jsx';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
+// validFrom is a date-only key; read it at noon UTC so it never shifts a day.
+const dateOnly = (key) => DATE_MEDIUM.format(new Date(`${String(key).slice(0, 10)}T12:00:00Z`));
 
-function CreatePlanForm({ onCreated }) {
+function NewPlanPanel({ open, onClose, onCreated }) {
+  const toast = useToast();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitting(true);
+  async function save() {
+    if (!name.trim() || !code.trim()) return setError('Escribe el nombre y el código del plan.');
+    setSaving(true);
     setError(null);
     try {
       await billingClient.createPlan({
@@ -29,124 +38,12 @@ function CreatePlanForm({ onCreated }) {
         name: name.trim(),
         description: description.trim() || undefined,
       });
-      setCode('');
-      setName('');
-      setDescription('');
-      await onCreated();
-    } catch (err) {
-      setError(describeBillingError(err));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="plan-code">
-          Código
-        </label>
-        <input
-          id="plan-code"
-          required
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="INICIACION"
-          className="mt-1 w-40 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="plan-name">
-          Nombre
-        </label>
-        <input
-          id="plan-name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Iniciación"
-          className="mt-1 w-56 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="plan-description">
-          Descripción (opcional)
-        </label>
-        <input
-          id="plan-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="mt-1 w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <Button type="submit" variant="primary" disabled={submitting || !code || !name}>
-        {submitting ? 'Creando...' : 'Crear plan'}
-      </Button>
-      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
-    </form>
-  );
-}
-
-function PriceHistory({ planId }) {
-  const [prices, setPrices] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    billingClient
-      .listPlanPrices(planId)
-      .then((data) => {
-        if (!cancelled) setPrices(data.prices);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(describeBillingError(err));
+      toast({
+        title: 'Plan creado',
+        description: `${name.trim()}. Ahora ponle un precio.`,
+        tone: 'success',
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [planId]);
-
-  if (error) return <p className="text-sm text-error">{error}</p>;
-  if (prices === null) return <p className="text-sm text-secondary">Cargando historial...</p>;
-  if (prices.length === 0)
-    return <p className="text-sm text-secondary">Sin precios registrados.</p>;
-
-  return (
-    <ul className="mt-2 space-y-1 text-sm text-secondary">
-      {prices.map((p) => (
-        <li key={p.id}>
-          {COP_FORMATTER.format(p.basePriceCop)} · desde{' '}
-          {DATE_FORMATTER.format(new Date(p.validFrom))}
-          {p.validTo ? ` hasta ${DATE_FORMATTER.format(new Date(p.validTo))}` : ' · vigente'}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PlanCard({ plan, onPriceUpdated }) {
-  const [basePriceCop, setBasePriceCop] = useState('');
-  const [validFrom, setValidFrom] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-
-  async function handleSetPrice(e) {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSaved(false);
-    try {
-      await billingClient.setPlanPrice(plan.id, {
-        basePriceCop: Number(basePriceCop),
-        validFrom,
-      });
-      setBasePriceCop('');
-      setValidFrom('');
-      setSaved(true);
-      setShowHistory(false);
-      await onPriceUpdated();
+      onCreated();
     } catch (err) {
       setError(describeBillingError(err));
     } finally {
@@ -155,103 +52,242 @@ function PlanCard({ plan, onPriceUpdated }) {
   }
 
   return (
-    <li className="rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-display font-semibold text-primary">
-            {plan.name} <span className="text-xs text-tertiary">({plan.code})</span>
-          </p>
-          <p className="text-sm text-secondary">
-            {plan.currentPriceCop != null
-              ? `Precio actual: ${COP_FORMATTER.format(plan.currentPriceCop)}`
-              : 'Sin precio configurado'}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={() => setShowHistory((v) => !v)}>
-          {showHistory ? 'Ocultar historial' : 'Ver historial de precios'}
+    <SlidePanel
+      open={open}
+      onClose={onClose}
+      title="Nuevo plan"
+      footer={
+        <Button size="lg" fullWidth loading={saving} loadingText="Creando plan…" onClick={save}>
+          Crear plan
         </Button>
+      }
+    >
+      <div className="space-y-6">
+        <TextField
+          label="Nombre del plan"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={120}
+          hint="Así lo ven los jugadores. Ejemplo: Iniciación"
+        />
+        <TextField
+          label="Código"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          maxLength={40}
+          hint="Una palabra corta, sin espacios. Ejemplo: INICIACION. No se puede cambiar después."
+        />
+        <TextAreaField
+          label="Descripción (opcional)"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={500}
+        />
+        <FormAlert>{error}</FormAlert>
       </div>
+    </SlidePanel>
+  );
+}
 
-      {showHistory ? <PriceHistory planId={plan.id} /> : null}
+function PricePanel({ plan, onClose, onSaved }) {
+  const toast = useToast();
+  const history = useAsync(
+    () => billingClient.listPlanPrices(plan.id).then((d) => d.prices),
+    [plan?.id],
+    { enabled: plan != null },
+  );
+  const [value, setValue] = useState('');
+  const [validFrom, setValidFrom] = useState(clubTodayKey);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const price = Number(value);
 
-      <form onSubmit={handleSetPrice} className="mt-3 flex flex-wrap items-end gap-2">
-        <div>
-          <label className="sr-only" htmlFor={`price-${plan.id}`}>
-            Nuevo precio
-          </label>
-          <input
-            id={`price-${plan.id}`}
-            type="number"
-            min="0"
-            step="1"
-            required
-            value={basePriceCop}
-            onChange={(e) => setBasePriceCop(e.target.value)}
-            placeholder="Pesos"
-            className="w-32 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="sr-only" htmlFor={`valid-from-${plan.id}`}>
-            Vigente desde
-          </label>
-          <input
-            id={`valid-from-${plan.id}`}
-            type="date"
-            required
-            value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
-            className="rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-          />
-        </div>
-        <Button type="submit" variant="primary" disabled={saving}>
-          {saving ? 'Guardando...' : 'Actualizar precio'}
-        </Button>
-      </form>
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {saved ? <p className="mt-2 text-sm text-success">Precio actualizado.</p> : null}
-    </li>
+  function review() {
+    if (value === '' || !Number.isInteger(price))
+      return setError('Escribe el precio en pesos, sin puntos ni decimales.');
+    if (!validFrom) return setError('Elige desde cuándo aplica.');
+    setError(null);
+    setConfirming(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      await billingClient.setPlanPrice(plan.id, { basePriceCop: price, validFrom });
+      toast({
+        title: 'Precio actualizado',
+        description: `${plan.name}: ${formatCop(price)} desde el ${dateOnly(validFrom)}`,
+        tone: 'success',
+      });
+      onSaved();
+    } catch (err) {
+      setConfirming(false);
+      setError(describeBillingError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <SlidePanel
+        open={plan != null}
+        onClose={onClose}
+        title={plan ? `Precio de ${plan.name}` : ''}
+        footer={
+          <Button size="lg" fullWidth onClick={review}>
+            Guardar precio
+          </Button>
+        }
+      >
+        {plan && (
+          <div className="space-y-6">
+            <div className="rounded-xl bg-page p-5">
+              <p className="text-body font-semibold text-ink-soft">Precio actual</p>
+              <p className="font-display text-stat font-bold text-ink">
+                {plan.currentPriceCop != null ? formatCop(plan.currentPriceCop) : 'Sin precio'}
+              </p>
+            </div>
+            <TextField
+              label="Nuevo precio (en pesos)"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value.replace(/\D/g, ''));
+                setError(null);
+              }}
+              hint={value ? `Quedaría en ${formatCop(price)}` : 'Ejemplo: 180000'}
+            />
+            <TextField
+              label="Aplica desde"
+              type="date"
+              value={validFrom}
+              onChange={(e) => setValidFrom(e.target.value)}
+            />
+            <p className="rounded-lg bg-navy-50 p-4 text-body text-ink">
+              Lo que ya se cobró no cambia. Queda guardado el historial de todos los precios.
+            </p>
+            <FormAlert>{error}</FormAlert>
+            <div>
+              <h3 className="mb-2 text-lead font-bold text-ink">Historial de precios</h3>
+              {history.status === 'loading' && (
+                <p className="text-body text-ink-soft">Cargando historial…</p>
+              )}
+              {history.status === 'error' && (
+                <p className="text-body text-ink">No pudimos cargar el historial.</p>
+              )}
+              {history.status === 'ready' &&
+                (history.data.length === 0 ? (
+                  <p className="text-body text-ink-soft">Todavía no tiene precios.</p>
+                ) : (
+                  <ul className="divide-y divide-line">
+                    {history.data.map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex flex-wrap justify-between gap-2 py-2 text-body"
+                      >
+                        <span className="font-semibold text-ink">{formatCop(p.basePriceCop)}</span>
+                        <span className="text-ink-soft">
+                          desde el {dateOnly(p.validFrom)}
+                          {p.validTo ? ` hasta el ${dateOnly(p.validTo)}` : ' · vigente'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ))}
+            </div>
+          </div>
+        )}
+      </SlidePanel>
+      <ConfirmDialog
+        open={confirming}
+        tone="primary"
+        title={`¿Cambiar el precio de ${plan?.name ?? ''}?`}
+        description={`Quedará en ${formatCop(price)} desde el ${validFrom ? dateOnly(validFrom) : ''}. Las facturas ya emitidas no cambian.`}
+        confirmLabel="Sí, cambiar precio"
+        loading={saving}
+        onConfirm={save}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
   );
 }
 
 export function PlansPage() {
-  const [plans, setPlans] = useState(null);
-  const [error, setError] = useState(null);
-
-  function refetch() {
-    return billingClient
-      .listPlans()
-      .then((data) => setPlans(data.plans))
-      .catch((err) => setError(describeBillingError(err)));
-  }
-
-  useEffect(() => {
-    refetch();
-  }, []);
+  const plans = useAsync(() => billingClient.listPlans().then((d) => d.plans), []);
+  const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const editing = plans.data?.find((p) => p.id === editingId) ?? null;
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Planes de membresía</h1>
-      <p className="mt-1 text-secondary">
-        Catálogo de planes y sus precios. Cambiar un precio nunca altera lo ya cobrado -- queda un
-        historial completo.
-      </p>
-
-      <div className="mt-6">
-        <CreatePlanForm onCreated={refetch} />
-      </div>
-
-      {error ? <p className="mt-6 text-error">{error}</p> : null}
-      {!error && plans === null ? <p className="mt-6 text-secondary">Cargando...</p> : null}
-      {plans?.length === 0 ? <p className="mt-6 text-secondary">Todavía no hay planes.</p> : null}
-
-      {plans?.length > 0 ? (
-        <ul className="mt-6 space-y-3">
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} onPriceUpdated={refetch} />
-          ))}
-        </ul>
-      ) : null}
+      <PageHeader
+        title="Planes de membresía"
+        description="Los planes que pagan los jugadores y sus precios."
+        actions={
+          <Button icon={<PlusIcon />} onClick={() => setCreating(true)}>
+            Nuevo plan
+          </Button>
+        }
+      />
+      <SectionCard
+        title="Planes"
+        async={plans}
+        isEmpty={(d) => d.length === 0}
+        empty={{ title: 'Todavía no hay planes', description: 'Crea el primero con “Nuevo plan”.' }}
+        errorTitle="No pudimos cargar los planes"
+      >
+        {(list) => (
+          <ul className="space-y-3">
+            {list.map((p) => (
+              <li key={p.id}>
+                <StaffRow
+                  title={p.name}
+                  badge={
+                    p.currentPriceCop == null ? (
+                      <StatusBadge status="pendiente" label="Sin precio" />
+                    ) : null
+                  }
+                  subtitle={
+                    p.currentPriceCop != null
+                      ? `Precio: ${formatCop(p.currentPriceCop)}`
+                      : 'Ponle un precio para poder inscribir jugadores.'
+                  }
+                  meta={`Código ${p.code}${p.description ? ` · ${p.description}` : ''}`}
+                  actions={
+                    <Button
+                      variant={p.currentPriceCop == null ? 'primary' : 'secondary'}
+                      onClick={() => setEditingId(p.id)}
+                    >
+                      {p.currentPriceCop == null ? 'Poner precio' : 'Cambiar precio'}
+                    </Button>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+      <NewPlanPanel
+        key={creating ? 'new-open' : 'new-closed'}
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={() => {
+          setCreating(false);
+          plans.reload();
+        }}
+      />
+      <PricePanel
+        key={editingId ?? 'none'}
+        plan={editing}
+        onClose={() => setEditingId(null)}
+        onSaved={() => {
+          setEditingId(null);
+          plans.reload();
+        }}
+      />
     </div>
   );
 }

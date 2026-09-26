@@ -1,9 +1,11 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { billingClient } from '../../api/billingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
+import { ToastProvider } from '../../components/ui/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 import { MembershipStatusPage } from './MembershipStatusPage.jsx';
@@ -16,22 +18,19 @@ vi.mock('../../api/membershipClient.js', () => ({
     setOverduePolicy: vi.fn(),
   },
 }));
-
 vi.mock('../../api/billingClient.js', () => ({
   billingClient: {
     listMemberships: vi.fn(),
     listPlans: vi.fn(),
     enrollPlayer: vi.fn(),
     listInvoices: vi.fn(),
+    listInvoicesClubWide: vi.fn(),
     generateInvoice: vi.fn(),
     recordInvoicePayment: vi.fn(),
     cancelInvoice: vi.fn(),
   },
 }));
-
-vi.mock('../../context/AuthContext.jsx', () => ({
-  useAuth: vi.fn(),
-}));
+vi.mock('../../context/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
 
 const PLAYER = {
   id: 'user-1',
@@ -41,11 +40,23 @@ const PLAYER = {
   roleCodes: ['USUARIO', 'JUGADOR'],
   membershipStatus: null,
 };
+const MEMBERSHIP = {
+  id: '33333333-3333-4333-8333-333333333333',
+  planName: 'Iniciación',
+  currentPriceCop: 150000,
+  status: 'ACTIVE',
+};
+const INVOICE = { id: 'inv-1', amountCop: 150000, dueDate: '2099-01-05', status: 'PENDING' };
 
-function renderAsAdmin() {
-  useAuth.mockReturnValue({ user: { id: 'admin-1', roles: ['ADMINISTRADOR'] } });
-  membershipClient.getOverduePolicy.mockResolvedValue({ enabled: false });
-  return render(<MembershipStatusPage />);
+function renderAs(roles, path = '/staff/membresias') {
+  useAuth.mockReturnValue({ user: { id: 'staff-1', roles } });
+  return render(
+    <ToastProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <MembershipStatusPage />
+      </MemoryRouter>
+    </ToastProvider>,
+  );
 }
 
 async function searchFor(user, email) {
@@ -53,172 +64,145 @@ async function searchFor(user, email) {
   await user.click(screen.getByRole('button', { name: 'Buscar' }));
 }
 
-describe('MembershipStatusPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    billingClient.listMemberships.mockResolvedValue({ memberships: [] });
-    billingClient.listPlans.mockResolvedValue({ plans: [] });
-    billingClient.listInvoices.mockResolvedValue({ invoices: [] });
+beforeEach(() => {
+  vi.clearAllMocks();
+  membershipClient.getOverduePolicy.mockResolvedValue({ enabled: false });
+  membershipClient.lookupUser.mockResolvedValue(PLAYER);
+  billingClient.listMemberships.mockResolvedValue({ memberships: [] });
+  billingClient.listPlans.mockResolvedValue({ plans: [] });
+  billingClient.listInvoices.mockResolvedValue({ invoices: [] });
+  billingClient.listInvoicesClubWide.mockResolvedValue({
+    invoices: [{ ...INVOICE, id: 'inv-9', playerFirstName: 'Luis', playerLastName: 'Paz' }],
+    totalCop: 150000,
+    count: 1,
+  });
+});
+
+describe('MembershipStatusPage (Membresías)', () => {
+  it('before searching, lists the invoices to collect with "Registrar pago"', async () => {
+    renderAs(['RECEPCION']);
+    expect(await screen.findByText('Luis Paz')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeInTheDocument();
   });
 
-  it('admin: looks up a player and can set a new status', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    membershipClient.setMembershipStatus.mockResolvedValue({
-      userId: PLAYER.id,
-      membershipStatus: 'OVERDUE',
-    });
-
+  it('admin: finds a player and changes the status after confirming', async () => {
+    membershipClient.setMembershipStatus.mockResolvedValue({ membershipStatus: 'ACTIVE' });
     const user = userEvent.setup();
-    renderAsAdmin();
-    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
-
+    renderAs(['ADMINISTRADOR']);
     await searchFor(user, PLAYER.email);
 
-    expect(await screen.findByText('Ana Gomez')).toBeInTheDocument();
-    expect(screen.getByText(PLAYER.email)).toBeInTheDocument();
-
-    await user.selectOptions(screen.getByLabelText('Estado de membresía'), 'Vencido');
-    await user.click(screen.getByRole('button', { name: 'Guardar' }));
-
+    expect(await screen.findByRole('heading', { name: 'Ana Gomez' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cambiar estado' }));
+    const panel = await screen.findByRole('dialog', { name: 'Cambiar estado de membresía' });
+    await user.click(within(panel).getByRole('radio', { name: /Al día/ }));
+    await user.click(within(panel).getByRole('button', { name: 'Guardar estado' }));
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Cambiar el estado?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, cambiar estado' }));
     await waitFor(() =>
-      expect(membershipClient.setMembershipStatus).toHaveBeenCalledWith(PLAYER.id, 'OVERDUE'),
+      expect(membershipClient.setMembershipStatus).toHaveBeenCalledWith('user-1', 'ACTIVE'),
     );
-    expect(await screen.findByText('Estado actualizado.')).toBeInTheDocument();
   });
 
-  it('shows a Spanish error when the email is not found', async () => {
-    const notFound = new Error('not found');
-    notFound.code = 'user_not_found';
-    membershipClient.lookupUser.mockRejectedValue(notFound);
+  it('opens the player from the top search link (?correo=)', async () => {
+    renderAs(['RECEPCION'], '/staff/membresias?correo=jugador%40example.com');
+    expect(await screen.findByRole('heading', { name: 'Ana Gomez' })).toBeInTheDocument();
+    expect(membershipClient.lookupUser).toHaveBeenCalledWith('jugador@example.com');
+  });
 
+  it('shows a clear error when the e-mail is not found', async () => {
+    membershipClient.lookupUser.mockRejectedValue(
+      Object.assign(new Error('x'), { status: 404, code: 'USER_NOT_FOUND' }),
+    );
     const user = userEvent.setup();
-    renderAsAdmin();
-    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
-
+    renderAs(['ADMINISTRADOR']);
     await searchFor(user, 'nadie@example.com');
-
-    expect(
-      await screen.findByText('No se encontró ningún usuario con ese correo.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
-  it('admin: can toggle the overdue booking policy', async () => {
-    membershipClient.getOverduePolicy.mockResolvedValue({ enabled: false });
+  it('admin: toggles the overdue booking policy after confirming', async () => {
     membershipClient.setOverduePolicy.mockResolvedValue({ enabled: true });
-
     const user = userEvent.setup();
-    useAuth.mockReturnValue({ user: { id: 'admin-1', roles: ['ADMINISTRADOR'] } });
-    render(<MembershipStatusPage />);
-
-    expect(await screen.findByText('Desactivado')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Activar bloqueo' }));
-
+    renderAs(['ADMINISTRADOR']);
+    await user.click(await screen.findByRole('button', { name: 'Activar bloqueo' }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: '¿Activar el bloqueo por mora?',
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, activar' }));
     await waitFor(() => expect(membershipClient.setOverduePolicy).toHaveBeenCalledWith(true));
-    expect(await screen.findByText('Activo')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Desactivar bloqueo' })).toBeInTheDocument();
   });
 
-  it('RECEPCION can look up a player but has no write controls', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    useAuth.mockReturnValue({ user: { id: 'staff-1', roles: ['RECEPCION'] } });
-
-    const user = userEvent.setup();
-    render(<MembershipStatusPage />);
-
-    await searchFor(user, PLAYER.email);
-
-    expect(await screen.findByText('Ana Gomez')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Estado de membresía')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Bloqueo de reservas por mora')).not.toBeInTheDocument();
-    expect(membershipClient.getOverduePolicy).not.toHaveBeenCalled();
-  });
-
-  const MEMBERSHIP = {
-    id: 'membership-1',
-    planName: 'Iniciación',
-    currentPriceCop: 100000,
-    status: 'ACTIVE',
-  };
-
-  it('admin: generates an invoice for an enrolled membership', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+  it('Recepción: can record payments, but cannot change status, invoices or the policy', async () => {
     billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
-    billingClient.generateInvoice.mockResolvedValue({ id: 'invoice-1' });
-
+    billingClient.listInvoices.mockResolvedValue({ invoices: [INVOICE] });
     const user = userEvent.setup();
-    renderAsAdmin();
-    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
-
-    await searchFor(user, PLAYER.email);
-    expect(await screen.findByText('Sin facturas generadas todavía.')).toBeInTheDocument();
-
-    // Date inputs have sr-only labels with per-membership ids; query via the form instead.
-    const form = screen.getByText('Generar factura').closest('form');
-    const dateInputs = form.querySelectorAll('input[type="date"]');
-    await user.type(dateInputs[0], '2026-03-01');
-    await user.type(dateInputs[1], '2026-04-01');
-    await user.type(dateInputs[2], '2026-03-05');
-    await user.click(screen.getByRole('button', { name: 'Generar factura' }));
-
-    await waitFor(() =>
-      expect(billingClient.generateInvoice).toHaveBeenCalledWith('membership-1', {
-        periodStart: '2026-03-01',
-        periodEnd: '2026-04-01',
-        dueDate: '2026-03-05',
-      }),
-    );
-  });
-
-  it('admin: records a payment and can cancel a PENDING invoice', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
-    billingClient.listInvoices.mockResolvedValue({
-      invoices: [{ id: 'invoice-1', status: 'PENDING', amountCop: 100000, dueDate: '2026-03-05' }],
-    });
-    billingClient.recordInvoicePayment.mockResolvedValue({ id: 'invoice-1', status: 'PAID' });
-    billingClient.cancelInvoice.mockResolvedValue({ id: 'invoice-1', status: 'CANCELLED' });
-
-    const user = userEvent.setup();
-    renderAsAdmin();
-    await waitFor(() => expect(membershipClient.getOverduePolicy).toHaveBeenCalled());
-
-    await searchFor(user, PLAYER.email);
-    const facturas = (await screen.findByText('Facturas')).closest('div');
-    expect(within(facturas).getByText('Pendiente')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Registrar pago' }));
-    await waitFor(() =>
-      expect(billingClient.recordInvoicePayment).toHaveBeenCalledWith('invoice-1', {
-        method: 'CASH',
-        notes: undefined,
-      }),
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Anular' }));
-    await user.type(screen.getByPlaceholderText('Motivo de anulación'), 'error de digitación');
-    await user.click(screen.getByRole('button', { name: 'Confirmar anulación' }));
-
-    await waitFor(() =>
-      expect(billingClient.cancelInvoice).toHaveBeenCalledWith('invoice-1', {
-        reason: 'error de digitación',
-      }),
-    );
-  });
-
-  it('RECEPCION sees "Registrar pago" but not "Generar factura" or "Anular"', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
-    billingClient.listInvoices.mockResolvedValue({
-      invoices: [{ id: 'invoice-1', status: 'PENDING', amountCop: 100000, dueDate: '2026-03-05' }],
-    });
-    useAuth.mockReturnValue({ user: { id: 'staff-1', roles: ['RECEPCION'] } });
-
-    const user = userEvent.setup();
-    render(<MembershipStatusPage />);
+    renderAs(['RECEPCION']);
     await searchFor(user, PLAYER.email);
 
     expect(await screen.findByRole('button', { name: 'Registrar pago' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cambiar estado' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Generar factura' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Anular' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Bloqueo de reservas por mora')).not.toBeInTheDocument();
+  });
+
+  it('records an invoice payment with the chosen method', async () => {
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.listInvoices.mockResolvedValue({ invoices: [INVOICE] });
+    billingClient.recordInvoicePayment.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderAs(['ADMINISTRADOR']);
+    await searchFor(user, PLAYER.email);
+
+    await user.click(await screen.findByRole('button', { name: 'Registrar pago' }));
+    const panel = await screen.findByRole('dialog', { name: 'Registrar pago de Ana Gomez' });
+    await user.click(within(panel).getByRole('radio', { name: 'Transferencia' }));
+    await user.click(within(panel).getByRole('button', { name: 'Marcar como pagada' }));
+    await waitFor(() =>
+      expect(billingClient.recordInvoicePayment).toHaveBeenCalledWith('inv-1', {
+        method: 'TRANSFER',
+      }),
+    );
+  });
+
+  it('admin: cancelling an invoice needs a reason', async () => {
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.listInvoices.mockResolvedValue({ invoices: [INVOICE] });
+    billingClient.cancelInvoice.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderAs(['ADMINISTRADOR']);
+    await searchFor(user, PLAYER.email);
+
+    await user.click(await screen.findByRole('button', { name: 'Anular' }));
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Anular la factura?' });
+    await user.type(within(dialog).getByLabelText('Motivo'), 'Cobro duplicado');
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, anular factura' }));
+    await waitFor(() =>
+      expect(billingClient.cancelInvoice).toHaveBeenCalledWith('inv-1', {
+        reason: 'Cobro duplicado',
+      }),
+    );
+  });
+
+  it('admin: generates an invoice for the membership', async () => {
+    billingClient.listMemberships.mockResolvedValue({ memberships: [MEMBERSHIP] });
+    billingClient.generateInvoice.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderAs(['ADMINISTRADOR']);
+    await searchFor(user, PLAYER.email);
+
+    await user.click(await screen.findByRole('button', { name: 'Generar factura' }));
+    const panel = await screen.findByRole('dialog', { name: 'Generar factura' });
+    await user.click(within(panel).getByRole('button', { name: 'Generar factura' }));
+    await waitFor(() =>
+      expect(billingClient.generateInvoice).toHaveBeenCalledWith(
+        MEMBERSHIP.id,
+        expect.objectContaining({
+          periodStart: expect.any(String),
+          periodEnd: expect.any(String),
+          dueDate: expect.any(String),
+        }),
+      ),
+    );
   });
 });

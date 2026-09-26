@@ -335,10 +335,10 @@ describe('Mi CTCJ — Inicio', () => {
     renderMyCtcj();
     const levels = await screen.findByRole('list', { name: 'Nivel por habilidad' });
     expect(levels).toHaveTextContent('SaqueExcelente· mejoró');
-    expect(levels).toHaveTextContent('Juego de piesEn desarrollo');
+    expect(levels).toHaveTextContent('PiesEn desarrollo');
     expect(levels).not.toHaveTextContent('9');
     expect(screen.getByText('Lo que más mejoró').nextElementSibling).toHaveTextContent('Saque');
-    expect(screen.getByText('Para trabajar').nextElementSibling).toHaveTextContent('Juego de pies');
+    expect(screen.getByText('Para trabajar').nextElementSibling).toHaveTextContent('Pies');
   });
 
   it('"Mi rendimiento" empty state when there are no evaluations', async () => {

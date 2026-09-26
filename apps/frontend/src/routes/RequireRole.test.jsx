@@ -29,7 +29,7 @@ function renderWithAuth(auth) {
 describe('RequireRole', () => {
   it('shows a loading state without redirecting while status is loading', () => {
     renderWithAuth({ status: 'loading', user: null });
-    expect(screen.getByText('Cargando...')).toBeInTheDocument();
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
     expect(screen.queryByText('Contenido de staff')).not.toBeInTheDocument();
   });
 

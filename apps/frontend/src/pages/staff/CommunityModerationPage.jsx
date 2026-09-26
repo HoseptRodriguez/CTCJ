@@ -1,135 +1,187 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { communityAdminClient } from '../../api/communityAdminClient.js';
-import { Button } from '../../components/ui/LegacyButton.jsx';
+import { ShieldIcon } from '../../components/icons/ShieldIcon.jsx';
+import { AnimatedList } from '../../components/motion/AnimatedList.jsx';
+import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { useToast } from '../../components/ui/Toast.jsx';
 import { describeCommunityError } from '../../lib/communityErrorMessages.js';
+import { formatDayShort, formatTime } from '../../lib/format.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { SectionCard } from '../mictcj/shared.jsx';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-const TARGET_TYPE_LABELS = { POST: 'Publicación', COMMENT: 'Comentario' };
+import { FormAlert, StaffRow } from './staffShared.jsx';
 
-function ReportRow({ report, onResolved }) {
-  const [working, setWorking] = useState(false);
+const TARGET_LABELS = { POST: 'Publicación', COMMENT: 'Comentario' };
+// Spanish gender agreement for each kind of content.
+const WORDS = {
+  POST: {
+    noun: 'publicación',
+    this: 'esta publicación',
+    stays: 'La publicación sigue publicada.',
+    deleted: 'Publicación eliminada',
+  },
+  COMMENT: {
+    noun: 'comentario',
+    this: 'este comentario',
+    stays: 'El comentario sigue publicado.',
+    deleted: 'Comentario eliminado',
+  },
+};
+const person = (p) => (p ? `${p.firstName} ${p.lastName}` : 'Un jugador');
+const when = (iso) => `${formatDayShort(iso)} · ${formatTime(iso)}`;
+
+function ReviewPanel({ report, onClose, onResolved }) {
+  const toast = useToast();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  const words = WORDS[report?.targetType] ?? WORDS.POST;
 
-  async function handleDismiss() {
-    setWorking(true);
+  async function run(kind) {
+    setBusy(kind);
     setError(null);
     try {
-      await communityAdminClient.dismissReport(report.id);
-      onResolved(report.id);
-    } catch (err) {
-      setError(describeCommunityError(err));
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function handleDeleteContent() {
-    setWorking(true);
-    setError(null);
-    try {
-      if (report.targetType === 'POST') {
-        await communityAdminClient.deletePost(report.targetId);
+      if (kind === 'dismiss') {
+        await communityAdminClient.dismissReport(report.id);
+        toast({ title: 'Reporte descartado', description: words.stays, tone: 'success' });
       } else {
-        await communityAdminClient.deleteComment(report.targetId);
+        if (report.targetType === 'POST') await communityAdminClient.deletePost(report.targetId);
+        else await communityAdminClient.deleteComment(report.targetId);
+        toast({ title: words.deleted, tone: 'success' });
       }
       onResolved(report.id);
     } catch (err) {
+      setConfirmDelete(false);
       setError(describeCommunityError(err));
     } finally {
-      setWorking(false);
+      setBusy(null);
     }
   }
 
-  const authorLabel = report.targetAuthor
-    ? `${report.targetAuthor.firstName} ${report.targetAuthor.lastName}`
-    : 'Jugador';
-  const reporterLabel = report.reporter
-    ? `${report.reporter.firstName} ${report.reporter.lastName}`
-    : 'Jugador';
-
   return (
-    <li className="rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">
-            {TARGET_TYPE_LABELS[report.targetType] ?? report.targetType} de {authorLabel}
-          </p>
-          <p className="mt-1 text-sm text-primary">
-            {report.targetContent ?? <em className="text-tertiary">Contenido ya eliminado</em>}
-          </p>
-          <p className="mt-2 text-xs text-tertiary">
-            Reportado por {reporterLabel} · {DATE_FORMATTER.format(new Date(report.createdAt))}
-          </p>
-          {report.reason ? (
-            <p className="mt-1 text-sm text-secondary">&ldquo;{report.reason}&rdquo;</p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="primary"
-            onClick={handleDeleteContent}
-            disabled={working || !report.targetContent}
-          >
-            {working ? 'Guardando...' : 'Eliminar contenido'}
-          </Button>
-          <Button variant="outline" onClick={handleDismiss} disabled={working}>
-            Descartar reporte
-          </Button>
-        </div>
-      </div>
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-    </li>
+    <>
+      <SlidePanel
+        open={report != null}
+        onClose={onClose}
+        title="Revisar reporte"
+        footer={
+          report && (
+            <div className="flex flex-col gap-3">
+              <Button
+                variant="danger"
+                size="lg"
+                fullWidth
+                disabled={!report.targetContent || busy != null}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Eliminar {words.noun}
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                fullWidth
+                loading={busy === 'dismiss'}
+                loadingText="Descartando…"
+                onClick={() => run('dismiss')}
+              >
+                Descartar el reporte
+              </Button>
+            </div>
+          )
+        }
+      >
+        {report && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-body font-semibold text-ink-soft">
+                {TARGET_LABELS[report.targetType] ?? 'Contenido'} de {person(report.targetAuthor)}
+              </p>
+              <blockquote className="mt-2 whitespace-pre-line rounded-xl border-l-4 border-navy-500 bg-page p-4 text-lead text-ink">
+                {report.targetContent ?? (
+                  <em className="text-ink-soft">El contenido ya fue eliminado.</em>
+                )}
+              </blockquote>
+            </div>
+            <div className="rounded-xl bg-amber-soft p-4">
+              <p className="text-body font-semibold text-amber-dark">
+                Lo reportó {person(report.reporter)} · {when(report.createdAt)}
+              </p>
+              {report.reason && <p className="mt-2 text-body text-ink">“{report.reason}”</p>}
+            </div>
+            <FormAlert>{error}</FormAlert>
+          </div>
+        )}
+      </SlidePanel>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`¿Eliminar ${words.this}?`}
+        description={`Se borra para todos y no se puede recuperar. ${person(report?.targetAuthor)} no recibirá un aviso automático.`}
+        confirmLabel={`Sí, eliminar ${words.noun}`}
+        loading={busy === 'delete'}
+        onConfirm={() => run('delete')}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    </>
   );
 }
 
 export function CommunityModerationPage() {
-  const [reports, setReports] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    communityAdminClient
-      .listReports()
-      .then((data) => {
-        if (!cancelled) setReports(data.reports);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(describeCommunityError(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function handleResolved(reportId) {
-    setReports((prev) => (prev ? prev.filter((r) => r.id !== reportId) : prev));
-  }
+  const reports = useAsync(() => communityAdminClient.listReports().then((d) => d.reports), []);
+  const [reviewingId, setReviewingId] = useState(null);
+  const reviewing = reports.data?.find((r) => r.id === reviewingId) ?? null;
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Comunidad</h1>
-      <p className="mt-1 text-secondary">
-        Publicaciones y comentarios reportados por jugadores, pendientes de revisión.
-      </p>
-
-      {error ? <p className="mt-4 text-sm text-error">{error}</p> : null}
-      {!error && reports === null ? (
-        <p className="mt-4 text-sm text-secondary">Cargando...</p>
-      ) : null}
-      {reports?.length === 0 ? (
-        <p className="mt-4 text-sm text-secondary">No hay reportes pendientes.</p>
-      ) : null}
-      {reports?.length > 0 ? (
-        <ul className="mt-6 space-y-3">
-          {reports.map((report) => (
-            <ReportRow key={report.id} report={report} onResolved={handleResolved} />
-          ))}
-        </ul>
-      ) : null}
+      <PageHeader
+        title="Moderar comunidad"
+        description="Publicaciones y comentarios que los jugadores reportaron. Revísalos y decide si se quedan o se eliminan."
+      />
+      <SectionCard
+        title="Reportes pendientes"
+        async={reports}
+        isEmpty={(d) => d.length === 0}
+        empty={{
+          icon: <ShieldIcon />,
+          title: 'No hay reportes pendientes',
+          description: 'Cuando un jugador reporte algo, aparecerá aquí.',
+        }}
+        errorTitle="No pudimos cargar los reportes"
+      >
+        {(list) => (
+          <AnimatedList
+            aria-label="Reportes pendientes"
+            items={list}
+            getKey={(r) => r.id}
+            renderItem={(r) => (
+              <StaffRow
+                title={`${TARGET_LABELS[r.targetType] ?? 'Contenido'} de ${person(r.targetAuthor)}`}
+                subtitle={
+                  r.targetContent ? (
+                    <span className="line-clamp-2">{r.targetContent}</span>
+                  ) : (
+                    <em className="text-ink-soft">Contenido ya eliminado</em>
+                  )
+                }
+                meta={`Reportado por ${person(r.reporter)} · ${when(r.createdAt)}${r.reason ? ` · “${r.reason}”` : ''}`}
+                actions={<Button onClick={() => setReviewingId(r.id)}>Revisar</Button>}
+              />
+            )}
+          />
+        )}
+      </SectionCard>
+      <ReviewPanel
+        key={reviewingId ?? 'none'}
+        report={reviewing}
+        onClose={() => setReviewingId(null)}
+        onResolved={(id) => {
+          setReviewingId(null);
+          reports.setData((list) => list.filter((r) => r.id !== id));
+        }}
+      />
     </div>
   );
 }

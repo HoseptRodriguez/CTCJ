@@ -5,7 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { PublicLayout } from './layout/PublicLayout.jsx';
-import { StaffLayout } from './layout/StaffLayout.jsx';
+import { RouteLoading } from './layout/RouteLoading.jsx';
 import { ForgotPassword } from './pages/ForgotPassword.jsx';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
@@ -41,6 +41,8 @@ const PlayerProfilePage = lazyPage(
   () => import('./pages/PlayerProfilePage.jsx'),
   'PlayerProfilePage',
 );
+// The staff shell (sidebar, counters, search) is only downloaded by staff.
+const StaffLayout = lazyPage(() => import('./layout/StaffLayout.jsx'), 'StaffLayout');
 const AdminDashboard = lazyPage(() => import('./pages/staff/AdminDashboard.jsx'), 'AdminDashboard');
 const ClinicalPage = lazyPage(() => import('./pages/staff/ClinicalPage.jsx'), 'ClinicalPage');
 const CoachDashboard = lazyPage(() => import('./pages/staff/CoachDashboard.jsx'), 'CoachDashboard');
@@ -131,7 +133,13 @@ export function App() {
                 />
               }
             >
-              <Route element={<StaffLayout />}>
+              <Route
+                element={
+                  <Suspense fallback={<RouteLoading />}>
+                    <StaffLayout />
+                  </Suspense>
+                }
+              >
                 <Route path="/staff" element={<StaffHome />} />
                 <Route path="/staff/competicion" element={<CompetitionPage />} />
                 <Route path="/staff/torneos" element={<TournamentsPage />} />

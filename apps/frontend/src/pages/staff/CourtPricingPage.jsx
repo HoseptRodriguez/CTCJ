@@ -1,24 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/LegacyButton.jsx';
+import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
+import { TextField } from '../../components/ui/Field.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
+import { useToast } from '../../components/ui/Toast.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
+import { formatCop } from '../../lib/format.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { SectionCard } from '../mictcj/shared.jsx';
 
-function CourtRow({ court, onSaved }) {
-  const [value, setValue] = useState(court.priceCop != null ? String(court.priceCop) : '');
-  const [saving, setSaving] = useState(false);
+import { FormAlert, StaffRow } from './staffShared.jsx';
+
+function PricePanel({ court, onClose, onSaved }) {
+  const toast = useToast();
+  const [value, setValue] = useState(court?.priceCop != null ? String(court.priceCop) : '');
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const price = Number(value);
 
-  async function handleSave() {
-    setSaving(true);
+  function review() {
+    if (!value || !Number.isInteger(price) || price < 1)
+      return setError('Escribe el precio en pesos, sin puntos ni decimales.');
+    if (price === court.priceCop) return setError('Es el mismo precio que ya tiene.');
     setError(null);
-    setSaved(false);
+    setConfirming(true);
+  }
+
+  async function save() {
+    setSaving(true);
     try {
-      const result = await bookingClient.setCourtPrice(court.id, Number(value));
+      const result = await bookingClient.setCourtPrice(court.id, price);
+      toast({
+        title: 'Precio actualizado',
+        description: `${court.name}: ${formatCop(result.priceCop)} por hora`,
+        tone: 'success',
+      });
       onSaved(court.id, result.priceCop);
-      setSaved(true);
     } catch (err) {
+      setConfirming(false);
       setError(describeBookingError(err));
     } finally {
       setSaving(false);
@@ -26,83 +50,113 @@ function CourtRow({ court, onSaved }) {
   }
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div>
-        <p className="font-display font-semibold text-primary">{court.name}</p>
-        <p className="text-sm text-secondary">
-          {court.priceCop != null
-            ? `Precio actual: $${court.priceCop.toLocaleString('es-CO')}`
-            : 'Sin precio configurado'}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="sr-only" htmlFor={`price-${court.id}`}>
-          Precio por hora en pesos
-        </label>
-        <input
-          id={`price-${court.id}`}
-          type="number"
-          min="1"
-          step="1"
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setSaved(false);
-          }}
-          placeholder="Pesos por hora"
-          className="w-36 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-        <Button variant="primary" onClick={handleSave} disabled={saving || !value}>
-          {saving ? 'Guardando...' : 'Guardar'}
-        </Button>
-      </div>
-      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
-      {saved ? <p className="w-full text-sm text-success">Precio actualizado.</p> : null}
-    </li>
+    <>
+      <SlidePanel
+        open={court != null}
+        onClose={onClose}
+        title={court ? `Precio de ${court.name}` : ''}
+        footer={
+          <Button size="lg" fullWidth onClick={review}>
+            Guardar precio
+          </Button>
+        }
+      >
+        {court && (
+          <div className="space-y-6">
+            <div className="rounded-xl bg-page p-5">
+              <p className="text-body font-semibold text-ink-soft">Precio actual por hora</p>
+              <p className="font-display text-stat font-bold text-ink">
+                {court.priceCop != null ? formatCop(court.priceCop) : 'Sin precio'}
+              </p>
+            </div>
+            <TextField
+              label="Nuevo precio por hora (en pesos)"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value.replace(/\D/g, ''));
+                setError(null);
+              }}
+              hint={value ? `Quedaría en ${formatCop(price)}` : 'Ejemplo: 35000'}
+            />
+            <p className="rounded-lg bg-navy-50 p-4 text-body text-ink">
+              Las reservas ya hechas conservan el precio con el que se reservaron. El nuevo precio
+              aplica a las reservas nuevas.
+            </p>
+            <FormAlert>{error}</FormAlert>
+          </div>
+        )}
+      </SlidePanel>
+      <ConfirmDialog
+        open={confirming}
+        tone="primary"
+        title={`¿Cambiar el precio de ${court?.name ?? ''}?`}
+        description={`Pasa de ${court?.priceCop != null ? formatCop(court.priceCop) : 'sin precio'} a ${formatCop(price)} por hora para las reservas nuevas.`}
+        confirmLabel="Sí, cambiar precio"
+        loading={saving}
+        onConfirm={save}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
   );
 }
 
 export function CourtPricingPage() {
-  const [courts, setCourts] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    bookingClient
-      .listCourts()
-      .then((data) => {
-        if (!cancelled) setCourts(data.courts);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function handleSaved(courtId, priceCop) {
-    setCourts((prev) => prev.map((c) => (c.id === courtId ? { ...c, priceCop } : c)));
-  }
+  const courts = useAsync(() => bookingClient.listCourts().then((d) => d.courts), []);
+  const [editingId, setEditingId] = useState(null);
+  const editing = courts.data?.find((c) => c.id === editingId) ?? null;
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Precios de canchas</h1>
-      <p className="mt-1 text-secondary">
-        El precio se cobra al confirmar la reserva y queda fijo para esa reserva, aunque el precio
-        de la cancha cambie después.
-      </p>
-
-      {error ? <p className="mt-6 text-error">No se pudieron cargar las canchas.</p> : null}
-      {!error && !courts ? <p className="mt-6 text-secondary">Cargando...</p> : null}
-
-      {courts ? (
-        <ul className="mt-6 space-y-3">
-          {courts.map((court) => (
-            <CourtRow key={court.id} court={court} onSaved={handleSaved} />
-          ))}
-        </ul>
-      ) : null}
+      <PageHeader
+        title="Precios de canchas"
+        description="El precio queda fijo en cada reserva al confirmarla, aunque después cambies el precio de la cancha."
+      />
+      <SectionCard
+        title="Canchas"
+        async={courts}
+        isEmpty={(d) => d.length === 0}
+        empty={{ title: 'No hay canchas activas' }}
+        errorTitle="No pudimos cargar las canchas"
+      >
+        {(list) => (
+          <ul className="space-y-3">
+            {list.map((c) => (
+              <li key={c.id}>
+                <StaffRow
+                  title={c.name}
+                  subtitle={c.priceCop != null ? `${formatCop(c.priceCop)} por hora` : undefined}
+                  badge={
+                    c.priceCop == null ? (
+                      <StatusBadge status="pendiente" label="Sin precio" />
+                    ) : null
+                  }
+                  meta={
+                    c.priceCop == null ? 'No se puede cobrar hasta que tenga precio.' : undefined
+                  }
+                  actions={
+                    <Button
+                      variant={c.priceCop == null ? 'primary' : 'secondary'}
+                      onClick={() => setEditingId(c.id)}
+                    >
+                      {c.priceCop == null ? 'Poner precio' : 'Cambiar precio'}
+                    </Button>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+      <PricePanel
+        key={editingId ?? 'none'}
+        court={editing}
+        onClose={() => setEditingId(null)}
+        onSaved={(id, priceCop) => {
+          courts.setData((list) => list.map((c) => (c.id === id ? { ...c, priceCop } : c)));
+          setEditingId(null);
+        }}
+      />
     </div>
   );
 }

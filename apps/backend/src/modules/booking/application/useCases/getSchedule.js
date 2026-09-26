@@ -7,6 +7,7 @@ import { projectForViewer } from '../../domain/services/reservationPrivacy.js';
  *   courtRepository: import('../ports/CourtRepository.js').CourtRepository,
  *   clubId: string,
  *   membershipStatusProvider: import('../ports/MembershipStatusProvider.js').MembershipStatusProvider,
+ *   playerDirectoryProvider?: import('../ports/PlayerDirectoryProvider.js').PlayerDirectoryProvider,
  * }} deps
  */
 export function createGetSchedule({
@@ -14,6 +15,7 @@ export function createGetSchedule({
   courtRepository,
   clubId,
   membershipStatusProvider,
+  playerDirectoryProvider,
 }) {
   /**
    * @param {{ date: string, viewer: { userId: string|null, isStaff: boolean } }} input
@@ -33,20 +35,48 @@ export function createGetSchedule({
     // trade-off already in createHold.js. If this ever matters, the fix is
     // a batch method on the port, not a redesign.
     let statusByHolder = new Map();
+    let namesById = new Map();
     if (viewer.isStaff) {
       const holderIds = [...new Set(reservations.map((r) => r.holderUserId).filter(Boolean))];
       const entries = await Promise.all(
         holderIds.map(async (id) => [id, await membershipStatusProvider.getStatus(id)]),
       );
       statusByHolder = new Map(entries);
+      // Staff-only, additive: the front desk needs to know WHO to charge,
+      // and whether someone (e.g. a guardian) booked on the holder's behalf.
+      // Staff could already see the holder's id -- this only adds names.
+      const peopleIds = [
+        ...new Set(reservations.flatMap((r) => [r.holderUserId, r.createdBy]).filter(Boolean)),
+      ];
+      namesById = playerDirectoryProvider
+        ? await playerDirectoryProvider.getPlayerSummaries(peopleIds)
+        : new Map();
     }
+
+    const fullName = (id) => {
+      const person = namesById.get(id);
+      return person ? `${person.firstName} ${person.lastName}`.trim() : null;
+    };
 
     return {
       date,
       courts,
-      reservations: reservations.map((reservation) =>
-        projectForViewer(reservation, viewer, statusByHolder.get(reservation.holderUserId) ?? null),
-      ),
+      reservations: reservations.map((reservation) => {
+        const projected = projectForViewer(
+          reservation,
+          viewer,
+          statusByHolder.get(reservation.holderUserId) ?? null,
+        );
+        if (!viewer.isStaff) return projected;
+        const bookedByOther =
+          reservation.holderUserId != null && reservation.createdBy !== reservation.holderUserId;
+        return {
+          ...projected,
+          holderName: fullName(reservation.holderUserId),
+          bookedByOther,
+          createdByName: bookedByOther ? fullName(reservation.createdBy) : null,
+        };
+      }),
     };
   };
 }

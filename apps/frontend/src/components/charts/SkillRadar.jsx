@@ -1,7 +1,7 @@
 import { SKILL_AREAS } from '../../lib/performance.js';
 import { AREA_LABELS, describeRatingBand } from '../../lib/performanceRatingLabels.js';
 
-// Wide canvas: labels like "Condición física" need room on both sides.
+// Wide canvas: long skill labels need room on both sides.
 const WIDTH = 640;
 const HEIGHT = 420;
 const CX = WIDTH / 2;

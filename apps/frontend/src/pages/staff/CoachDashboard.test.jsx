@@ -1,140 +1,96 @@
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { bookingClient } from '../../api/bookingClient.js';
 import { coachingClient } from '../../api/coachingClient.js';
-import { membershipClient } from '../../api/membershipClient.js';
+import { ToastProvider } from '../../components/ui/Toast.jsx';
 
 import { CoachDashboard } from './CoachDashboard.jsx';
 
-vi.mock('../../api/bookingClient.js', () => ({
-  bookingClient: { getSchedule: vi.fn() },
-}));
-
-vi.mock('../../api/coachingClient.js', () => ({
-  coachingClient: { getRecentActivity: vi.fn() },
-}));
-
+vi.mock('../../api/bookingClient.js', () => ({ bookingClient: { getSchedule: vi.fn() } }));
 vi.mock('../../api/membershipClient.js', () => ({
-  membershipClient: { lookupUser: vi.fn() },
+  membershipClient: { lookupUser: vi.fn(), searchPlayers: vi.fn() },
+}));
+vi.mock('../../api/coachingClient.js', () => ({
+  coachingClient: {
+    getRecentActivity: vi.fn(),
+    listPlayerNotes: vi.fn(),
+    listPlayerPerformance: vi.fn(),
+  },
 }));
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <CoachDashboard />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter initialEntries={['/staff/panel-entrenador']}>
+        <CoachDashboard />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
-describe('CoachDashboard', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    bookingClient.getSchedule.mockResolvedValue({ reservations: [] });
-    coachingClient.getRecentActivity.mockResolvedValue({ activity: [] });
+beforeEach(() => {
+  vi.clearAllMocks();
+  bookingClient.getSchedule.mockResolvedValue({
+    courts: [{ id: 'c2', name: 'Cancha 2' }],
+    reservations: [
+      {
+        courtId: 'c2',
+        label: 'Clase',
+        periodStart: '2026-09-25T21:00:00Z',
+        periodEnd: '2026-09-25T22:00:00Z',
+      },
+      {
+        courtId: 'c2',
+        label: 'Ocupada',
+        periodStart: '2026-09-25T13:00:00Z',
+        periodEnd: '2026-09-25T14:00:00Z',
+      },
+    ],
+  });
+  coachingClient.getRecentActivity.mockResolvedValue({
+    activity: [
+      {
+        id: 'a1',
+        type: 'NOTE',
+        noteType: 'TECHNICAL',
+        area: 'SERVE',
+        playerName: 'Ana Gómez',
+        at: '2026-09-24T15:00:00Z',
+      },
+      {
+        id: 'a2',
+        type: 'RATING',
+        area: 'FOREHAND',
+        rating: 8,
+        playerName: 'Luis Paz',
+        at: '2026-09-23T15:00:00Z',
+      },
+    ],
+  });
+});
+
+describe('CoachDashboard (Clases de hoy)', () => {
+  it("lists today's classes by court and time (only classes)", async () => {
+    renderPage();
+    const heading = await screen.findByRole('heading', { name: 'Clases de hoy', level: 2 });
+    const card = heading.closest('section');
+    expect(await screen.findByText(/Cancha 2 · hasta/)).toBeInTheDocument();
+    expect(card.querySelectorAll('li')).toHaveLength(1);
   });
 
-  it('shows recent notes and ratings with player names, newest-first', async () => {
-    coachingClient.getRecentActivity.mockResolvedValue({
-      activity: [
-        {
-          id: 'note-1',
-          type: 'NOTE',
-          playerId: 'p1',
-          playerName: 'Ana Gomez',
-          noteType: 'TRAINING',
-          area: 'SERVE',
-          at: '2026-03-05T10:00:00.000Z',
-        },
-        {
-          id: 'rating-1',
-          type: 'RATING',
-          playerId: 'p2',
-          playerName: 'Luis Perez',
-          area: 'FOREHAND',
-          rating: 8,
-          at: '2026-03-04T10:00:00.000Z',
-        },
-      ],
-    });
-
+  it("shows the team's recent notes and ratings until a player is chosen", async () => {
     renderPage();
-
-    expect(await screen.findByText('Ana Gomez')).toBeInTheDocument();
-    expect(screen.getByText(/Entrenamiento · Saque/)).toBeInTheDocument();
-    expect(await screen.findByText('Luis Perez')).toBeInTheDocument();
-    expect(screen.getByText(/Evaluación · Derecha · 8\/10/)).toBeInTheDocument();
+    expect(await screen.findByText('Ana Gómez')).toBeInTheDocument();
+    expect(screen.getByText(/Nota de técnica \(Saque\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Derecha: 8 de 10/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Nombre o correo del jugador')).toBeInTheDocument();
   });
 
-  it('shows an empty state when there is no recent activity', async () => {
+  it('says so when there are no classes today', async () => {
+    bookingClient.getSchedule.mockResolvedValue({ courts: [], reservations: [] });
     renderPage();
-    expect(await screen.findByText('Sin actividad reciente.')).toBeInTheDocument();
-  });
-
-  it('shows upcoming club-wide CLASS sessions derived from the schedule', async () => {
-    bookingClient.getSchedule.mockResolvedValue({
-      reservations: [
-        {
-          courtId: 'court-1',
-          periodStart: '2026-03-05T14:00:00.000Z',
-          periodEnd: '2026-03-05T15:00:00.000Z',
-          label: 'Clase',
-          occupied: true,
-        },
-        {
-          courtId: 'court-2',
-          periodStart: '2026-03-05T16:00:00.000Z',
-          periodEnd: '2026-03-05T17:00:00.000Z',
-          label: 'Ocupada',
-          occupied: true,
-        },
-      ],
-    });
-
-    renderPage();
-
-    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
-    expect(await screen.findByText('Próximas clases')).toBeInTheDocument();
-    // Only the 'Clase' entry renders as an upcoming class -- 8 calls (one per
-    // UPCOMING_DAYS date key) all resolve the same fixture, so exactly one
-    // matching row appears per day; assert at least one and never the
-    // 'Ocupada' occupied-but-not-class slot leaking through.
-    expect(screen.queryByText(/Cancha court-2/)).not.toBeInTheDocument();
-  });
-
-  it('shows an empty state when there are no upcoming classes', async () => {
-    renderPage();
-    expect(await screen.findByText('Sin clases programadas próximamente.')).toBeInTheDocument();
-  });
-
-  it('looks up a player by email and offers a shortcut to their notes', async () => {
-    membershipClient.lookupUser.mockResolvedValue({
-      id: 'p1',
-      firstName: 'Ana',
-      lastName: 'Gomez',
-      email: 'ana@example.com',
-    });
-
-    const user = userEvent.setup();
-    renderPage();
-    await user.type(screen.getByLabelText('Correo del jugador'), 'ana@example.com');
-    await user.click(screen.getByRole('button', { name: 'Buscar' }));
-
-    expect(await screen.findByText('ana@example.com')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ver notas y evaluaciones' })).toHaveAttribute(
-      'href',
-      '/staff/notas',
-    );
-  });
-
-  it('renders shortcuts to coach-reachable staff modules', async () => {
-    renderPage();
-    expect(await screen.findByText('Accesos rápidos')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Notas y evaluaciones' })).toHaveAttribute(
-      'href',
-      '/staff/notas',
-    );
+    expect(await screen.findByText('No hay clases programadas hoy')).toBeInTheDocument();
   });
 });

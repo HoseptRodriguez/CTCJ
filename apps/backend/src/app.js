@@ -55,6 +55,7 @@ import { createBookingRoutes } from './modules/booking/infrastructure/http/booki
 import { createIdentityMembershipStatusProvider } from './modules/booking/infrastructure/adapters/membershipStatusProviderAdapter.js';
 import { createIdentitySystemSettingBookingPolicy } from './modules/booking/infrastructure/adapters/bookingPolicySettingsAdapter.js';
 import { createIdentityGuardianshipProvider } from './modules/booking/infrastructure/adapters/guardianshipProviderAdapter.js';
+import { createIdentityPlayerDirectoryProvider as createBookingPlayerDirectoryProvider } from './modules/booking/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { buildBillingContainer } from './modules/billing/infrastructure/compositionRoot.js';
 import { createBillingAdminController } from './modules/billing/infrastructure/http/billingAdminController.js';
 import { createBillingAdminRoutes } from './modules/billing/infrastructure/http/billingAdminRoutes.js';
@@ -238,6 +239,10 @@ export function createApp() {
     membershipStatusProvider,
     bookingPolicySettings,
     guardianshipProvider,
+    // Staff-only names on the schedule (who to charge at the front desk).
+    playerDirectoryProvider: createBookingPlayerDirectoryProvider({
+      getUserSummaries: identityContainer.getUserSummaries,
+    }),
   });
   const bookingController = createBookingController(bookingContainer);
   app.use('/api/booking', createBookingRoutes(bookingController));

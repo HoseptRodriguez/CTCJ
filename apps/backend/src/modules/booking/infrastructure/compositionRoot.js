@@ -22,6 +22,7 @@ import {
   createNullMembershipStatusProvider,
   createStaticBookingPolicySettings,
   createNullGuardianshipProvider,
+  createNullPlayerDirectoryProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -40,6 +41,7 @@ export function buildBookingContainer({
   membershipStatusProvider = createNullMembershipStatusProvider(),
   bookingPolicySettings = createStaticBookingPolicySettings(false),
   guardianshipProvider = createNullGuardianshipProvider(),
+  playerDirectoryProvider = createNullPlayerDirectoryProvider(),
 } = {}) {
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
@@ -53,6 +55,7 @@ export function buildBookingContainer({
       courtRepository,
       clubId: DEFAULT_CLUB_ID,
       membershipStatusProvider,
+      playerDirectoryProvider,
     }),
     createHold: createCreateHold({
       reservationRepository,

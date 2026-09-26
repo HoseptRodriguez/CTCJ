@@ -1,41 +1,39 @@
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { affiliationClient } from '../../api/affiliationClient.js';
 import { billingClient } from '../../api/billingClient.js';
 import { bookingClient } from '../../api/bookingClient.js';
+import { communityAdminClient } from '../../api/communityAdminClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 import { AdminDashboard } from './AdminDashboard.jsx';
 
+vi.mock('../../context/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
 vi.mock('../../api/bookingClient.js', () => ({
-  bookingClient: {
-    getSchedule: vi.fn(),
-    listCourts: vi.fn(),
-    getMonthlyRevenue: vi.fn(),
-    listPayments: vi.fn(),
-  },
+  bookingClient: { getSchedule: vi.fn(), getMonthlyRevenue: vi.fn(), listPayments: vi.fn() },
 }));
-
 vi.mock('../../api/billingClient.js', () => ({
   billingClient: { listInvoicesClubWide: vi.fn(), getMonthlyRevenue: vi.fn() },
 }));
-
 vi.mock('../../api/membershipClient.js', () => ({
-  membershipClient: { getPlayerCounts: vi.fn() },
+  membershipClient: { getPlayerCounts: vi.fn(), getMyProfile: vi.fn() },
 }));
-
-vi.mock('../../api/affiliationClient.js', () => ({
-  affiliationClient: { listRequests: vi.fn() },
-}));
-
+vi.mock('../../api/affiliationClient.js', () => ({ affiliationClient: { listRequests: vi.fn() } }));
 vi.mock('../../api/guardianshipClient.js', () => ({
   guardianshipClient: { listGuardianships: vi.fn() },
 }));
+vi.mock('../../api/communityAdminClient.js', () => ({
+  communityAdminClient: { listReports: vi.fn() },
+}));
 
-function renderPage() {
+const recently = new Date(Date.now() - 86_400_000).toISOString();
+
+function renderPage(roles = ['ADMINISTRADOR']) {
+  useAuth.mockReturnValue({ user: { id: 'u1', roles: ['USUARIO', ...roles] } });
   return render(
     <MemoryRouter>
       <AdminDashboard />
@@ -43,138 +41,139 @@ function renderPage() {
   );
 }
 
-describe('AdminDashboard', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    bookingClient.getSchedule.mockResolvedValue({
-      reservations: [
-        { id: 'r1', status: 'CONFIRMED' },
-        { id: 'r2', status: 'HOLD' },
-        { id: 'r3', status: 'CANCELLED' },
-      ],
-    });
-    bookingClient.listCourts.mockResolvedValue({ courts: [{ id: 'c1' }, { id: 'c2' }] });
-    bookingClient.getMonthlyRevenue.mockResolvedValue({ months: [{ totalCop: 100000, count: 2 }] });
-    bookingClient.listPayments.mockResolvedValue({ payments: [], totalCop: 0, count: 0 });
-    billingClient.listInvoicesClubWide.mockImplementation(({ status }) =>
-      Promise.resolve(
-        status === 'PENDING'
-          ? { invoices: [], totalCop: 250000, count: 3 }
-          : { invoices: [], totalCop: 0, count: 0 },
-      ),
+beforeEach(() => {
+  vi.clearAllMocks();
+  membershipClient.getMyProfile.mockResolvedValue({ firstName: 'Marta' });
+  bookingClient.getSchedule.mockResolvedValue({
+    courts: [
+      { id: 'c1', name: 'Cancha 1' },
+      { id: 'c2', name: 'Cancha 2' },
+    ],
+    reservations: [
+      {
+        id: 'r1',
+        courtId: 'c1',
+        status: 'CONFIRMED',
+        reservationType: 'PRIVATE',
+        paymentId: null,
+        priceCop: 35000,
+        holderName: 'Ana Ruiz',
+        periodStart: '2026-09-25T12:00:00Z',
+        periodEnd: '2026-09-25T13:00:00Z',
+      },
+      {
+        id: 'r2',
+        courtId: 'c1',
+        status: 'CONFIRMED',
+        reservationType: 'PRIVATE',
+        paymentId: 'p1',
+        priceCop: 35000,
+        holderName: 'Luis Gómez',
+        periodStart: '2026-09-25T14:00:00Z',
+        periodEnd: '2026-09-25T15:00:00Z',
+      },
+      {
+        id: 'r3',
+        courtId: 'c2',
+        status: 'CONFIRMED',
+        reservationType: 'CLASS',
+        paymentId: null,
+        priceCop: 40000,
+        periodStart: '2026-09-25T21:00:00Z',
+        periodEnd: '2026-09-25T22:00:00Z',
+      },
+    ],
+  });
+  bookingClient.getMonthlyRevenue.mockResolvedValue({ months: [{ totalCop: 100000, count: 2 }] });
+  billingClient.getMonthlyRevenue.mockResolvedValue({ months: [{ totalCop: 50000, count: 1 }] });
+  bookingClient.listPayments.mockResolvedValue({
+    payments: [{ id: 'p1', amountCop: 35000, recordedAt: recently }],
+  });
+  billingClient.listInvoicesClubWide.mockResolvedValue({
+    invoices: [
+      {
+        id: 'i1',
+        amountCop: 120000,
+        paidAt: recently,
+        playerFirstName: 'Sofía',
+        playerLastName: 'Paz',
+      },
+    ],
+  });
+  membershipClient.getPlayerCounts.mockResolvedValue({ ACTIVE: 12, OVERDUE: 2, total: 15 });
+  affiliationClient.listRequests.mockResolvedValue({
+    requests: [{ id: 'a1', requestedAt: recently }],
+  });
+  guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [] });
+  communityAdminClient.listReports.mockResolvedValue({ reports: [] });
+});
+
+describe('AdminDashboard (panel de Admin/Recepción)', () => {
+  it('greets the person by name', async () => {
+    renderPage();
+    expect(await screen.findByRole('heading', { level: 1, name: /, Marta$/ })).toBeInTheDocument();
+  });
+
+  it('"Para hacer hoy": unpaid reservations → Cobrar, requests → Revisar, no reports → all clear', async () => {
+    renderPage();
+    const todo = (await screen.findByRole('heading', { name: 'Para hacer hoy' })).closest(
+      'section',
     );
-    billingClient.getMonthlyRevenue.mockResolvedValue({ months: [{ totalCop: 50000, count: 1 }] });
-    membershipClient.getPlayerCounts.mockResolvedValue({
-      ACTIVE: 12,
-      PENDING: 1,
-      OVERDUE: 2,
-      INACTIVE: 0,
-      SUSPENDED: 0,
-      NONE: 0,
-      total: 15,
-    });
-    affiliationClient.listRequests.mockResolvedValue({ requests: [] });
-    guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [] });
-  });
-
-  it("shows today's reservation count (occupying statuses only)", async () => {
-    renderPage();
-    await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
-    expect(await screen.findByText('Reservas de hoy')).toBeInTheDocument();
-    expect(await screen.findByText('2')).toBeInTheDocument();
-  });
-
-  it('computes court occupancy from active courts and operating hours', async () => {
-    renderPage();
-    // 2 occupying reservations / (2 courts * 17 hours) = 5.88% -> rounds to 6%.
-    expect(await screen.findByText('6%')).toBeInTheDocument();
-    expect(screen.getByText('2 canchas activas')).toBeInTheDocument();
-  });
-
-  it('shows pending payments total and count', async () => {
-    renderPage();
-    expect(await screen.findByText('Pagos pendientes')).toBeInTheDocument();
-    expect(await screen.findByText(/\$\s*250\.000/)).toBeInTheDocument();
-    expect(screen.getByText('3 facturas')).toBeInTheDocument();
-  });
-
-  it('shows combined court + membership revenue for the current month', async () => {
-    renderPage();
-    expect(await screen.findByText('Ingresos este mes')).toBeInTheDocument();
-    expect(await screen.findByText(/\$\s*150\.000/)).toBeInTheDocument();
-  });
-
-  it('shows active players count out of the total', async () => {
-    renderPage();
-    expect(await screen.findByText('Jugadores activos')).toBeInTheDocument();
-    expect(await screen.findByText('12')).toBeInTheDocument();
-    expect(screen.getByText('15 jugadores en total')).toBeInTheDocument();
-  });
-
-  it('shows pending requests count combining affiliation and guardianship', async () => {
-    affiliationClient.listRequests.mockResolvedValue({
-      requests: [{ id: 'a1', requestedAt: '2026-03-01T10:00:00.000Z' }],
-    });
-    guardianshipClient.listGuardianships.mockResolvedValue({
-      guardianships: [
-        { id: 'g1', requestedAt: '2026-03-01T10:00:00.000Z', minorEmail: 'menor1@example.com' },
-        { id: 'g2', requestedAt: '2026-03-01T10:00:00.000Z', minorEmail: 'menor2@example.com' },
-      ],
-    });
-
-    renderPage();
-
-    expect(await screen.findByText('Solicitudes pendientes')).toBeInTheDocument();
-    expect(await screen.findByText('3')).toBeInTheDocument();
-  });
-
-  it('shows recent activity merged from payments and requests, newest first', async () => {
-    bookingClient.listPayments.mockResolvedValue({
-      payments: [
-        {
-          id: 'p1',
-          recordedAt: '2026-03-01T10:00:00.000Z',
-          method: 'CASH',
-          amountCop: 60000,
-        },
-      ],
-      totalCop: 60000,
-      count: 1,
-    });
-    billingClient.listInvoicesClubWide.mockImplementation(({ status }) =>
-      Promise.resolve(
-        status === 'PENDING'
-          ? { invoices: [], totalCop: 250000, count: 3 }
-          : {
-              invoices: [
-                {
-                  id: 'i1',
-                  paidAt: '2026-03-05T10:00:00.000Z',
-                  amountCop: 100000,
-                  playerFirstName: 'Ana',
-                  playerLastName: 'Gomez',
-                },
-              ],
-              totalCop: 100000,
-              count: 1,
-            },
-      ),
-    );
-
-    renderPage();
-
-    expect(await screen.findByText('Actividad reciente')).toBeInTheDocument();
-    expect(await screen.findByText(/Pago de membresía · Ana Gomez/)).toBeInTheDocument();
-    expect(await screen.findByText(/Pago de cancha registrado/)).toBeInTheDocument();
-  });
-
-  it('renders quick shortcuts to every staff module', async () => {
-    renderPage();
-    expect(await screen.findByText('Accesos rápidos')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Pagos' })).toHaveAttribute('href', '/staff/pagos');
-    expect(screen.getByRole('link', { name: 'Finanzas' })).toHaveAttribute(
+    // r1 and the class r3 are confirmed and unpaid.
+    expect(await within(todo).findByText('reservas sin pagar')).toBeInTheDocument();
+    expect(within(todo).getByRole('link', { name: 'Cobrar' })).toHaveAttribute(
       'href',
-      '/staff/finanzas',
+      '/staff/pagos',
     );
+    expect(await within(todo).findByText('solicitud por revisar')).toBeInTheDocument();
+    expect(within(todo).getByRole('link', { name: 'Revisar' })).toHaveAttribute(
+      'href',
+      '/staff/solicitudes',
+    );
+    expect(await within(todo).findByText('No hay reportes en la comunidad')).toBeInTheDocument();
+    expect(within(todo).getByRole('link', { name: 'Moderar' })).toBeInTheDocument();
+  });
+
+  it('Recepción never asks for the admin-only requests', async () => {
+    renderPage(['RECEPCION']);
+    await screen.findByText('Para hacer hoy');
+    expect(screen.queryByRole('link', { name: 'Revisar' })).not.toBeInTheDocument();
+    expect(affiliationClient.listRequests).not.toHaveBeenCalled();
+    expect(guardianshipClient.listGuardianships).not.toHaveBeenCalled();
+  });
+
+  it('shows the 4 figures: reservations + occupancy, to charge, month income, active + overdue', async () => {
+    renderPage();
+    const stats = await screen.findByRole('region', { name: 'Cifras del club' });
+    // 3 hours booked out of 2 courts × 17 hours.
+    expect(await within(stats).findByText('9 % de ocupación')).toBeInTheDocument();
+    expect(within(stats).getByText('3')).toBeInTheDocument();
+    expect(within(stats).getByText('$ 75.000')).toBeInTheDocument();
+    expect(await within(stats).findByText('$ 150.000')).toBeInTheDocument();
+    expect(await within(stats).findByText('12')).toBeInTheDocument();
+    expect(within(stats).getByText('2 con pago vencido')).toBeInTheDocument();
+  });
+
+  it('"Canchas hoy" lists every court with who booked and the classes (phone layout)', async () => {
+    renderPage();
+    const courts = (await screen.findByRole('heading', { name: 'Canchas hoy' })).closest('section');
+    expect(await within(courts).findByText('Cancha 1')).toBeInTheDocument();
+    expect(within(courts).getByText(/Reserva · Ana Ruiz/)).toBeInTheDocument();
+    expect(within(courts).getByText('Clase')).toBeInTheDocument();
+  });
+
+  it('"Últimos 7 días" mixes court payments, membership payments and requests', async () => {
+    renderPage();
+    expect(await screen.findByText('Pago de cancha por $ 35.000')).toBeInTheDocument();
+    expect(screen.getByText('Sofía Paz pagó su membresía ($ 120.000)')).toBeInTheDocument();
+    expect(screen.getByText('Nueva solicitud de afiliación')).toBeInTheDocument();
+  });
+
+  it('a failing schedule shows an error with retry, and the rest of the panel still loads', async () => {
+    bookingClient.getSchedule.mockRejectedValue(new Error('down'));
+    renderPage();
+    expect(await screen.findByText('No pudimos cargar la agenda de hoy')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    expect(await screen.findByText('Pago de cancha por $ 35.000')).toBeInTheDocument();
   });
 });

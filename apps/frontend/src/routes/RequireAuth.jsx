@@ -9,7 +9,7 @@ export function RequireAuth() {
   if (status === 'loading') {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <span className="text-sm text-secondary">Cargando...</span>
+        <span className="text-body text-ink-soft">Cargando…</span>
       </div>
     );
   }

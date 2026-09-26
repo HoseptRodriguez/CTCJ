@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -58,17 +58,15 @@ const CARTERA = {
   count: 1,
 };
 
-describe('FinancePage', () => {
+const section = (name) => screen.getByRole('heading', { name }).closest('section');
+
+describe('FinancePage (Finanzas)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     bookingClient.listPayments.mockResolvedValue(COURT_PAYMENTS);
     billingClient.listInvoicesClubWide.mockImplementation(({ status }) =>
       Promise.resolve(status === 'PENDING' ? CARTERA : MEMBERSHIP_PAYMENTS),
     );
-    // Deliberately distinct from COURT_PAYMENTS/MEMBERSHIP_PAYMENTS' totals
-    // below (60.000/100.000/160.000) -- CashFlowChart renders real SVG text
-    // nodes for its axis ticks, and a colliding value would make those
-    // sections' own subtotal assertions ambiguous.
     bookingClient.getMonthlyRevenue.mockResolvedValue({
       months: [
         { month: '2026-01', totalCop: 12345, count: 2 },
@@ -83,47 +81,58 @@ describe('FinancePage', () => {
     });
   });
 
-  it('renders both payment sections with subtotals and a combined total', async () => {
+  it('shows the big total of the period and each source', async () => {
     render(<FinancePage />);
-
-    expect(await screen.findByText('Pagos de canchas')).toBeInTheDocument();
-    expect(await screen.findByText('Pagos de membresías')).toBeInTheDocument();
-    // Subtotals: $ 60.000 (canchas) and $ 100.000 (membresías); combined = $ 160.000.
-    expect(screen.getAllByText(/\$\s*60\.000/)).toHaveLength(2); // subtotal + the one row
-    expect(screen.getAllByText(/\$\s*100\.000/)).toHaveLength(2);
-    expect(screen.getByText(/\$\s*160\.000/)).toBeInTheDocument();
+    const total = await screen.findByRole('region', { name: 'Total del período' });
+    expect(await within(total).findByText('$ 160.000')).toBeInTheDocument();
+    expect(within(total).getByText('Canchas $ 60.000 · Membresías $ 100.000')).toBeInTheDocument();
   });
 
-  it('shows the cartera section with an overdue badge', async () => {
+  it('lists court and membership payments', async () => {
     render(<FinancePage />);
-
-    expect(await screen.findByText(/Luis Ruiz/)).toBeInTheDocument();
-    expect(screen.getByText('Vencida')).toBeInTheDocument();
+    await screen.findByText('Ana Gomez');
+    expect(within(section('Pagos de canchas')).getByText('Efectivo')).toBeInTheDocument();
+    expect(within(section('Pagos de membresías')).getByText(/Transferencia/)).toBeInTheDocument();
   });
 
-  it('exports court payments to CSV on click', async () => {
+  it('"Cartera" shows who owes, with a "Vencida" badge', async () => {
+    render(<FinancePage />);
+    expect(await screen.findByText('Luis Ruiz')).toBeInTheDocument();
+    expect(within(section('Cartera')).getByText('Vencida')).toBeInTheDocument();
+  });
+
+  it('every section has "Descargar CSV"', async () => {
     const user = userEvent.setup();
     render(<FinancePage />);
-
-    const heading = await screen.findByText('Pagos de canchas');
-    const section = within(heading.closest('div'));
-    await user.click(await section.findByRole('button', { name: 'Exportar CSV' }));
-
-    expect(exportToCsv).toHaveBeenCalledWith(
-      expect.objectContaining({ filename: 'pagos-canchas.csv', rows: COURT_PAYMENTS.payments }),
+    await screen.findByText('Luis Ruiz');
+    await user.click(
+      within(section('Pagos de canchas')).getByRole('button', { name: 'Descargar CSV' }),
+    );
+    expect(exportToCsv).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rows: COURT_PAYMENTS.payments }),
+    );
+    await user.click(
+      within(section('Pagos de membresías')).getByRole('button', { name: 'Descargar CSV' }),
+    );
+    expect(exportToCsv).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rows: MEMBERSHIP_PAYMENTS.invoices }),
+    );
+    await user.click(within(section('Cartera')).getByRole('button', { name: 'Descargar CSV' }));
+    expect(exportToCsv).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rows: CARTERA.invoices }),
     );
   });
 
-  it('refetches when the date range changes', async () => {
+  it('range presets and custom dates refetch the payments', async () => {
     const user = userEvent.setup();
     render(<FinancePage />);
-
     await waitFor(() => expect(bookingClient.listPayments).toHaveBeenCalledTimes(1));
 
-    const fromInput = screen.getByLabelText('Desde');
-    await user.clear(fromInput);
-    await user.type(fromInput, '2026-01-01');
+    await user.click(screen.getByRole('radio', { name: 'Mes pasado' }));
+    await waitFor(() => expect(bookingClient.listPayments).toHaveBeenCalledTimes(2));
 
+    await user.click(screen.getByRole('radio', { name: 'Otras fechas' }));
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-01-01' } });
     await waitFor(() =>
       expect(bookingClient.listPayments).toHaveBeenLastCalledWith(
         expect.objectContaining({ from: '2026-01-01' }),
@@ -131,51 +140,30 @@ describe('FinancePage', () => {
     );
   });
 
-  it('shows the cash flow section, defaulting to 6 months', async () => {
+  it('cash flow: 6 months by default, 3/6/12 selector, and CSV per month', async () => {
+    const user = userEvent.setup();
     render(<FinancePage />);
-
-    await screen.findByText('Flujo de caja');
     await waitFor(() =>
       expect(bookingClient.getMonthlyRevenue).toHaveBeenCalledWith({ months: 6 }),
     );
-    await waitFor(() =>
-      expect(billingClient.getMonthlyRevenue).toHaveBeenCalledWith({ months: 6 }),
-    );
-  });
+    expect(billingClient.getMonthlyRevenue).toHaveBeenCalledWith({ months: 6 });
 
-  it('refetches cash flow when the months selector changes', async () => {
-    const user = userEvent.setup();
-    render(<FinancePage />);
-
-    await screen.findByText('Flujo de caja');
-    await waitFor(() => expect(bookingClient.getMonthlyRevenue).toHaveBeenCalledTimes(1));
-
-    await user.selectOptions(screen.getByLabelText('Meses'), '12');
-
-    await waitFor(() =>
-      expect(bookingClient.getMonthlyRevenue).toHaveBeenLastCalledWith({ months: 12 }),
-    );
-    await waitFor(() =>
-      expect(billingClient.getMonthlyRevenue).toHaveBeenLastCalledWith({ months: 12 }),
-    );
-  });
-
-  it('exports cash flow to CSV, merging court and membership totals per month', async () => {
-    const user = userEvent.setup();
-    render(<FinancePage />);
-
-    const heading = await screen.findByText('Flujo de caja');
-    const section = within(heading.closest('div'));
-    await user.click(await section.findByRole('button', { name: 'Exportar CSV' }));
-
-    expect(exportToCsv).toHaveBeenCalledWith(
+    const flow = section('Flujo de caja');
+    // The figures are also in a readable table.
+    expect(await within(flow).findByRole('table')).toBeInTheDocument();
+    await user.click(within(flow).getByRole('button', { name: 'Descargar CSV' }));
+    expect(exportToCsv).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        filename: 'flujo-de-caja.csv',
         rows: [
           { month: '2026-01', courtCop: 12345, membershipCop: 34567 },
           { month: '2026-02', courtCop: 23456, membershipCop: 45678 },
         ],
       }),
+    );
+
+    await user.click(within(flow).getByRole('radio', { name: '12 meses' }));
+    await waitFor(() =>
+      expect(bookingClient.getMonthlyRevenue).toHaveBeenLastCalledWith({ months: 12 }),
     );
   });
 });

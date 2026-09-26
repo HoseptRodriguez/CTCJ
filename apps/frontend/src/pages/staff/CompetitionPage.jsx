@@ -1,615 +1,486 @@
-import { useEffect, useState } from 'react';
 import { ROLE_CODES } from '@ctcj/shared';
+import { useEffect, useState } from 'react';
 
 import { competitionClient } from '../../api/competitionClient.js';
-import { membershipClient } from '../../api/membershipClient.js';
-import { Button } from '../../components/ui/LegacyButton.jsx';
+import { PlusIcon } from '../../components/icons/PlusIcon.jsx';
+import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { cn } from '../../components/ui/cn.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
+import { SelectField, TextField } from '../../components/ui/Field.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
+import { useToast } from '../../components/ui/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { clubTodayKey } from '../../lib/clubTime.js';
 import { describeCompetitionError } from '../../lib/competitionErrorMessages.js';
-import { describeIdentityError } from '../../lib/identityErrorMessages.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { CATEGORY_LABELS, DATE_MEDIUM, MODALITY_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
-const CATEGORIES = [
-  { code: 'SEGUNDA', label: 'Segunda categoría' },
-  { code: 'TERCERA', label: 'Tercera categoría' },
-  { code: 'CUARTA', label: 'Cuarta categoría' },
-  { code: 'QUINTA', label: 'Quinta categoría' },
-];
-const MODALITIES = [
-  { code: 'SINGLES', label: 'Singles' },
-  { code: 'DOBLES', label: 'Dobles' },
-];
+import { NumberChoice, ParticipantSlot } from './matchInputs.jsx';
+import { FormAlert, ReasonDialog, StaffRow } from './staffShared.jsx';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
+// Same role sets the backend enforces on these routes.
+const RECORD_ROLES = [ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION, ROLE_CODES.ENTRENADOR];
+const LOOKUP_ROLES = RECORD_ROLES;
 
-function CreateSeasonForm({ onCreated }) {
-  const [name, setName] = useState('');
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [seasonNumber, setSeasonNumber] = useState(1);
-  const [startDate, setStartDate] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+const dateOnly = (key) => DATE_MEDIUM.format(new Date(`${String(key).slice(0, 10)}T12:00:00Z`));
+const sideName = (people) =>
+  people
+    .map((p) => (p.firstName ? `${p.firstName} ${p.lastName ?? ''}`.trim() : 'Jugador'))
+    .join(' y ');
+
+function RecordMatchPanel({ open, onClose, seasonId, category, modality, allowEmail, onSaved }) {
+  const toast = useToast();
+  const slots = modality === 'SINGLES' ? 1 : 2;
+  const [sideA, setSideA] = useState(() => Array(slots).fill(null));
+  const [sideB, setSideB] = useState(() => Array(slots).fill(null));
+  const [setsA, setSetsA] = useState(null);
+  const [setsB, setSetsB] = useState(null);
+  const [playedAt, setPlayedAt] = useState(clubTodayKey);
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitting(true);
+  async function save() {
+    const everyone = [...sideA, ...sideB];
+    if (everyone.some((p) => !p)) return setError('Elige a todos los jugadores.');
+    if (new Set(everyone.map((p) => p.id)).size !== everyone.length)
+      return setError('Un jugador no puede estar dos veces.');
+    if (setsA == null || setsB == null) return setError('Marca los sets de cada lado.');
+    if (setsA === setsB)
+      return setError('Tiene que haber un ganador: los sets no pueden quedar iguales.');
+    setSaving(true);
+    setError(null);
+    try {
+      await competitionClient.recordMatch({
+        seasonId,
+        category,
+        modality,
+        participantsA: sideA.map((p) => p.id),
+        participantsB: sideB.map((p) => p.id),
+        winnerSide: setsA > setsB ? 'A' : 'B',
+        setsWonA: setsA,
+        setsWonB: setsB,
+        playedAt,
+        notes: notes.trim() || undefined,
+      });
+      toast({
+        title: 'Resultado registrado',
+        description: `${sideName(sideA)} ${setsA}-${setsB} ${sideName(sideB)}`,
+        tone: 'success',
+      });
+      onSaved();
+    } catch (err) {
+      setError(describeCompetitionError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const slotLabel = (side, i) =>
+    slots === 1 ? `Jugador del lado ${side}` : `Jugador ${i + 1} del lado ${side}`;
+  const setAt = (setter) => (i) => (p) => setter((prev) => prev.map((x, j) => (j === i ? p : x)));
+
+  return (
+    <SlidePanel
+      open={open}
+      onClose={onClose}
+      title="Registrar resultado"
+      description={`${CATEGORY_LABELS[category]} · ${MODALITY_LABELS[modality]}`}
+      footer={
+        <Button size="lg" fullWidth loading={saving} loadingText="Guardando…" onClick={save}>
+          Guardar resultado
+        </Button>
+      }
+    >
+      <div className="space-y-8">
+        {[
+          ['A', sideA, setAt(setSideA), setsA, setSetsA],
+          ['B', sideB, setAt(setSideB), setsB, setSetsB],
+        ].map(([side, list, setOne, sets, setSets]) => (
+          <section
+            key={side}
+            aria-label={`Lado ${side}`}
+            className="space-y-4 rounded-xl bg-page p-4"
+          >
+            <h3 className="text-lead font-bold text-ink">Lado {side}</h3>
+            {list.map((p, i) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <ParticipantSlot
+                key={i}
+                label={slotLabel(side, i)}
+                value={p}
+                onChange={setOne(i)}
+                allowEmail={allowEmail}
+              />
+            ))}
+            <NumberChoice
+              label={`Sets ganados por el lado ${side}`}
+              value={sets}
+              onChange={setSets}
+              max={5}
+            />
+          </section>
+        ))}
+        <TextField
+          label="Fecha del partido"
+          type="date"
+          value={playedAt}
+          onChange={(e) => setPlayedAt(e.target.value)}
+        />
+        <TextField
+          label="Notas (opcional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          maxLength={1000}
+        />
+        <FormAlert>{error}</FormAlert>
+      </div>
+    </SlidePanel>
+  );
+}
+
+function NewSeasonPanel({ open, onClose, onSaved }) {
+  const toast = useToast();
+  const year = Number(clubTodayKey().slice(0, 4));
+  const [seasonNumber, setSeasonNumber] = useState('1');
+  const [name, setName] = useState(`Temporada 1 · ${year}`);
+  const [startDate, setStartDate] = useState(clubTodayKey);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function save() {
+    if (!name.trim()) return setError('Escribe el nombre de la temporada.');
+    setSaving(true);
     setError(null);
     try {
       await competitionClient.createSeason({
         name: name.trim(),
-        year: Number(year),
+        year: Number(startDate.slice(0, 4)) || year,
         seasonNumber: Number(seasonNumber),
         startDate,
       });
-      setName('');
-      setStartDate('');
-      await onCreated();
+      toast({ title: 'Temporada creada', description: name.trim(), tone: 'success' });
+      onSaved();
     } catch (err) {
       setError(describeCompetitionError(err));
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap items-end gap-3">
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="season-name">
-          Nombre
-        </label>
-        <input
-          id="season-name"
-          required
+    <SlidePanel
+      open={open}
+      onClose={onClose}
+      title="Nueva temporada"
+      footer={
+        <Button size="lg" fullWidth loading={saving} loadingText="Creando…" onClick={save}>
+          Crear temporada
+        </Button>
+      }
+    >
+      <div className="space-y-6">
+        <SegmentedControl
+          label="Temporada del año"
+          value={seasonNumber}
+          onChange={(v) => {
+            setSeasonNumber(v);
+            setName(`Temporada ${v} · ${startDate.slice(0, 4) || year}`);
+          }}
+          options={[
+            { value: '1', label: 'Primera' },
+            { value: '2', label: 'Segunda' },
+          ]}
+        />
+        <TextField
+          label="Nombre"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Temporada 1 · 2026"
-          className="mt-1 w-56 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
+          maxLength={60}
         />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="season-year">
-          Año
-        </label>
-        <input
-          id="season-year"
-          type="number"
-          required
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className="mt-1 w-24 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="season-number">
-          Temporada del año
-        </label>
-        <select
-          id="season-number"
-          value={seasonNumber}
-          onChange={(e) => setSeasonNumber(e.target.value)}
-          className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        >
-          <option value={1}>1</option>
-          <option value={2}>2</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="season-start">
-          Fecha de inicio
-        </label>
-        <input
-          id="season-start"
+        <TextField
+          label="Fecha de inicio"
           type="date"
-          required
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
         />
+        <FormAlert>{error}</FormAlert>
       </div>
-      <Button type="submit" variant="primary" disabled={submitting || !name.trim() || !startDate}>
-        {submitting ? 'Creando...' : 'Crear temporada'}
-      </Button>
-      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
-    </form>
+    </SlidePanel>
   );
 }
 
-function CloseSeasonButton({ season, onClosed }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
-  async function handleClose() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await competitionClient.closeSeason(season.id);
-      await onClosed();
-    } catch (err) {
-      setError(describeCompetitionError(err));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (season.status !== 'OPEN') {
-    return null;
-  }
-
-  return (
-    <div className="mt-3">
-      <Button variant="ghost" onClick={handleClose} disabled={submitting}>
-        {submitting ? 'Cerrando...' : 'Cerrar temporada'}
-      </Button>
-      {error ? <p className="mt-1 text-sm text-error">{error}</p> : null}
-    </div>
+function Standings({ seasonId, category, modality, version }) {
+  const standings = useAsync(
+    () => competitionClient.getStandings({ seasonId, category, modality }).then((d) => d.standings),
+    [seasonId, category, modality, version],
   );
-}
-
-function SeasonPanel({ isAdmin, seasons, selectedSeasonId, onSelectSeason, onSeasonsChanged }) {
-  const selectedSeason = seasons?.find((s) => s.id === selectedSeasonId) ?? null;
-
   return (
-    <div className="rounded-lg border border-neutral-200 bg-canvas p-6">
-      <h3 className="font-display text-lg font-semibold text-primary">Temporadas</h3>
-
-      {seasons === null ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
-      {seasons?.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">Todavía no hay ninguna temporada.</p>
-      ) : null}
-
-      {seasons?.length > 0 ? (
-        <div className="mt-3">
-          <label className="flex items-center gap-2 text-sm text-secondary" htmlFor="season-select">
-            Temporada activa en esta vista
-            <select
-              id="season-select"
-              value={selectedSeasonId}
-              onChange={(e) => onSelectSeason(e.target.value)}
-              className="rounded-md border border-neutral-300 bg-canvas px-3 py-1.5 text-sm"
+    <SectionCard
+      title="Tabla"
+      async={standings}
+      isEmpty={(r) => r.length === 0}
+      empty={{ title: 'Todavía no hay partidos en esta categoría' }}
+    >
+      {(rows) => (
+        <ol className="space-y-2">
+          {rows.map((row) => (
+            <li
+              key={row.playerId}
+              className={cn(
+                'flex items-center gap-3 rounded-lg p-3',
+                row.qualifiesForMasters ? 'bg-status-ok-bg' : 'bg-page',
+              )}
             >
-              {seasons.map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.name} {season.status === 'CLOSED' ? '(cerrada)' : '(abierta)'}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
-
-      {isAdmin ? (
-        <>
-          {selectedSeason ? (
-            <CloseSeasonButton season={selectedSeason} onClosed={onSeasonsChanged} />
-          ) : null}
-          <CreateSeasonForm onCreated={onSeasonsChanged} />
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function CategoryModalitySelector({ category, modality, onCategoryChange, onModalityChange }) {
-  return (
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-      <div className="flex gap-2" role="tablist" aria-label="Modalidad">
-        {MODALITIES.map((m) => (
-          <button
-            key={m.code}
-            type="button"
-            role="tab"
-            aria-selected={modality.code === m.code}
-            onClick={() => onModalityChange(m)}
-            className={`rounded-full px-4 py-2 font-display text-sm font-semibold uppercase tracking-wide ${
-              modality.code === m.code ? 'bg-navy-500 text-on-inverse' : 'bg-sunken text-secondary'
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.code}
-            type="button"
-            onClick={() => onCategoryChange(cat)}
-            aria-pressed={category.code === cat.code}
-            className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
-              category.code === cat.code
-                ? 'border-navy-500 bg-navy-50 text-primary'
-                : 'border-neutral-200 text-secondary'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ParticipantSlot({ id, label, value, onChange }) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-primary" htmlFor={id}>
-        {label}
-      </label>
-      <input
-        id={id}
-        type="email"
-        required
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="jugador@correo.com"
-        className="mt-1 w-56 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-      />
-    </div>
-  );
-}
-
-function RecordMatchForm({ seasonId, category, modality, onRecorded }) {
-  const slotsPerSide = modality.code === 'SINGLES' ? 1 : 2;
-  const [emailsA, setEmailsA] = useState(() => Array(slotsPerSide).fill(''));
-  const [emailsB, setEmailsB] = useState(() => Array(slotsPerSide).fill(''));
-  const [setsWonA, setSetsWonA] = useState('');
-  const [setsWonB, setSetsWonB] = useState('');
-  const [playedAt, setPlayedAt] = useState('');
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setEmailsA(Array(slotsPerSide).fill(''));
-    setEmailsB(Array(slotsPerSide).fill(''));
-  }, [slotsPerSide]);
-
-  function updateEmail(side, index, value) {
-    const setter = side === 'A' ? setEmailsA : setEmailsB;
-    setter((prev) => prev.map((email, i) => (i === index ? value : email)));
-  }
-
-  const validScore = setsWonA !== '' && setsWonB !== '' && Number(setsWonA) !== Number(setsWonB);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    let participantsA;
-    let participantsB;
-    try {
-      [participantsA, participantsB] = await Promise.all([
-        Promise.all(
-          emailsA.map((email) => membershipClient.lookupUser(email.trim()).then((u) => u.id)),
-        ),
-        Promise.all(
-          emailsB.map((email) => membershipClient.lookupUser(email.trim()).then((u) => u.id)),
-        ),
-      ]);
-    } catch (err) {
-      setError(describeIdentityError(err));
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const a = Number(setsWonA);
-      const b = Number(setsWonB);
-      await competitionClient.recordMatch({
-        seasonId,
-        category: category.code,
-        modality: modality.code,
-        participantsA,
-        participantsB,
-        winnerSide: a > b ? 'A' : 'B',
-        setsWonA: a,
-        setsWonB: b,
-        playedAt,
-        notes: notes.trim() || undefined,
-      });
-      setEmailsA(Array(slotsPerSide).fill(''));
-      setEmailsB(Array(slotsPerSide).fill(''));
-      setSetsWonA('');
-      setSetsWonB('');
-      setPlayedAt('');
-      setNotes('');
-      await onRecorded();
-    } catch (err) {
-      setError(describeCompetitionError(err));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-      <h4 className="font-display font-semibold text-primary">Registrar resultado</h4>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">Lado A</p>
-          {emailsA.map((email, i) => (
-            <ParticipantSlot
-              // eslint-disable-next-line react/no-array-index-key
-              key={`a-${i}`}
-              id={`participant-a-${i}`}
-              label={slotsPerSide === 1 ? 'Jugador' : `Jugador ${i + 1}`}
-              value={email}
-              onChange={(value) => updateEmail('A', i, value)}
-            />
-          ))}
-        </div>
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-tertiary">Lado B</p>
-          {emailsB.map((email, i) => (
-            <ParticipantSlot
-              // eslint-disable-next-line react/no-array-index-key
-              key={`b-${i}`}
-              id={`participant-b-${i}`}
-              label={slotsPerSide === 1 ? 'Jugador' : `Jugador ${i + 1}`}
-              value={email}
-              onChange={(value) => updateEmail('B', i, value)}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="block text-sm font-semibold text-primary" htmlFor="sets-won-a">
-            Sets ganados (A)
-          </label>
-          <input
-            id="sets-won-a"
-            type="number"
-            min="0"
-            max="5"
-            required
-            value={setsWonA}
-            onChange={(e) => setSetsWonA(e.target.value)}
-            className="mt-1 w-20 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-primary" htmlFor="sets-won-b">
-            Sets ganados (B)
-          </label>
-          <input
-            id="sets-won-b"
-            type="number"
-            min="0"
-            max="5"
-            required
-            value={setsWonB}
-            onChange={(e) => setSetsWonB(e.target.value)}
-            className="mt-1 w-20 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-primary" htmlFor="played-at">
-            Fecha del partido
-          </label>
-          <input
-            id="played-at"
-            type="date"
-            required
-            value={playedAt}
-            onChange={(e) => setPlayedAt(e.target.value)}
-            className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="match-notes">
-          Notas (opcional)
-        </label>
-        <input
-          id="match-notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="mt-1 w-full rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-
-      <Button type="submit" variant="primary" disabled={submitting || !validScore || !playedAt}>
-        {submitting ? 'Guardando...' : 'Registrar resultado'}
-      </Button>
-      {error ? <p className="text-sm text-error">{error}</p> : null}
-    </form>
-  );
-}
-
-function VoidMatchForm({ matchId, onVoided }) {
-  const [showForm, setShowForm] = useState(false);
-  const [reason, setReason] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    try {
-      await competitionClient.voidMatch(matchId, reason);
-      setShowForm(false);
-      setReason('');
-      await onVoided();
-    } catch (err) {
-      setError(describeCompetitionError(err));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (!showForm) {
-    return (
-      <Button variant="ghost" onClick={() => setShowForm(true)}>
-        Anular
-      </Button>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-2 flex flex-wrap items-end gap-2">
-      <div>
-        <label className="sr-only" htmlFor={`void-reason-${matchId}`}>
-          Motivo de anulación
-        </label>
-        <input
-          id={`void-reason-${matchId}`}
-          required
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Motivo de anulación"
-          className="w-64 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <Button type="submit" variant="danger" disabled={submitting}>
-        {submitting ? 'Anulando...' : 'Confirmar anulación'}
-      </Button>
-      <Button variant="ghost" onClick={() => setShowForm(false)}>
-        Cancelar
-      </Button>
-      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
-    </form>
-  );
-}
-
-function MatchHistoryList({ seasonId, category, modality, refreshToken }) {
-  const [matches, setMatches] = useState(null);
-  const [error, setError] = useState(null);
-
-  function refetch() {
-    return competitionClient
-      .listMatches({ seasonId, category: category.code, modality: modality.code })
-      .then((data) => setMatches(data.matches))
-      .catch((err) => setError(describeCompetitionError(err)));
-  }
-
-  useEffect(() => {
-    refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seasonId, category, modality, refreshToken]);
-
-  function sideLabel(participants) {
-    return participants
-      .map((p) => (p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : 'Jugador'))
-      .join(' / ');
-  }
-
-  return (
-    <div className="mt-8">
-      <h4 className="font-display font-semibold text-primary">Historial de partidos</h4>
-
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {!error && matches === null ? (
-        <p className="mt-2 text-sm text-secondary">Cargando...</p>
-      ) : null}
-      {matches?.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">Sin partidos registrados todavía.</p>
-      ) : null}
-
-      {matches?.length > 0 ? (
-        <ul className="mt-3 space-y-2">
-          {matches.map((match) => (
-            <li key={match.id} className="rounded-md bg-raised px-4 py-3 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-primary">
-                  {`${sideLabel(match.participantsA)} vs ${sideLabel(match.participantsB)}`}
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-tertiary">
-                  {DATE_FORMATTER.format(new Date(match.playedAt))}
-                </span>
-              </div>
-              <p className="mt-1 text-secondary">
-                {match.setsWonA}-{match.setsWonB} · gana lado {match.winnerSide}
-                {match.status === 'VOID' ? (
-                  <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-error">
-                    Anulado
-                  </span>
-                ) : null}
-              </p>
-              {match.status !== 'VOID' ? (
-                <div className="mt-2">
-                  <VoidMatchForm matchId={match.id} onVoided={refetch} />
-                </div>
-              ) : null}
+              <span className="w-10 text-center font-display text-h3 font-bold text-ink">
+                {row.rank}
+              </span>
+              <span className="min-w-0 flex-1 text-body text-ink">
+                {row.playerName ?? 'Jugador'}
+                {row.qualifiesForMasters && (
+                  <span className="ml-2 text-body-sm font-semibold text-status-ok-fg">Masters</span>
+                )}
+              </span>
+              <span className="text-right text-body">
+                <strong>{row.points}</strong> pts · {row.matchesPlayed} PJ
+              </span>
             </li>
           ))}
-        </ul>
-      ) : null}
-    </div>
+        </ol>
+      )}
+    </SectionCard>
+  );
+}
+
+function Matches({ seasonId, category, modality, version, canRecord, onChanged }) {
+  const toast = useToast();
+  const matches = useAsync(
+    () => competitionClient.listMatches({ seasonId, category, modality }).then((d) => d.matches),
+    [seasonId, category, modality, version],
+  );
+  const [voiding, setVoiding] = useState(null);
+
+  return (
+    <>
+      <SectionCard
+        title="Partidos"
+        async={matches}
+        isEmpty={(d) => d.length === 0}
+        empty={{ title: 'Sin partidos registrados todavía' }}
+      >
+        {(list) => (
+          <ul className="space-y-3">
+            {list.map((m) => {
+              const isVoid = m.status === 'VOID';
+              const winner = m.winnerSide === 'A' ? m.participantsA : m.participantsB;
+              return (
+                <li key={m.id}>
+                  <StaffRow
+                    className={isVoid ? 'opacity-80' : undefined}
+                    title={`${sideName(m.participantsA)} vs ${sideName(m.participantsB)}`}
+                    badge={isVoid ? <StatusBadge status="suspendida" label="Anulado" /> : null}
+                    subtitle={`${m.setsWonA}-${m.setsWonB} · ganó ${sideName(winner)}`}
+                    meta={dateOnly(m.playedAt)}
+                    actions={
+                      canRecord && !isVoid ? (
+                        <Button variant="ghost" onClick={() => setVoiding(m)}>
+                          Anular
+                        </Button>
+                      ) : null
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionCard>
+      <ReasonDialog
+        open={voiding != null}
+        title="¿Anular el partido?"
+        description={
+          voiding
+            ? `${sideName(voiding.participantsA)} vs ${sideName(voiding.participantsB)}. Deja de contar para la tabla y no se puede deshacer.`
+            : ''
+        }
+        confirmLabel="Sí, anular partido"
+        describeError={describeCompetitionError}
+        onConfirm={async (reason) => {
+          await competitionClient.voidMatch(voiding.id, reason);
+          toast({ title: 'Partido anulado', tone: 'success' });
+          setVoiding(null);
+          onChanged();
+        }}
+        onCancel={() => setVoiding(null)}
+      />
+    </>
   );
 }
 
 export function CompetitionPage() {
+  const toast = useToast();
   const { user } = useAuth();
-  const isAdmin = (user?.roles ?? []).includes(ROLE_CODES.ADMINISTRADOR);
+  const roles = user?.roles ?? [];
+  const isAdmin = roles.includes(ROLE_CODES.ADMINISTRADOR);
+  const canRecord = RECORD_ROLES.some((r) => roles.includes(r));
+  const allowEmail = LOOKUP_ROLES.some((r) => roles.includes(r));
 
-  const [seasons, setSeasons] = useState(null);
-  const [selectedSeasonId, setSelectedSeasonId] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [modality, setModality] = useState(MODALITIES[0]);
-  const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
-
-  function refetchSeasons() {
-    return competitionClient
-      .listSeasons()
-      .then((data) => {
-        setSeasons(data.seasons);
-        setSelectedSeasonId((current) => {
-          if (current && data.seasons.some((s) => s.id === current)) return current;
-          const defaultSeason = data.seasons.find((s) => s.status === 'OPEN') ?? data.seasons[0];
-          return defaultSeason?.id ?? '';
-        });
-      })
-      .catch(() => setSeasons([]));
-  }
+  const seasons = useAsync(() => competitionClient.listSeasons().then((d) => d.seasons), []);
+  const [seasonId, setSeasonId] = useState('');
+  const [category, setCategory] = useState('SEGUNDA');
+  const [modality, setModality] = useState('SINGLES');
+  const [version, setVersion] = useState(0);
+  const [panel, setPanel] = useState(null); // 'season' | 'match'
+  const [closing, setClosing] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    refetchSeasons();
-  }, []);
+    if (seasons.status !== 'ready') return;
+    if (seasonId && seasons.data.some((s) => s.id === seasonId)) return;
+    setSeasonId((seasons.data.find((s) => s.status === 'OPEN') ?? seasons.data[0])?.id ?? '');
+  }, [seasons.status, seasons.data, seasonId]);
+
+  const season = seasons.data?.find((s) => s.id === seasonId);
+  const bump = () => setVersion((v) => v + 1);
+
+  async function closeSeason() {
+    setBusy(true);
+    try {
+      await competitionClient.closeSeason(seasonId);
+      toast({ title: 'Temporada cerrada', tone: 'success' });
+      setClosing(false);
+      seasons.reload();
+    } catch (err) {
+      toast({
+        title: 'No pudimos cerrar la temporada',
+        description: describeCompetitionError(err),
+        tone: 'error',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Competición</h1>
-      <p className="mt-1 text-secondary">
-        Gestiona temporadas y registra resultados de partidos para el ranking interno del club.
-      </p>
+      <PageHeader
+        title="Ranking y partidos"
+        description="Temporadas, tabla de posiciones y resultados del ranking interno."
+        actions={
+          <>
+            {canRecord && season?.status === 'OPEN' && (
+              <Button icon={<PlusIcon />} onClick={() => setPanel('match')}>
+                Registrar resultado
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="secondary" onClick={() => setPanel('season')}>
+                Nueva temporada
+              </Button>
+            )}
+          </>
+        }
+      />
 
-      <div className="mt-6">
-        <SeasonPanel
-          isAdmin={isAdmin}
-          seasons={seasons}
-          selectedSeasonId={selectedSeasonId}
-          onSelectSeason={setSelectedSeasonId}
-          onSeasonsChanged={refetchSeasons}
-        />
-      </div>
+      <SectionCard
+        title="Temporada"
+        async={seasons}
+        isEmpty={(d) => d.length === 0}
+        empty={{
+          title: 'Todavía no hay ninguna temporada',
+          description: isAdmin
+            ? 'Crea la primera con “Nueva temporada”.'
+            : 'Un administrador debe crear la primera temporada.',
+        }}
+        className="mb-8"
+      >
+        {(list) => (
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+            <SelectField
+              label="Temporada"
+              value={seasonId}
+              onChange={(e) => setSeasonId(e.target.value)}
+              options={list.map((s) => ({
+                value: s.id,
+                label: `${s.name} (${s.status === 'OPEN' ? 'abierta' : 'cerrada'})`,
+              }))}
+            />
+            <SelectField
+              label="Categoría"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              options={Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
+            />
+            <SegmentedControl
+              label="Modalidad"
+              value={modality}
+              onChange={setModality}
+              options={Object.entries(MODALITY_LABELS).map(([value, label]) => ({ value, label }))}
+            />
+            {isAdmin && season?.status === 'OPEN' && (
+              <Button variant="ghost" onClick={() => setClosing(true)}>
+                Cerrar temporada
+              </Button>
+            )}
+          </div>
+        )}
+      </SectionCard>
 
-      {selectedSeasonId ? (
-        <div className="mt-6 rounded-lg border border-neutral-200 bg-canvas p-6">
-          <CategoryModalitySelector
+      {seasonId && (
+        <div className="grid gap-8 xl:grid-cols-2">
+          <Standings
+            seasonId={seasonId}
             category={category}
             modality={modality}
-            onCategoryChange={setCategory}
-            onModalityChange={setModality}
+            version={version}
           />
-          <RecordMatchForm
-            key={`${selectedSeasonId}-${category.code}-${modality.code}`}
-            seasonId={selectedSeasonId}
+          <Matches
+            seasonId={seasonId}
             category={category}
             modality={modality}
-            onRecorded={() => setHistoryRefreshToken((n) => n + 1)}
-          />
-          <MatchHistoryList
-            seasonId={selectedSeasonId}
-            category={category}
-            modality={modality}
-            refreshToken={historyRefreshToken}
+            version={version}
+            canRecord={canRecord}
+            onChanged={bump}
           />
         </div>
-      ) : null}
+      )}
+
+      <RecordMatchPanel
+        key={`${panel}-${seasonId}-${category}-${modality}`}
+        open={panel === 'match'}
+        onClose={() => setPanel(null)}
+        seasonId={seasonId}
+        category={category}
+        modality={modality}
+        allowEmail={allowEmail}
+        onSaved={() => {
+          setPanel(null);
+          bump();
+        }}
+      />
+      {isAdmin && (
+        <NewSeasonPanel
+          key={panel === 'season' ? 'season-open' : 'season'}
+          open={panel === 'season'}
+          onClose={() => setPanel(null)}
+          onSaved={() => {
+            setPanel(null);
+            seasons.reload();
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={closing}
+        title={`¿Cerrar ${season?.name ?? 'la temporada'}?`}
+        description="No se podrán registrar más partidos en ella y la tabla queda final. No se puede reabrir."
+        confirmLabel="Sí, cerrar temporada"
+        loading={busy}
+        onConfirm={closeSeason}
+        onCancel={() => setClosing(false)}
+      />
     </div>
   );
 }

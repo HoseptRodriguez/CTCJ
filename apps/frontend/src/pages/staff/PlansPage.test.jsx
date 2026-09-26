@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { billingClient } from '../../api/billingClient.js';
+import { ToastProvider } from '../../components/ui/Toast.jsx';
 
 import { PlansPage } from './PlansPage.jsx';
 
@@ -15,95 +16,78 @@ vi.mock('../../api/billingClient.js', () => ({
   },
 }));
 
-describe('PlansPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+function renderPage() {
+  return render(
+    <ToastProvider>
+      <PlansPage />
+    </ToastProvider>,
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  billingClient.listPlans.mockResolvedValue({
+    plans: [
+      { id: 'plan-1', code: 'INICIACION', name: 'Iniciación', currentPriceCop: 50000 },
+      { id: 'plan-2', code: 'AVANZADO', name: 'Avanzado', currentPriceCop: null },
+    ],
+  });
+  billingClient.listPlanPrices.mockResolvedValue({
+    prices: [{ id: 'pr-1', basePriceCop: 50000, validFrom: '2026-01-01', validTo: null }],
+  });
+});
+
+describe('PlansPage (Planes de membresía)', () => {
+  it('lists plans with their price, or that they have none', async () => {
+    renderPage();
+    expect(await screen.findByText('Precio: $ 50.000')).toBeInTheDocument();
+    expect(screen.getByText('Sin precio')).toBeInTheDocument();
+    expect(screen.getByText(/Código INICIACION/)).toBeInTheDocument();
   });
 
-  it('renders plans with their current price, or "sin precio" when unset', async () => {
-    billingClient.listPlans.mockResolvedValue({
-      plans: [
-        { id: 'plan-1', code: 'INICIACION', name: 'Iniciación', currentPriceCop: 50000 },
-        { id: 'plan-2', code: 'AVANZADO', name: 'Avanzado', currentPriceCop: null },
-      ],
-    });
-
-    render(<PlansPage />);
-
-    await waitFor(() => expect(screen.getByText('Iniciación')).toBeInTheDocument());
-    expect(screen.getByText(/Precio actual:.*50\.000/)).toBeInTheDocument();
-    expect(screen.getByText('Avanzado')).toBeInTheDocument();
-    expect(screen.getByText('Sin precio configurado')).toBeInTheDocument();
-  });
-
-  it('creates a new plan', async () => {
-    billingClient.listPlans.mockResolvedValue({ plans: [] });
-    billingClient.createPlan.mockResolvedValue({
-      id: 'plan-1',
-      code: 'INICIACION',
-      name: 'Iniciación',
-    });
-
+  it('creates a plan from the side panel', async () => {
+    billingClient.createPlan.mockResolvedValue({ id: 'plan-3' });
     const user = userEvent.setup();
-    render(<PlansPage />);
-
-    await waitFor(() => expect(screen.getByText('Todavía no hay planes.')).toBeInTheDocument());
-    await user.type(screen.getByLabelText('Código'), 'INICIACION');
-    await user.type(screen.getByLabelText('Nombre'), 'Iniciación');
-    await user.click(screen.getByRole('button', { name: 'Crear plan' }));
-
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Nuevo plan' }));
+    const panel = await screen.findByRole('dialog', { name: 'Nuevo plan' });
+    await user.type(within(panel).getByLabelText(/Nombre del plan/), 'Competencia');
+    await user.type(within(panel).getByLabelText(/Código/), 'comp');
+    await user.click(within(panel).getByRole('button', { name: 'Crear plan' }));
     await waitFor(() =>
       expect(billingClient.createPlan).toHaveBeenCalledWith({
-        code: 'INICIACION',
-        name: 'Iniciación',
+        code: 'COMP',
+        name: 'Competencia',
         description: undefined,
       }),
     );
   });
 
-  it('sets a new price and shows a confirmation', async () => {
-    billingClient.listPlans.mockResolvedValue({
-      plans: [{ id: 'plan-1', code: 'INICIACION', name: 'Iniciación', currentPriceCop: null }],
-    });
-    billingClient.setPlanPrice.mockResolvedValue({ id: 'price-1', basePriceCop: 60000 });
-
+  it('changes a price after confirming, and shows the price history', async () => {
+    billingClient.setPlanPrice.mockResolvedValue({ id: 'pr-2', basePriceCop: 60000 });
     const user = userEvent.setup();
-    render(<PlansPage />);
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Cambiar precio' }));
+    const panel = await screen.findByRole('dialog', { name: 'Precio de Iniciación' });
+    expect(await within(panel).findByText(/vigente/)).toBeInTheDocument();
+    expect(billingClient.listPlanPrices).toHaveBeenCalledWith('plan-1');
 
-    await waitFor(() => expect(screen.getByText('Iniciación')).toBeInTheDocument());
-    const priceInput = screen.getByLabelText('Nuevo precio');
-    await user.type(priceInput, '60000');
-    const dateInput = screen.getByLabelText('Vigente desde');
-    await user.type(dateInput, '2026-01-01');
-    await user.click(screen.getByRole('button', { name: 'Actualizar precio' }));
+    await user.type(within(panel).getByLabelText(/Nuevo precio/), '60000');
+    fireEvent.change(within(panel).getByLabelText('Aplica desde'), {
+      target: { value: '2026-10-01' },
+    });
+    await user.click(within(panel).getByRole('button', { name: 'Guardar precio' }));
+    expect(billingClient.setPlanPrice).not.toHaveBeenCalled();
 
+    const dialog = await screen.findByRole('alertdialog', {
+      name: '¿Cambiar el precio de Iniciación?',
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, cambiar precio' }));
     await waitFor(() =>
       expect(billingClient.setPlanPrice).toHaveBeenCalledWith('plan-1', {
         basePriceCop: 60000,
-        validFrom: '2026-01-01',
+        validFrom: '2026-10-01',
       }),
     );
-    expect(await screen.findByText('Precio actualizado.')).toBeInTheDocument();
-  });
-
-  it('shows price history when requested', async () => {
-    billingClient.listPlans.mockResolvedValue({
-      plans: [{ id: 'plan-1', code: 'INICIACION', name: 'Iniciación', currentPriceCop: 60000 }],
-    });
-    billingClient.listPlanPrices.mockResolvedValue({
-      prices: [
-        { id: 'p1', basePriceCop: 50000, validFrom: '2026-01-01', validTo: '2026-03-01' },
-        { id: 'p2', basePriceCop: 60000, validFrom: '2026-03-01', validTo: null },
-      ],
-    });
-
-    const user = userEvent.setup();
-    render(<PlansPage />);
-
-    await waitFor(() => expect(screen.getByText('Iniciación')).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: 'Ver historial de precios' }));
-
-    expect(await screen.findByText(/vigente/)).toBeInTheDocument();
-    expect(billingClient.listPlanPrices).toHaveBeenCalledWith('plan-1');
   });
 });

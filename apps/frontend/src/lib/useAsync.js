@@ -28,8 +28,11 @@ export function useAsync(load, deps, { enabled = true } = {}) {
     }
     let cancelled = false;
     setState((s) => ({ ...s, status: 'loading', error: null }));
-    loadRef
-      .current()
+    // Promise.resolve().then(): a loader that throws synchronously (e.g. a
+    // client-side schema check) becomes this section's error state instead
+    // of crashing the whole page.
+    Promise.resolve()
+      .then(() => loadRef.current())
       .then((data) => !cancelled && setState({ status: 'ready', data, error: null }))
       .catch((error) => !cancelled && setState({ status: 'error', data: undefined, error }));
     return () => {

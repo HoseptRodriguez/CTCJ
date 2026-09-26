@@ -30,6 +30,6 @@ describe('SkillRadar', () => {
     );
     const list = screen.getByRole('list', { name: 'Nivel por habilidad' });
     expect(list).toHaveTextContent('SaqueMuy bueno· mejoró');
-    expect(list).toHaveTextContent('Juego de piesEn desarrollo· bajó');
+    expect(list).toHaveTextContent('PiesEn desarrollo· bajó');
   });
 });

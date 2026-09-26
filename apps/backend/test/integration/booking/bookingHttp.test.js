@@ -265,6 +265,8 @@ describe('Booking HTTP API (real Postgres)', () => {
     const ownerView = ownerRes.body.reservations.find((r) => r.id === holdRes.body.reservationId);
     expect(ownerView.holderUserId).toBe(owner.id);
     expect(ownerView.isOwnBooking).toBe(true);
+    // Names are a staff-only addition -- the owner's view doesn't carry them.
+    expect(ownerView).not.toHaveProperty('holderName');
 
     const staffRes = await request(app)
       .get('/api/booking/schedule')
@@ -277,6 +279,10 @@ describe('Booking HTTP API (real Postgres)', () => {
     // booking -- isOwnBooking must stay false, or the staff console's own
     // grid would highlight every reservation as "mine".
     expect(staffView.isOwnBooking).toBe(false);
+    // Front desk: who to charge, and it was booked by the holder themselves.
+    expect(staffView.holderName).toBe('Test User');
+    expect(staffView.bookedByOther).toBe(false);
+    expect(staffView.createdByName).toBeNull();
   });
 
   it('rejects an invalid slot (not exactly 60 minutes) with 400', async () => {

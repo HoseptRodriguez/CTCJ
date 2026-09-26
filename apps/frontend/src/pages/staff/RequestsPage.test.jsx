@@ -1,24 +1,18 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { affiliationClient } from '../../api/affiliationClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
+import { ToastProvider } from '../../components/ui/Toast.jsx';
 
 import { RequestsPage } from './RequestsPage.jsx';
 
 vi.mock('../../api/affiliationClient.js', () => ({
-  affiliationClient: {
-    listRequests: vi.fn(),
-    decideRequest: vi.fn(),
-  },
+  affiliationClient: { listRequests: vi.fn(), decideRequest: vi.fn() },
 }));
-
 vi.mock('../../api/guardianshipClient.js', () => ({
-  guardianshipClient: {
-    listGuardianships: vi.fn(),
-    decideGuardianship: vi.fn(),
-  },
+  guardianshipClient: { listGuardianships: vi.fn(), decideGuardianship: vi.fn() },
 }));
 
 const AFFILIATION_REQUEST = {
@@ -42,70 +36,85 @@ const GUARDIANSHIP = {
   requestedAt: '2026-08-01T10:00:00.000Z',
 };
 
-describe('RequestsPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+function renderPage() {
+  return render(
+    <ToastProvider>
+      <RequestsPage />
+    </ToastProvider>,
+  );
+}
 
-  it('renders pending affiliation requests and guardianships', async () => {
-    affiliationClient.listRequests.mockResolvedValue({ requests: [AFFILIATION_REQUEST] });
-    guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [GUARDIANSHIP] });
+beforeEach(() => {
+  vi.clearAllMocks();
+  affiliationClient.listRequests.mockResolvedValue({ requests: [AFFILIATION_REQUEST] });
+  guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [GUARDIANSHIP] });
+});
 
-    render(<RequestsPage />);
-
+describe('RequestsPage (Solicitudes)', () => {
+  it('lists pending affiliations and guardianships as big rows', async () => {
+    renderPage();
     expect(await screen.findByText('Ana Gomez')).toBeInTheDocument();
-    expect(screen.getByText('ana@example.com')).toBeInTheDocument();
-    expect(screen.getByText(/padre@example.com/)).toBeInTheDocument();
-    expect(screen.getByText(/hijo@example.com/)).toBeInTheDocument();
+    expect(screen.getByText('padre@example.com → hijo@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Pide poder reservar canchas')).toBeInTheDocument();
     expect(affiliationClient.listRequests).toHaveBeenCalledWith('PENDING');
     expect(guardianshipClient.listGuardianships).toHaveBeenCalledWith('PENDING');
   });
 
-  it('approving an affiliation request removes it from the pending list', async () => {
-    affiliationClient.listRequests.mockResolvedValue({ requests: [AFFILIATION_REQUEST] });
-    guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [] });
-    affiliationClient.decideRequest.mockResolvedValue({ id: 'req-1', status: 'APPROVED' });
-
+  it('approving an affiliation asks first, then removes it from the list', async () => {
+    affiliationClient.decideRequest.mockResolvedValue({});
     const user = userEvent.setup();
-    render(<RequestsPage />);
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Quieren ser jugadores' });
+    await user.click(within(list).getByRole('button', { name: 'Revisar' }));
 
-    await screen.findByText('Ana Gomez');
-    await user.click(screen.getByRole('button', { name: 'Aprobar' }));
+    const panel = await screen.findByRole('dialog', { name: 'Revisar solicitud' });
+    expect(within(panel).getByText('Su mensaje: “Quiero unirme”')).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Aprobar' }));
+    expect(affiliationClient.decideRequest).not.toHaveBeenCalled();
 
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Aprobar la solicitud?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, aprobar' }));
     await waitFor(() =>
       expect(affiliationClient.decideRequest).toHaveBeenCalledWith('req-1', {
         decision: 'APPROVED',
       }),
     );
-    await waitFor(() => expect(screen.queryByText('Ana Gomez')).not.toBeInTheDocument());
+    await waitFor(() => expect(within(list).queryByText('Ana Gomez')).not.toBeInTheDocument());
   });
 
-  it('rejecting a guardianship removes it from the pending list', async () => {
-    affiliationClient.listRequests.mockResolvedValue({ requests: [] });
-    guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [GUARDIANSHIP] });
-    guardianshipClient.decideGuardianship.mockResolvedValue({ id: 'guard-1', status: 'REJECTED' });
-
+  it('rejecting a guardianship sends the optional note', async () => {
+    guardianshipClient.decideGuardianship.mockResolvedValue({});
     const user = userEvent.setup();
-    render(<RequestsPage />);
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Vinculaciones familiares' });
+    await user.click(within(list).getByRole('button', { name: 'Revisar' }));
 
-    await screen.findByText(/padre@example.com/);
-    await user.click(screen.getByRole('button', { name: 'Rechazar' }));
+    const panel = await screen.findByRole('dialog', { name: 'Revisar solicitud' });
+    await user.type(within(panel).getByLabelText(/Nota para el registro/), 'No es su acudiente');
+    await user.click(within(panel).getByRole('button', { name: 'Rechazar' }));
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Rechazar la solicitud?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, rechazar' }));
 
     await waitFor(() =>
       expect(guardianshipClient.decideGuardianship).toHaveBeenCalledWith('guard-1', {
         decision: 'REJECTED',
+        notes: 'No es su acudiente',
       }),
     );
-    await waitFor(() => expect(screen.queryByText(/padre@example.com/)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        within(list).queryByText('padre@example.com → hijo@example.com'),
+      ).not.toBeInTheDocument(),
+    );
   });
 
-  it('shows the empty state when there is nothing pending', async () => {
+  it('says so when there is nothing pending', async () => {
     affiliationClient.listRequests.mockResolvedValue({ requests: [] });
     guardianshipClient.listGuardianships.mockResolvedValue({ guardianships: [] });
-
-    render(<RequestsPage />);
-
-    expect(await screen.findByText('No hay solicitudes pendientes.')).toBeInTheDocument();
-    expect(screen.getByText('No hay vinculaciones pendientes.')).toBeInTheDocument();
+    renderPage();
+    expect(
+      await screen.findByText('No hay solicitudes de afiliación pendientes'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No hay vinculaciones pendientes')).toBeInTheDocument();
   });
 });

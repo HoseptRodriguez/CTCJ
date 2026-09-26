@@ -87,3 +87,16 @@ export function formatCountdown(totalSeconds) {
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   return `${minutes}:${seconds}`;
 }
+
+// Court time that is never charged at the desk (the club's own blocks).
+const NOT_CHARGED = [RESERVATION_TYPE.MAINTENANCE, RESERVATION_TYPE.BLOCKED];
+
+/** A confirmed booking the front desk charges for (not maintenance/blocked). */
+export function isChargeable(r) {
+  return r.status === 'CONFIRMED' && !NOT_CHARGED.includes(r.reservationType);
+}
+
+/** Chargeable and not paid yet: what "Cobros" and its amber counter count. */
+export function isUnpaid(r) {
+  return isChargeable(r) && r.paymentId == null;
+}

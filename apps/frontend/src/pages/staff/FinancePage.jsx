@@ -1,389 +1,369 @@
-import { useEffect, useState } from 'react';
-import { PAYMENT_METHOD } from '@ctcj/shared';
+import { lazy, Suspense, useState } from 'react';
 
 import { billingClient } from '../../api/billingClient.js';
 import { bookingClient } from '../../api/bookingClient.js';
-import { Button } from '../../components/ui/LegacyButton.jsx';
-import { CashFlowChart } from '../../components/ui/CashFlowChart.jsx';
-import { describeBillingError } from '../../lib/billingErrorMessages.js';
-import { describeBookingError } from '../../lib/bookingErrorMessages.js';
+import { DownloadIcon } from '../../components/icons/DownloadIcon.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import { TextField } from '../../components/ui/Field.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { SegmentedControl } from '../../components/ui/SegmentedControl.jsx';
+import { Skeleton } from '../../components/ui/Skeleton.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
+import { addDaysToKey, clubTodayKey } from '../../lib/clubTime.js';
 import { exportToCsv } from '../../lib/csvExport.js';
+import { formatCop } from '../../lib/format.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { DATE_MEDIUM, SectionCard } from '../mictcj/shared.jsx';
 
-const COP_FORMATTER = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-});
+import { METHOD_LABELS } from './staffShared.jsx';
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium' });
+// recharts stays in its own chunk, loaded only when this page renders.
+const CashFlowChart = lazy(() =>
+  import('../../components/ui/CashFlowChart.jsx').then((m) => ({ default: m.CashFlowChart })),
+);
 
-const METHOD_LABELS = {
-  [PAYMENT_METHOD.CASH]: 'Efectivo',
-  [PAYMENT_METHOD.TRANSFER]: 'Transferencia',
-  [PAYMENT_METHOD.CARD_IN_PERSON]: 'Tarjeta en el club',
+const pad = (n) => String(n).padStart(2, '0');
+
+function monthRange(offset = 0) {
+  const [y, m] = clubTodayKey().split('-').map(Number);
+  const first = new Date(Date.UTC(y, m - 1 + offset, 1));
+  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0));
+  const key = (d) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  return { from: key(first), to: key(last) };
+}
+
+const PRESETS = {
+  'este-mes': () => monthRange(0),
+  'mes-pasado': () => monthRange(-1),
+  '30-dias': () => ({ from: addDaysToKey(clubTodayKey(), -29), to: clubTodayKey() }),
 };
 
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
+const fullName = (i) =>
+  [i.playerFirstName, i.playerLastName].filter(Boolean).join(' ') || 'Jugador sin nombre';
+const dateOnly = (iso) => DATE_MEDIUM.format(new Date(iso));
 
-function currentMonthRange() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  return {
-    from: `${year}-${pad2(month + 1)}-01`,
-    to: `${year}-${pad2(month + 1)}-${pad2(lastDay)}`,
-  };
-}
-
-function DateRangeForm({ range, onChange }) {
+function CsvButton({ onClick }) {
   return (
-    <form
-      onSubmit={(e) => e.preventDefault()}
-      className="flex flex-wrap items-end gap-3 rounded-md border border-neutral-200 bg-canvas p-4"
-    >
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="finance-from">
-          Desde
-        </label>
-        <input
-          id="finance-from"
-          type="date"
-          value={range.from}
-          onChange={(e) => onChange({ ...range, from: e.target.value })}
-          className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-primary" htmlFor="finance-to">
-          Hasta
-        </label>
-        <input
-          id="finance-to"
-          type="date"
-          value={range.to}
-          onChange={(e) => onChange({ ...range, to: e.target.value })}
-          className="mt-1 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-      </div>
-    </form>
+    <Button variant="secondary" icon={<DownloadIcon />} onClick={onClick}>
+      Descargar CSV
+    </Button>
   );
 }
 
-function CourtPaymentsSection({ data, error }) {
+function Row({ left, sub, right, badge }) {
   return (
-    <div className="mt-6 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display font-semibold text-primary">Pagos de canchas</h3>
-        {data ? (
-          <Button
-            variant="ghost"
-            onClick={() =>
-              exportToCsv({
-                filename: 'pagos-canchas.csv',
-                columns: [
-                  { header: 'Fecha', get: (p) => new Date(p.recordedAt).toISOString() },
-                  { header: 'Método', get: (p) => METHOD_LABELS[p.method] ?? p.method },
-                  { header: 'Monto', get: (p) => p.amountCop },
-                ],
-                rows: data.payments,
-              })
-            }
-          >
-            Exportar CSV
-          </Button>
-        ) : null}
+    <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div className="min-w-0">
+        <p className="text-body font-semibold text-ink">{left}</p>
+        {sub && <p className="text-body-sm text-ink-soft">{sub}</p>}
       </div>
-
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {!error && !data ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
-
-      {data ? (
-        <>
-          <p className="mt-2 text-sm text-secondary">
-            Subtotal: <strong>{COP_FORMATTER.format(data.totalCop)}</strong> ({data.count} pagos)
-          </p>
-          {data.payments.length === 0 ? (
-            <p className="mt-2 text-sm text-secondary">Sin pagos en este período.</p>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              {data.payments.map((p) => (
-                <li key={p.id} className="rounded-md bg-raised px-3 py-2">
-                  {DATE_FORMATTER.format(new Date(p.recordedAt))} ·{' '}
-                  {METHOD_LABELS[p.method] ?? p.method} · {COP_FORMATTER.format(p.amountCop)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : null}
-    </div>
+      <div className="flex items-center gap-3">
+        {badge}
+        <p className="font-display text-h3 font-bold text-ink">{right}</p>
+      </div>
+    </li>
   );
 }
 
-function MembershipPaymentsSection({ data, error }) {
+function RangePicker({ preset, range, onPreset, onRange }) {
   return (
-    <div className="mt-6 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display font-semibold text-primary">Pagos de membresías</h3>
-        {data ? (
-          <Button
-            variant="ghost"
-            onClick={() =>
-              exportToCsv({
-                filename: 'pagos-membresias.csv',
-                columns: [
-                  { header: 'Fecha de pago', get: (i) => new Date(i.paidAt).toISOString() },
-                  {
-                    header: 'Jugador',
-                    get: (i) => `${i.playerFirstName ?? ''} ${i.playerLastName ?? ''}`.trim(),
-                  },
-                  { header: 'Método', get: (i) => METHOD_LABELS[i.paidMethod] ?? i.paidMethod },
-                  { header: 'Monto', get: (i) => i.amountCop },
-                ],
-                rows: data.invoices,
-              })
-            }
-          >
-            Exportar CSV
-          </Button>
-        ) : null}
-      </div>
-
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {!error && !data ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
-
-      {data ? (
-        <>
-          <p className="mt-2 text-sm text-secondary">
-            Subtotal: <strong>{COP_FORMATTER.format(data.totalCop)}</strong> ({data.count} pagos)
-          </p>
-          {data.invoices.length === 0 ? (
-            <p className="mt-2 text-sm text-secondary">Sin pagos en este período.</p>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              {data.invoices.map((i) => (
-                <li key={i.id} className="rounded-md bg-raised px-3 py-2">
-                  {DATE_FORMATTER.format(new Date(i.paidAt))} ·{' '}
-                  {i.playerFirstName ?? 'Jugador desconocido'} {i.playerLastName ?? ''} ·{' '}
-                  {METHOD_LABELS[i.paidMethod] ?? i.paidMethod} ·{' '}
-                  {COP_FORMATTER.format(i.amountCop)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function CarteraSection({ data, error }) {
-  return (
-    <div className="mt-6 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display font-semibold text-primary">Cartera (facturas pendientes)</h3>
-        {data ? (
-          <Button
-            variant="ghost"
-            onClick={() =>
-              exportToCsv({
-                filename: 'cartera.csv',
-                columns: [
-                  {
-                    header: 'Jugador',
-                    get: (i) => `${i.playerFirstName ?? ''} ${i.playerLastName ?? ''}`.trim(),
-                  },
-                  { header: 'Vence', get: (i) => new Date(i.dueDate).toISOString().slice(0, 10) },
-                  { header: 'Vencida', get: (i) => (i.isOverdue ? 'Sí' : 'No') },
-                  { header: 'Monto', get: (i) => i.amountCop },
-                ],
-                rows: data.invoices,
-              })
-            }
-          >
-            Exportar CSV
-          </Button>
-        ) : null}
-      </div>
-
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {!error && !data ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
-
-      {data ? (
-        <>
-          <p className="mt-2 text-sm text-secondary">
-            Total pendiente: <strong>{COP_FORMATTER.format(data.totalCop)}</strong> ({data.count}{' '}
-            facturas)
-          </p>
-          {data.invoices.length === 0 ? (
-            <p className="mt-2 text-sm text-secondary">Sin facturas pendientes.</p>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              {data.invoices.map((i) => (
-                <li
-                  key={i.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-3 py-2"
-                >
-                  <span>
-                    {i.playerFirstName ?? 'Jugador desconocido'} {i.playerLastName ?? ''} · vence{' '}
-                    {DATE_FORMATTER.format(new Date(i.dueDate))} ·{' '}
-                    {COP_FORMATTER.format(i.amountCop)}
-                  </span>
-                  {i.isOverdue ? (
-                    <span className="rounded-full border border-error px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-error">
-                      Vencida
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      ) : null}
+    <div className="mb-8 space-y-4">
+      <SegmentedControl
+        label="Período"
+        value={preset}
+        onChange={onPreset}
+        options={[
+          { value: 'este-mes', label: 'Este mes' },
+          { value: 'mes-pasado', label: 'Mes pasado' },
+          { value: '30-dias', label: 'Últimos 30 días' },
+          { value: 'otro', label: 'Otras fechas' },
+        ]}
+      />
+      {preset === 'otro' && (
+        <div className="grid max-w-lg grid-cols-2 gap-4">
+          <TextField
+            label="Desde"
+            type="date"
+            value={range.from}
+            max={range.to}
+            onChange={(e) => e.target.value && onRange({ ...range, from: e.target.value })}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            value={range.to}
+            min={range.from}
+            onChange={(e) => e.target.value && onRange({ ...range, to: e.target.value })}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 function CashFlowSection() {
-  const [monthsCount, setMonthsCount] = useState(6);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setData(null);
-    setError(null);
-    Promise.all([
-      bookingClient.getMonthlyRevenue({ months: monthsCount }),
-      billingClient.getMonthlyRevenue({ months: monthsCount }),
-    ])
-      .then(([courtResult, membershipResult]) => {
-        const merged = courtResult.months.map((courtMonth, i) => ({
-          month: courtMonth.month,
-          courtCop: courtMonth.totalCop,
-          membershipCop: membershipResult.months[i]?.totalCop ?? 0,
+  const [months, setMonths] = useState('6');
+  const flow = useAsync(
+    () =>
+      Promise.all([
+        bookingClient.getMonthlyRevenue({ months: Number(months) }),
+        billingClient.getMonthlyRevenue({ months: Number(months) }),
+      ]).then(([court, membership]) => {
+        const byMonth = new Map(membership.months.map((m) => [m.month, m.totalCop]));
+        return court.months.map((m) => ({
+          month: m.month,
+          courtCop: m.totalCop,
+          membershipCop: byMonth.get(m.month) ?? 0,
         }));
-        setData(merged);
-      })
-      .catch((err) => setError(describeBookingError(err) ?? describeBillingError(err)));
-  }, [monthsCount]);
+      }),
+    [months],
+  );
 
   return (
-    <div className="mt-6 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display font-semibold text-primary">Flujo de caja</h3>
-        <div className="flex items-center gap-3">
-          {data ? (
-            <Button
-              variant="ghost"
+    <SectionCard
+      title="Flujo de caja"
+      description="Lo que entró cada mes, por canchas y por membresías."
+      className="mb-8"
+      async={flow}
+      isEmpty={(d) => d.length === 0}
+      empty={{ title: 'Todavía no hay ingresos registrados' }}
+      actions={
+        <>
+          <SegmentedControl
+            label="Meses"
+            hideLabel
+            value={months}
+            onChange={setMonths}
+            options={[
+              { value: '3', label: '3 meses' },
+              { value: '6', label: '6 meses' },
+              { value: '12', label: '12 meses' },
+            ]}
+          />
+          {flow.status === 'ready' && (
+            <CsvButton
               onClick={() =>
                 exportToCsv({
-                  filename: 'flujo-de-caja.csv',
+                  filename: `flujo-de-caja-${months}-meses.csv`,
                   columns: [
                     { header: 'Mes', get: (m) => m.month },
                     { header: 'Canchas', get: (m) => m.courtCop },
                     { header: 'Membresías', get: (m) => m.membershipCop },
                     { header: 'Total', get: (m) => m.courtCop + m.membershipCop },
                   ],
-                  rows: data,
+                  rows: flow.data,
                 })
               }
-            >
-              Exportar CSV
-            </Button>
-          ) : null}
-          <label
-            className="flex items-center gap-2 text-sm text-secondary"
-            htmlFor="cashflow-months"
-          >
-            Meses
-            <select
-              id="cashflow-months"
-              value={monthsCount}
-              onChange={(e) => setMonthsCount(Number(e.target.value))}
-              className="rounded-md border border-neutral-300 bg-canvas px-2 py-1 text-sm"
-            >
-              <option value={3}>3</option>
-              <option value={6}>6</option>
-              <option value={12}>12</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
-      {!error && !data ? <p className="mt-2 text-sm text-secondary">Cargando...</p> : null}
-
-      {data ? (
-        <div className="mt-4">
+            />
+          )}
+        </>
+      }
+    >
+      {(data) => (
+        <Suspense fallback={<Skeleton className="h-80 w-full" />}>
           <CashFlowChart months={data} />
-        </div>
-      ) : null}
-    </div>
+        </Suspense>
+      )}
+    </SectionCard>
   );
 }
 
 export function FinancePage() {
-  const [range, setRange] = useState(currentMonthRange);
-  const [courtPayments, setCourtPayments] = useState(null);
-  const [courtError, setCourtError] = useState(null);
-  const [membershipPayments, setMembershipPayments] = useState(null);
-  const [membershipError, setMembershipError] = useState(null);
-  const [cartera, setCartera] = useState(null);
-  const [carteraError, setCarteraError] = useState(null);
+  const [preset, setPreset] = useState('este-mes');
+  const [range, setRange] = useState(PRESETS['este-mes']);
 
-  useEffect(() => {
-    setCourtPayments(null);
-    setCourtError(null);
-    bookingClient
-      .listPayments({ from: range.from, to: range.to })
-      .then(setCourtPayments)
-      .catch((err) => setCourtError(describeBookingError(err)));
+  const court = useAsync(() => bookingClient.listPayments(range), [range.from, range.to]);
+  const membership = useAsync(
+    () => billingClient.listInvoicesClubWide({ status: 'PAID', from: range.from, to: range.to }),
+    [range.from, range.to],
+  );
+  const cartera = useAsync(() => billingClient.listInvoicesClubWide({ status: 'PENDING' }), []);
 
-    setMembershipPayments(null);
-    setMembershipError(null);
-    billingClient
-      .listInvoicesClubWide({ status: 'PAID', from: range.from, to: range.to })
-      .then(setMembershipPayments)
-      .catch((err) => setMembershipError(describeBillingError(err)));
-  }, [range.from, range.to]);
+  const bothReady = court.status === 'ready' && membership.status === 'ready';
+  const total = bothReady ? Number(court.data.totalCop) + Number(membership.data.totalCop) : null;
 
-  useEffect(() => {
-    billingClient
-      .listInvoicesClubWide({ status: 'PENDING' })
-      .then(setCartera)
-      .catch((err) => setCarteraError(describeBillingError(err)));
-  }, []);
-
-  const combinedTotalCop =
-    courtPayments && membershipPayments
-      ? courtPayments.totalCop + membershipPayments.totalCop
-      : null;
+  function choosePreset(value) {
+    setPreset(value);
+    if (PRESETS[value]) setRange(PRESETS[value]());
+  }
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Gestión financiera</h1>
-      <p className="mt-1 text-secondary">
-        Flujo de caja, ingresos por canchas y membresías, y cartera pendiente de cobro.
-      </p>
+      <PageHeader
+        title="Finanzas"
+        description="Ingresos del club, flujo de caja y cartera pendiente."
+      />
 
-      <div className="mt-6">
-        <DateRangeForm range={range} onChange={setRange} />
-      </div>
+      <RangePicker preset={preset} range={range} onPreset={choosePreset} onRange={setRange} />
 
-      <div className="mt-6 rounded-md border border-neutral-200 bg-raised p-4">
-        <p className="text-sm text-secondary">Ingresos totales del período</p>
-        <p className="font-display text-3xl font-semibold text-primary">
-          {combinedTotalCop != null ? COP_FORMATTER.format(combinedTotalCop) : 'Cargando...'}
+      <section
+        aria-label="Total del período"
+        className="mb-8 rounded-xl bg-navy-500 p-6 text-white md:p-8"
+      >
+        <p className="text-lead text-white/90">
+          Ingresos del {dateOnly(`${range.from}T12:00:00Z`)} al {dateOnly(`${range.to}T12:00:00Z`)}
         </p>
-      </div>
+        {total != null ? (
+          <p className="mt-2 font-display text-[3.5rem] font-bold leading-none md:text-[4.5rem]">
+            {formatCop(total)}
+          </p>
+        ) : court.status === 'error' || membership.status === 'error' ? (
+          <p className="mt-2 text-lead font-semibold">
+            No pudimos calcular el total. Revisa las secciones de abajo.
+          </p>
+        ) : (
+          <Skeleton className="mt-3 h-16 w-72 bg-white/20" />
+        )}
+        {bothReady && (
+          <p className="mt-3 text-lead text-white/90">
+            Canchas {formatCop(court.data.totalCop)} · Membresías{' '}
+            {formatCop(membership.data.totalCop)}
+          </p>
+        )}
+      </section>
 
       <CashFlowSection />
-      <CourtPaymentsSection data={courtPayments} error={courtError} />
-      <MembershipPaymentsSection data={membershipPayments} error={membershipError} />
-      <CarteraSection data={cartera} error={carteraError} />
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <SectionCard
+          title="Pagos de canchas"
+          description={
+            court.status === 'ready'
+              ? `${court.data.count} pagos · ${formatCop(court.data.totalCop)}`
+              : undefined
+          }
+          async={court}
+          isEmpty={(d) => d.payments.length === 0}
+          empty={{ title: 'Sin pagos de canchas en este período' }}
+          actions={
+            court.status === 'ready' && court.data.payments.length > 0 ? (
+              <CsvButton
+                onClick={() =>
+                  exportToCsv({
+                    filename: `pagos-canchas-${range.from}-a-${range.to}.csv`,
+                    columns: [
+                      { header: 'Fecha', get: (p) => new Date(p.recordedAt).toISOString() },
+                      { header: 'Método', get: (p) => METHOD_LABELS[p.method] ?? p.method },
+                      { header: 'Monto', get: (p) => p.amountCop },
+                    ],
+                    rows: court.data.payments,
+                  })
+                }
+              />
+            ) : null
+          }
+        >
+          {(d) => (
+            <ul className="divide-y divide-line">
+              {d.payments.map((p) => (
+                <Row
+                  key={p.id}
+                  left={dateOnly(p.recordedAt)}
+                  sub={METHOD_LABELS[p.method] ?? p.method}
+                  right={formatCop(p.amountCop)}
+                />
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Pagos de membresías"
+          description={
+            membership.status === 'ready'
+              ? `${membership.data.count} pagos · ${formatCop(membership.data.totalCop)}`
+              : undefined
+          }
+          async={membership}
+          isEmpty={(d) => d.invoices.length === 0}
+          empty={{ title: 'Sin pagos de membresías en este período' }}
+          actions={
+            membership.status === 'ready' && membership.data.invoices.length > 0 ? (
+              <CsvButton
+                onClick={() =>
+                  exportToCsv({
+                    filename: `pagos-membresias-${range.from}-a-${range.to}.csv`,
+                    columns: [
+                      { header: 'Fecha de pago', get: (i) => new Date(i.paidAt).toISOString() },
+                      { header: 'Jugador', get: fullName },
+                      { header: 'Método', get: (i) => METHOD_LABELS[i.paidMethod] ?? i.paidMethod },
+                      { header: 'Monto', get: (i) => i.amountCop },
+                    ],
+                    rows: membership.data.invoices,
+                  })
+                }
+              />
+            ) : null
+          }
+        >
+          {(d) => (
+            <ul className="divide-y divide-line">
+              {d.invoices.map((i) => (
+                <Row
+                  key={i.id}
+                  left={fullName(i)}
+                  sub={`${dateOnly(i.paidAt)} · ${METHOD_LABELS[i.paidMethod] ?? i.paidMethod ?? ''}`}
+                  right={formatCop(i.amountCop)}
+                />
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      </div>
+
+      <SectionCard
+        title="Cartera"
+        description={
+          cartera.status === 'ready'
+            ? `${cartera.data.count} facturas sin pagar · ${formatCop(cartera.data.totalCop)} por cobrar`
+            : 'Facturas de membresía pendientes de pago.'
+        }
+        className="mt-8"
+        async={cartera}
+        isEmpty={(d) => d.invoices.length === 0}
+        empty={{
+          title: 'No hay facturas pendientes',
+          description: 'Todos los jugadores están al día.',
+        }}
+        actions={
+          cartera.status === 'ready' && cartera.data.invoices.length > 0 ? (
+            <CsvButton
+              onClick={() =>
+                exportToCsv({
+                  filename: `cartera-${clubTodayKey()}.csv`,
+                  columns: [
+                    { header: 'Jugador', get: fullName },
+                    { header: 'Vence', get: (i) => new Date(i.dueDate).toISOString().slice(0, 10) },
+                    { header: 'Vencida', get: (i) => (i.isOverdue ? 'Sí' : 'No') },
+                    { header: 'Monto', get: (i) => i.amountCop },
+                  ],
+                  rows: cartera.data.invoices,
+                })
+              }
+            />
+          ) : null
+        }
+      >
+        {(d) => (
+          <ul className="divide-y divide-line">
+            {[...d.invoices]
+              .sort(
+                (a, b) =>
+                  Number(b.isOverdue) - Number(a.isOverdue) ||
+                  new Date(a.dueDate) - new Date(b.dueDate),
+              )
+              .map((i) => (
+                <Row
+                  key={i.id}
+                  left={fullName(i)}
+                  sub={`Vence el ${dateOnly(i.dueDate)}`}
+                  right={formatCop(i.amountCop)}
+                  badge={<StatusBadge status={i.isOverdue ? 'vencida' : 'pendiente'} />}
+                />
+              ))}
+          </ul>
+        )}
+      </SectionCard>
     </div>
   );
 }
