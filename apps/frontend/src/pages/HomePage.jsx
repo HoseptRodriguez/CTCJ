@@ -43,9 +43,9 @@ const QUICK_ACTIONS = [
 ];
 
 const PROGRAMS = [
-  { photo: 'accion-desplazamiento', label: 'Clases para adultos', className: 'md:row-span-2' },
-  { photo: 'accion-saque', label: 'Escuela infantil', className: '' },
-  { photo: 'accion-palmeras', label: 'Competencia y ranking', className: '' },
+  { photo: 'jugador-desplazamiento', label: 'Clases para adultos', className: 'md:row-span-2' },
+  { photo: 'nino-saque', label: 'Escuela infantil', className: '' },
+  { photo: 'jugador-saque-azul', label: 'Competencia y ranking', className: '' },
 ];
 
 export function HomePage() {
@@ -64,7 +64,7 @@ function Hero() {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden bg-navy-500">
       <ClubPhoto
-        name="hero-canchas"
+        name="canchas-panoramica-nubes"
         priority
         sizes="100vw"
         className="absolute inset-0 -z-20 h-full w-full"
@@ -195,7 +195,7 @@ function ClayBlock() {
           </Button>
         </div>
         <ParallaxPhoto
-          name="instalacion-red"
+          name="jugador-espera-recepcion"
           sizes="(min-width: 768px) 50vw, 100vw"
           className="aspect-[4/3] rounded-xl"
         />

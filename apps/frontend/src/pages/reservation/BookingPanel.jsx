@@ -121,7 +121,7 @@ export function BookingPanel({
       <div>
         {showPhoto && (
           <ClubPhoto
-            name="instalacion-red"
+            name="canchas-panoramica-nubes"
             alt=""
             sizes="22rem"
             className="aspect-[16/9] rounded-xl"
@@ -143,7 +143,7 @@ export function BookingPanel({
     <div className="space-y-5">
       {showPhoto && (
         <ClubPhoto
-          name="instalacion-red"
+          name="canchas-panoramica-nubes"
           alt=""
           sizes="22rem"
           className="aspect-[16/9] rounded-xl"

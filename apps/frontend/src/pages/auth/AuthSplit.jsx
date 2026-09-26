@@ -6,7 +6,13 @@ import { ClubPhoto } from '../../components/ui/ClubPhoto.jsx';
  * at most one short `tagline` -- and the form on the right. On phones the
  * photo shrinks to a band above the form.
  */
-export function AuthSplit({ title, description, children, photo = 'accion-espera', tagline }) {
+export function AuthSplit({
+  title,
+  description,
+  children,
+  photo = 'jugador-espera-recepcion',
+  tagline,
+}) {
   return (
     <div className="grid min-h-[calc(100svh-84px)] bg-page lg:grid-cols-2">
       <div className="relative isolate flex min-h-[12rem] items-end overflow-hidden bg-navy-500 lg:min-h-0">

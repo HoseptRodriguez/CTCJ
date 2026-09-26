@@ -185,7 +185,7 @@ export function NextMatchCard({ reservations }) {
               </div>
             </div>
             <ClubPhoto
-              name="accion-palmeras"
+              name="jugador-saque-azul"
               alt=""
               sizes="16rem"
               className="hidden aspect-[3/4] rounded-xl md:block"

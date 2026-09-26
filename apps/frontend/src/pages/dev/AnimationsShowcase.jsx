@@ -343,7 +343,7 @@ function ParallaxDemo() {
     >
       <ParallaxPhoto
         key={key}
-        name="accion-palmeras"
+        name="jugador-saque-azul"
         sizes="(min-width: 1024px) 40vw, 100vw"
         className="aspect-[4/3] rounded-xl"
       />

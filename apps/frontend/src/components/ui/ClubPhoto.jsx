@@ -1,41 +1,44 @@
+import widthsByPhoto from './clubPhotoWidths.json';
 import { cn } from './cn.js';
 
 /**
- * The club's real photos -- the ONLY images the app uses (no stock, no
- * generated images). Each exists in public/img as <name>-<width>.webp and
- * .jpg; all are portrait 2:3. `widths` must match the files on disk.
+ * The club's official photos (from the brochure) -- the ONLY images the app
+ * uses (no stock, no generated images). `npm run photos` makes each one in
+ * public/img/club as <name>-<width>.webp and .jpg (metadata removed) and
+ * writes the available widths to clubPhotoWidths.json. All are portrait 2:3.
+ * `position` is where the subject is, so a wide crop keeps faces in view.
  */
 export const CLUB_PHOTOS = {
-  'hero-canchas': {
-    widths: [560, 900, 1400, 1920],
+  'canchas-panoramica-nubes': {
+    position: 'center 55%',
     alt: 'Canchas de arcilla del club con banderines de colores, reflectores y las montañas al fondo bajo un cielo con nubes',
   },
-  'instalacion-red': {
-    widths: [480, 700, 1000],
-    alt: 'Vista de las canchas de arcilla del club, con la red, los reflectores y la cordillera al fondo',
-  },
-  'accion-saque': {
-    widths: [480, 700, 1000],
-    alt: 'Jugador juvenil lanzando la bola para sacar en una cancha de arcilla del club',
-  },
-  'accion-palmeras': {
-    widths: [480, 700, 1000],
-    alt: 'Jugador sacando en una cancha de arcilla, con palmeras y público al fondo',
-  },
-  'accion-desplazamiento': {
-    widths: [480, 700],
+  'jugador-desplazamiento': {
+    position: 'center 60%',
     alt: 'Jugador adulto estirándose para devolver un revés en una cancha de arcilla',
   },
-  'accion-espera': {
-    widths: [480, 700],
+  'jugador-espera-recepcion': {
+    position: 'center 62%',
     alt: 'Jugador en posición de espera con la raqueta lista, con árboles y montañas detrás',
+  },
+  'jugador-saque-azul': {
+    position: 'center 62%',
+    alt: 'Jugador sacando en una cancha de arcilla, con palmeras y público al fondo',
+  },
+  'nino-saque': {
+    position: 'center 46%',
+    alt: 'Niño de la escuela lanzando la bola para sacar en una cancha de arcilla del club',
+  },
+  'academia-chaqueta-orlando-rodriguez': {
+    position: 'center 60%',
+    alt: 'Orlando Rodríguez, de espaldas con la chaqueta de la academia, mirando un partido desde la orilla de la cancha',
   },
 };
 
 const RATIO = { width: 2, height: 3 };
 
 function srcSet(name, widths, ext) {
-  return widths.map((w) => `/img/${name}-${w}.${ext} ${w}w`).join(', ');
+  return widths.map((w) => `/img/club/${name}-${w}.${ext} ${w}w`).join(', ');
 }
 
 /**
@@ -64,7 +67,7 @@ export function ClubPhoto({
       `ClubPhoto: unknown photo "${name}". Available: ${Object.keys(CLUB_PHOTOS).join(', ')}`,
     );
   }
-  const { widths } = photo;
+  const widths = widthsByPhoto[name];
   const largest = widths[widths.length - 1];
   const fallbackWidth = widths[Math.min(1, widths.length - 1)];
 
@@ -72,7 +75,7 @@ export function ClubPhoto({
     <picture className={cn('block overflow-hidden bg-clay', className)}>
       <source type="image/webp" srcSet={srcSet(name, widths, 'webp')} sizes={sizes} />
       <img
-        src={`/img/${name}-${fallbackWidth}.jpg`}
+        src={`/img/club/${name}-${fallbackWidth}.jpg`}
         srcSet={srcSet(name, widths, 'jpg')}
         sizes={sizes}
         alt={alt ?? photo.alt}
@@ -84,6 +87,7 @@ export function ClubPhoto({
         // warns about it; the lowercase attribute passes straight through.
         // eslint-disable-next-line react/no-unknown-property
         fetchpriority={priority ? 'high' : undefined}
+        style={{ objectPosition: photo.position }}
         className={cn('h-full w-full object-cover', imgClassName)}
       />
     </picture>

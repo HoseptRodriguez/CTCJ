@@ -72,7 +72,7 @@ describe('with prefers-reduced-motion: everything shows its final state, unanima
 
   it('ParallaxPhoto: still photo, no scroll trigger created', () => {
     setReducedMotion(true);
-    const { container } = render(<ParallaxPhoto name="accion-saque" />);
+    const { container } = render(<ParallaxPhoto name="nino-saque" />);
     expectAtRest(container.querySelector('[data-part="parallax-layer"]'));
     expect(ScrollTrigger.getAll()).toHaveLength(0);
   });
@@ -157,7 +157,7 @@ describe('without reduced motion: the animations really start (control)', () => 
 
   it('ParallaxPhoto registers exactly one scroll trigger, and removes it on unmount', () => {
     setReducedMotion(false);
-    const { unmount } = render(<ParallaxPhoto name="accion-saque" />);
+    const { unmount } = render(<ParallaxPhoto name="nino-saque" />);
     expect(ScrollTrigger.getAll()).toHaveLength(1);
     unmount();
     expect(ScrollTrigger.getAll()).toHaveLength(0);
