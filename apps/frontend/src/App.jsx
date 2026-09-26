@@ -30,6 +30,7 @@ function lazyPage(load, name) {
 
 const CommunityPage = lazyPage(() => import('./pages/CommunityPage.jsx'), 'CommunityPage');
 const HomePage = lazyPage(() => import('./pages/HomePage.jsx'), 'HomePage');
+const ClubPage = lazyPage(() => import('./pages/ClubPage.jsx'), 'ClubPage');
 const MyCtcjHome = lazyPage(() => import('./pages/mictcj/HomeTab.jsx'), 'HomeTab');
 const MyReservations = lazyPage(
   () => import('./pages/mictcj/ReservationsTab.jsx'),
@@ -97,6 +98,7 @@ export function App() {
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<HomePage />} />
+              <Route path="/el-club" element={<ClubPage />} />
               <Route path="/canchas" element={<ReservationPage />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />

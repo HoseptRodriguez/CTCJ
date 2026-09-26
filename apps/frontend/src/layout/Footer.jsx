@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/canchas', label: 'Reservar una cancha' },
   { to: '/mi-ctcj', label: 'Mi CTCJ' },
   { to: '/#clases', label: 'Clases y academia' },
+  { to: '/el-club', label: 'El club' },
   { to: '/login', label: 'Entrar' },
 ];
 

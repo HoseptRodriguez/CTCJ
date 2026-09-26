@@ -8,10 +8,12 @@ import { WhatsAppIcon } from '../components/icons/WhatsAppIcon.jsx';
 import { HeroBallTrajectory } from '../components/motion/HeroBallTrajectory.jsx';
 import { ParallaxPhoto } from '../components/motion/ParallaxPhoto.jsx';
 import { SplitHeadline } from '../components/motion/SplitHeadline.jsx';
+import { BrochureTitle, DiagonalSection } from '../components/brochure/Brochure.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { ClubPhoto } from '../components/ui/ClubPhoto.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { WHATSAPP_LINK } from '../lib/clubInfo.js';
+import { CLUB_TEXTS } from '../lib/clubTexts.js';
 
 import { FreeTodayCard } from './home/FreeTodayCard.jsx';
 
@@ -56,6 +58,7 @@ export function HomePage() {
       <QuickActions />
       <Programs />
       <ClayBlock />
+      <AboutClub />
     </>
   );
 }
@@ -178,9 +181,37 @@ function Programs() {
   );
 }
 
+/** Brochure-style summary of the club (mission + history) -> /el-club. */
+function AboutClub() {
+  return (
+    <DiagonalSection
+      photo="academia-chaqueta-orlando-rodriguez"
+      tone="navy"
+      titleId="el-club-resumen"
+    >
+      <BrochureTitle id="el-club-resumen" tone="navy">
+        El club
+      </BrochureTitle>
+      <h3 className="mt-6 font-display text-h3 font-bold uppercase tracking-wide text-lime">
+        Misión
+      </h3>
+      <p className="mt-2 text-lead text-white/90">{CLUB_TEXTS.mission}</p>
+      <h3 className="mt-6 font-display text-h3 font-bold uppercase tracking-wide text-lime">
+        Nuestra historia
+      </h3>
+      <p className="mt-2 text-lead text-white/90">
+        {CLUB_TEXTS.history[0].split('. ').slice(0, 2).join('. ')}.
+      </p>
+      <Button to="/el-club" tone="dark" size="lg" className="mt-8">
+        Conoce el club
+      </Button>
+    </DiagonalSection>
+  );
+}
+
 function ClayBlock() {
   return (
-    <section id="club" aria-labelledby="club-title" className="bg-clay text-white">
+    <section id="canchas" aria-labelledby="club-title" className="bg-clay text-white">
       <div className="mx-auto grid max-w-container items-center gap-8 px-4 py-14 md:grid-cols-2 md:px-8">
         <div>
           <h2

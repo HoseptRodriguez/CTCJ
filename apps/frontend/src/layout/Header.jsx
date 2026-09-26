@@ -25,7 +25,7 @@ const STAFF_ROLES = [
 
 export const NAV_LINKS = [
   { label: 'Clases y academia', to: '/#clases' },
-  { label: 'El club', to: '/#club' },
+  { label: 'El club', to: '/el-club' },
   { label: 'Contacto', to: '/#contacto' },
 ];
 
@@ -57,7 +57,7 @@ export function Header() {
           {/* Smaller mark on phones and when the full menu shares the row. */}
           <ClubMark tone="dark" size="sm" className="sm:hidden xl:inline-block" />
           <ClubMark tone="dark" size="md" className="hidden sm:inline-block xl:hidden" />
-          <span className="flex flex-col whitespace-nowrap leading-tight">
+          <span className="flex min-w-0 flex-col leading-tight sm:whitespace-nowrap">
             <strong className="font-display text-h3 font-bold">Ciudad Jardín</strong>
             <span className="hidden text-body-sm text-white/85 sm:block">
               Club de Tenis · Fusagasugá
