@@ -176,14 +176,21 @@ export function createFakeMembershipStatusProvider(statusByUserId = {}) {
   };
 }
 
-export function createFakeBookingPolicySettings(enabled = false) {
+export function createFakeBookingPolicySettings(enabled = false, holdMinutes = 15) {
   let current = enabled;
+  let minutes = holdMinutes;
   return {
     async isOverdueBookingBlockEnabled() {
       return current;
     },
     async setOverdueBookingBlockEnabled(next) {
       current = next;
+    },
+    async getHoldDurationMinutes() {
+      return minutes;
+    },
+    async setHoldDurationMinutes(next) {
+      minutes = next;
     },
   };
 }

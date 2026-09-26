@@ -632,6 +632,52 @@ describe('Booking HTTP API (real Postgres)', () => {
     });
   });
 
+  describe('configurable hold duration', () => {
+    afterEach(async () => {
+      await prisma.systemSetting.deleteMany({ where: { key: 'booking.holdDurationMinutes' } });
+    });
+
+    it('defaults to 15 minutes, anyone can read it, only an admin can change it, and new holds use it', async () => {
+      const admin = await seedVerifiedUser({ roleCode: ROLE_CODES.ADMINISTRADOR });
+      const player = await seedVerifiedUser({ roleCode: ROLE_CODES.JUGADOR });
+      const adminToken = await login(app, admin.email, admin.password);
+      const playerToken = await login(app, player.email, player.password);
+
+      const initial = await request(app).get('/api/booking/settings/hold-duration').expect(200);
+      expect(initial.body).toEqual({ minutes: 15 });
+
+      await request(app)
+        .put('/api/booking/settings/hold-duration')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ minutes: 20 })
+        .expect(403);
+      await request(app)
+        .put('/api/booking/settings/hold-duration')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ minutes: 2 })
+        .expect(400);
+      await request(app)
+        .put('/api/booking/settings/hold-duration')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ minutes: 20 })
+        .expect(200);
+
+      const updated = await request(app).get('/api/booking/settings/hold-duration').expect(200);
+      expect(updated.body).toEqual({ minutes: 20 });
+
+      const { start, end } = futureSlot(12);
+      const before = Date.now();
+      const hold = await request(app)
+        .post('/api/booking/hold')
+        .set('Authorization', `Bearer ${playerToken}`)
+        .send({ courtId, start, end })
+        .expect(201);
+      const minutes = (new Date(hold.body.holdExpiresAt).getTime() - before) / 60_000;
+      expect(minutes).toBeGreaterThan(19.5);
+      expect(minutes).toBeLessThanOrEqual(20.1);
+    });
+  });
+
   describe('membership overdue booking block (Phase 5)', () => {
     afterEach(async () => {
       // The overdue-policy toggle is a club-wide SystemSetting, not reset by

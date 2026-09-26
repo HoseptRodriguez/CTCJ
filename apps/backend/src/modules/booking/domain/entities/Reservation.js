@@ -5,10 +5,10 @@ import { HoldExpired } from '../errors/HoldExpired.js';
 import { ReservationNotOwned } from '../errors/ReservationNotOwned.js';
 import { ReservationAlreadyPaid } from '../errors/ReservationAlreadyPaid.js';
 import { ReservationHasNoPrice } from '../errors/ReservationHasNoPrice.js';
-import { HOLD_DURATION_MINUTES } from '../policies/bookingPolicy.js';
+import { DEFAULT_HOLD_DURATION_MINUTES } from '../policies/bookingPolicy.js';
 import { isWithoutPenalty, PENALTY_FREE_WINDOW_HOURS } from '../policies/cancellationPolicy.js';
 
-const HOLD_DURATION_MS = HOLD_DURATION_MINUTES * 60_000;
+const MINUTE_MS = 60_000;
 
 /**
  * Booking aggregate root. Framework-agnostic by construction: no Express,
@@ -46,7 +46,7 @@ export class Reservation {
     this.notes = notes;
   }
 
-  /** Creates a new PRIVATE reservation in HOLD, expiring HOLD_DURATION_MINUTES from `now`. */
+  /** Creates a new PRIVATE reservation in HOLD, expiring `holdMinutes` (the club's setting) from `now`. */
   static createHold({
     id,
     clubId,
@@ -57,6 +57,7 @@ export class Reservation {
     createdBy,
     priceCop,
     now,
+    holdMinutes = DEFAULT_HOLD_DURATION_MINUTES,
   }) {
     return new Reservation({
       id,
@@ -68,7 +69,7 @@ export class Reservation {
       reservationType: RESERVATION_TYPE.PRIVATE,
       holderUserId,
       createdBy,
-      holdExpiresAt: new Date(now.getTime() + HOLD_DURATION_MS),
+      holdExpiresAt: new Date(now.getTime() + holdMinutes * MINUTE_MS),
       priceCop: priceCop ?? null,
     });
   }

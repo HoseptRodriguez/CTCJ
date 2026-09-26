@@ -13,6 +13,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { describeIdentityError } from '../lib/identityErrorMessages.js';
 
 import { useMyCtcj } from './mictcj/MyCtcjContext.jsx';
+import { PhysioConsentSection } from './mictcj/PhysioConsentSection.jsx';
 import { REQUEST_STATUS_LABELS } from './mictcj/shared.jsx';
 
 const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -258,7 +259,7 @@ function GuardianshipSection() {
 /** Mi CTCJ → Mi perfil (from the avatar in the header). */
 export function PlayerProfilePage() {
   useDocumentTitle('Mi perfil');
-  const { profile, setProfile } = useMyCtcj();
+  const { profile, setProfile, isJugador } = useMyCtcj();
 
   return (
     <div className="space-y-8">
@@ -283,6 +284,7 @@ export function PlayerProfilePage() {
             </div>
           </Card>
           <GuardianshipSection />
+          {isJugador && <PhysioConsentSection />}
         </>
       )}
     </div>

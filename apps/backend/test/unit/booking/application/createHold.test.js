@@ -66,11 +66,23 @@ describe('createHold', () => {
     });
 
     expect(result.reservationId).toBeTruthy();
-    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 5 * 60_000);
+    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 15 * 60_000);
 
     const stored = await deps.reservationRepository.findById(result.reservationId);
     expect(stored.status).toBe('HOLD');
     expect(stored.holderUserId).toBe('user-1');
+  });
+
+  it("uses the club's configured hold duration (admin setting)", async () => {
+    await deps.bookingPolicySettings.setHoldDurationMinutes(30);
+    const { periodStart, periodEnd } = slot();
+    const result = await createHold({
+      courtId: COURT.id,
+      periodStart,
+      periodEnd,
+      holderUserId: 'user-1',
+    });
+    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 30 * 60_000);
   });
 
   it('rejects an invalid slot (policy violation) before touching the repository', async () => {

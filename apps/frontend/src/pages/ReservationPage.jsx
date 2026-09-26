@@ -1,3 +1,4 @@
+import { DEFAULT_HOLD_DURATION_MINUTES } from '@ctcj/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -11,7 +12,7 @@ import { Skeleton, SkeletonGroup } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { DAYS_SHOWN, HOLD_MINUTES } from '../lib/booking.js';
+import { DAYS_SHOWN } from '../lib/booking.js';
 import { describeBookingError } from '../lib/bookingErrorMessages.js';
 import {
   DAY_PARTS,
@@ -30,7 +31,11 @@ import { CourtGrid, GridLegend } from './reservation/CourtGrid.jsx';
 import { DayPicker } from './reservation/DayPicker.jsx';
 import { StepIndicator } from './reservation/StepIndicator.jsx';
 
-const STEPS = ['Elige el día', 'Toca una hora libre', `Confirma en ${HOLD_MINUTES} minutos`];
+const stepsFor = (holdMinutes) => [
+  'Elige el día',
+  'Toca una hora libre',
+  `Confirma en ${holdMinutes} minutos`,
+];
 const IDLE = { status: 'idle', slot: null, hold: null, error: null };
 
 function initialPart(dateKey) {
@@ -62,6 +67,19 @@ export function ReservationPage() {
   const [minors, setMinors] = useState([]);
   const [holderUserId, setHolderUserId] = useState('');
   const preselectedFromUrl = useRef(false);
+  // The club's real hold time (admin setting); the default until it loads.
+  const [holdMinutes, setHoldMinutes] = useState(DEFAULT_HOLD_DURATION_MINUTES);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => bookingClient.getHoldDuration())
+      .then((d) => !cancelled && Number.isInteger(d?.minutes) && setHoldMinutes(d.minutes))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Day schedule (public; the server hides who booked what).
   useEffect(() => {
@@ -252,6 +270,7 @@ export function ReservationPage() {
       onRetry={() => holdSlot(flow.slot)}
       onLogin={() => goToLogin(flow.slot)}
       onExpire={handleExpire}
+      holdMinutes={holdMinutes}
     />
   );
 
@@ -262,7 +281,7 @@ export function ReservationPage() {
           title="Reservar cancha"
           description="Así de fácil: eliges el día, tocas una hora libre y confirmas. Pagas en recepción."
         />
-        <StepIndicator steps={STEPS} current={step} />
+        <StepIndicator steps={stepsFor(holdMinutes)} current={step} />
 
         {!authenticated && (
           <p className="mt-6 rounded-lg bg-navy-50 p-4 text-body text-ink">

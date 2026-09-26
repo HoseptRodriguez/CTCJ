@@ -119,8 +119,8 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     const todo = (await screen.findByRole('heading', { name: 'Para hacer hoy' })).closest(
       'section',
     );
-    // r1 and the class r3 are confirmed and unpaid.
-    expect(await within(todo).findByText('reservas sin pagar')).toBeInTheDocument();
+    // Only r1: the class r3 is paid in the monthly fee, not at the desk.
+    expect(await within(todo).findByText('reserva sin pagar')).toBeInTheDocument();
     expect(within(todo).getByRole('link', { name: 'Cobrar' })).toHaveAttribute(
       'href',
       '/staff/pagos',
@@ -148,7 +148,7 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     // 3 hours booked out of 2 courts × 17 hours.
     expect(await within(stats).findByText('9 % de ocupación')).toBeInTheDocument();
     expect(within(stats).getByText('3')).toBeInTheDocument();
-    expect(within(stats).getByText('$ 75.000')).toBeInTheDocument();
+    expect(within(stats).getByText('$ 35.000')).toBeInTheDocument();
     expect(await within(stats).findByText('$ 150.000')).toBeInTheDocument();
     expect(await within(stats).findByText('12')).toBeInTheDocument();
     expect(within(stats).getByText('2 con pago vencido')).toBeInTheDocument();

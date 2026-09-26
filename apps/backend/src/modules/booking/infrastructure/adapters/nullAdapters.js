@@ -1,3 +1,5 @@
+import { DEFAULT_HOLD_DURATION_MINUTES } from '../../domain/policies/bookingPolicy.js';
+
 /**
  * Safe defaults so buildBookingContainer() still works standalone (e.g. in
  * tests) without requiring the cross-module wiring app.js normally supplies.
@@ -13,12 +15,21 @@ export function createNullMembershipStatusProvider() {
   };
 }
 
-export function createStaticBookingPolicySettings(enabled = false) {
+export function createStaticBookingPolicySettings(
+  enabled = false,
+  holdMinutes = DEFAULT_HOLD_DURATION_MINUTES,
+) {
   return {
     async isOverdueBookingBlockEnabled() {
       return enabled;
     },
     async setOverdueBookingBlockEnabled() {
+      throw new Error('Static policy adapter is read-only.');
+    },
+    async getHoldDurationMinutes() {
+      return holdMinutes;
+    },
+    async setHoldDurationMinutes() {
       throw new Error('Static policy adapter is read-only.');
     },
   };

@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -78,6 +79,26 @@ describe('CoachDashboard (Clases de hoy)', () => {
     const card = heading.closest('section');
     expect(await screen.findByText(/Cancha 2 · hasta/)).toBeInTheDocument();
     expect(card.querySelectorAll('li')).toHaveLength(1);
+  });
+
+  it('"Ver semana" loads the next 8 days and groups the classes by day', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText(/Cancha 2 · hasta/);
+    expect(bookingClient.getSchedule).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Ver semana' }));
+    const heading = await screen.findByRole('heading', { name: 'Clases de la semana', level: 2 });
+    expect(bookingClient.getSchedule).toHaveBeenCalledTimes(9);
+    const card = heading.closest('section');
+    // The mock returns the same class every day: one group per day.
+    expect(await within(card).findByRole('heading', { name: 'Hoy', level: 3 })).toBeInTheDocument();
+    expect(within(card).getAllByRole('heading', { level: 3 })).toHaveLength(8);
+
+    await user.click(screen.getByRole('button', { name: 'Ver solo hoy' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Clases de hoy', level: 2 }),
+    ).toBeInTheDocument();
   });
 
   it("shows the team's recent notes and ratings until a player is chosen", async () => {

@@ -112,6 +112,7 @@ export function BookingPanel({
   onExpire,
   showPhoto = true,
   inPanel = false,
+  holdMinutes,
 }) {
   const { status, slot, hold, error } = flow;
 
@@ -129,7 +130,7 @@ export function BookingPanel({
         {!inPanel && <h2 className="mt-5 font-display text-h2 font-bold text-ink">Tu reserva</h2>}
         <p className="mt-2 text-body text-ink-soft">
           Elige el día y toca una hora <strong className="text-ink">Libre</strong>. Te la guardamos
-          unos minutos mientras confirmas.
+          {holdMinutes ? `${holdMinutes} minutos` : 'unos minutos'} mientras confirmas.
         </p>
         <p className="mt-4 text-body text-ink-soft">
           Las reservas son de 1 hora. Pagas en recepción al llegar.

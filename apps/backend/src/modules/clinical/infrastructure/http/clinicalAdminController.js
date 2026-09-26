@@ -68,6 +68,7 @@ export function createClinicalAdminController(container) {
     const result = await container.listPlayerNotes({
       playerId: req.params.id,
       practitionerUserId: req.user.id,
+      actorRoles: req.user.roles,
     });
     res.status(200).json(result);
   });
@@ -136,7 +137,32 @@ export function createClinicalAdminController(container) {
     res.status(200).json(entry);
   });
 
+  const getPhysioSummary = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getPhysioSummary({ playerId: req.params.id }));
+  });
+
+  const setFitnessStatus = asyncHandler(async (req, res) => {
+    const result = await container.setFitnessStatus({
+      playerId: req.params.id,
+      practitionerUserId: req.user.id,
+      status: req.body.status,
+      unfitUntil: req.body.unfitUntil,
+    });
+    res.status(201).json(result);
+  });
+
+  const listPhysioNotesForAdmin = asyncHandler(async (req, res) => {
+    const result = await container.listPhysioNotesForAdmin({
+      playerId: req.params.id,
+      actor: { id: req.user.id, roles: req.user.roles },
+    });
+    res.status(200).json(result);
+  });
+
   return {
+    getPhysioSummary,
+    setFitnessStatus,
+    listPhysioNotesForAdmin,
     scheduleAppointment,
     cancelAppointment,
     markCompleted,

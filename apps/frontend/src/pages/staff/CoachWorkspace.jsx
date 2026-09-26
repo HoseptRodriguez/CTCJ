@@ -11,7 +11,7 @@ import { cn } from '../../components/ui/cn.js';
 import { RadioCards, SelectField, TextAreaField } from '../../components/ui/Field.jsx';
 import { Tabs } from '../../components/ui/Tabs.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { clubTodayKey } from '../../lib/clubTime.js';
+import { addDaysToKey, clubTodayKey } from '../../lib/clubTime.js';
 import { describeCoachingError } from '../../lib/coachingErrorMessages.js';
 import { formatTime } from '../../lib/format.js';
 import { compareWithPast, SKILL_AREAS } from '../../lib/performance.js';
@@ -20,7 +20,7 @@ import { useAsync } from '../../lib/useAsync.js';
 import { DATE_MEDIUM, NOTE_TYPE_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { PlayerPicker } from './PlayerPicker.jsx';
-import { useSelectedPlayer } from './staffShared.jsx';
+import { dayTitle, useSelectedPlayer } from './staffShared.jsx';
 
 const VISIBILITY_OPTIONS = [
   {
@@ -34,39 +34,90 @@ const VISIBILITY_LABELS = { PLAYER_VISIBLE: 'La ve el jugador', PRIVATE: 'Solo e
 
 // ---------------------------------------------------------------------------
 
+const WEEK_DAYS = 8; // today + the next 7, the same window as bookings
+
+const isClass = (r) => r.reservationType === RESERVATION_TYPE.CLASS || r.label === 'Clase';
+
+/** Classes on each requested day, with the court name resolved. */
+async function loadClasses(dayKeys) {
+  const schedules = await Promise.all(dayKeys.map((key) => bookingClient.getSchedule(key)));
+  return schedules.map((d, i) => ({
+    dayKey: dayKeys[i],
+    classes: d.reservations
+      .filter(isClass)
+      .sort((a, b) => new Date(a.periodStart) - new Date(b.periodStart))
+      .map((c) => ({
+        ...c,
+        courtName: d.courts.find((x) => x.id === c.courtId)?.name ?? 'Cancha',
+      })),
+  }));
+}
+
+function ClassList({ classes }) {
+  return (
+    <ul className="space-y-2">
+      {classes.map((c, i) => (
+        <li
+          key={c.id ?? `${c.courtId}-${c.periodStart}-${i}`}
+          className="flex items-center gap-3 rounded-lg bg-page p-3"
+        >
+          <span className="shrink-0 whitespace-nowrap rounded-md bg-navy-400 px-2 py-1 text-body-sm font-bold text-white">
+            {formatTime(c.periodStart)}
+          </span>
+          <span className="text-body text-ink">
+            {c.courtName} · hasta {formatTime(c.periodEnd)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Today's classes; "Ver semana" shows the next 8 days, grouped by day. */
 export function TodayClasses() {
+  const [week, setWeek] = useState(false);
   const today = clubTodayKey();
-  const schedule = useAsync(() => bookingClient.getSchedule(today), [today]);
-  const classes = (d) =>
-    d.reservations
-      .filter((r) => r.reservationType === RESERVATION_TYPE.CLASS || r.label === 'Clase')
-      .sort((a, b) => new Date(a.periodStart) - new Date(b.periodStart));
-  const courtName = (d, id) => d.courts.find((c) => c.id === id)?.name ?? 'Cancha';
+  const days = useAsync(
+    () =>
+      loadClasses(
+        week ? Array.from({ length: WEEK_DAYS }, (_, i) => addDaysToKey(today, i)) : [today],
+      ),
+    [today, week],
+  );
+  const total = (d) => d.reduce((n, day) => n + day.classes.length, 0);
 
   return (
     <SectionCard
-      title="Clases de hoy"
-      async={schedule}
-      isEmpty={(d) => classes(d).length === 0}
-      empty={{ title: 'No hay clases programadas hoy' }}
+      title={week ? 'Clases de la semana' : 'Clases de hoy'}
+      actions={
+        <Button variant="secondary" aria-pressed={week} onClick={() => setWeek((w) => !w)}>
+          {week ? 'Ver solo hoy' : 'Ver semana'}
+        </Button>
+      }
+      async={days}
+      isEmpty={(d) => total(d) === 0}
+      empty={{
+        title: week ? 'No hay clases en los próximos 8 días' : 'No hay clases programadas hoy',
+      }}
     >
-      {(d) => (
-        <ul className="space-y-2">
-          {classes(d).map((c, i) => (
-            <li
-              key={c.id ?? `${c.courtId}-${i}`}
-              className="flex items-center gap-3 rounded-lg bg-page p-3"
-            >
-              <span className="rounded-md bg-navy-400 px-2 py-1 text-body-sm font-bold text-white">
-                {formatTime(c.periodStart)}
-              </span>
-              <span className="text-body text-ink">
-                {courtName(d, c.courtId)} · hasta {formatTime(c.periodEnd)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {(d) =>
+        week ? (
+          <div className="space-y-5">
+            {d
+              .filter((day) => day.classes.length > 0)
+              .map((day) => (
+                <section key={day.dayKey} aria-label={dayTitle(day.dayKey)}>
+                  <h3 className="mb-2 text-lead font-bold text-ink">
+                    {day.dayKey === today ? 'Hoy' : dayTitle(day.dayKey)}
+                  </h3>
+                  <ClassList classes={day.classes} />
+                </section>
+              ))}
+          </div>
+        ) : (
+          <ClassList classes={d[0].classes} />
+        )
+      }
     </SectionCard>
   );
 }

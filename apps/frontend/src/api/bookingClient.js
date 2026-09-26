@@ -6,12 +6,22 @@ import {
   recordPaymentSchema,
   listPaymentsQuerySchema,
   paymentsMonthlyQuerySchema,
+  holdDurationSchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
 
 export const bookingClient = {
   listCourts: () => request('/api/booking/courts'),
+
+  /** Public. @returns {Promise<{minutes: number}>} how long a hold waits for confirmation */
+  getHoldDuration: () => request('/api/booking/settings/hold-duration'),
+
+  /** Admin only. @param {number} minutes */
+  setHoldDuration: (minutes) => {
+    holdDurationSchema.parse({ minutes });
+    return request('/api/booking/settings/hold-duration', { method: 'PUT', body: { minutes } });
+  },
 
   /**
    * The caller's own upcoming reservations (HOLD/CONFIRMED), today (club

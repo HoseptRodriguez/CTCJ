@@ -12,7 +12,9 @@ import { createListPaymentsByDateRange } from '../application/useCases/listPayme
 import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
 import { createGetMyTrainingFrequency } from '../application/useCases/getMyTrainingFrequency.js';
 import { createGetMyReservations } from '../application/useCases/getMyReservations.js';
+import { createGetHoldDurationPolicy } from '../application/useCases/getHoldDurationPolicy.js';
 import { createGetOverdueBookingPolicy } from '../application/useCases/getOverdueBookingPolicy.js';
+import { createSetHoldDurationPolicy } from '../application/useCases/setHoldDurationPolicy.js';
 import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
 import { createPrismaReservationRepository } from './persistence/prismaReservationRepository.js';
@@ -86,5 +88,7 @@ export function buildBookingContainer({
     }),
     getOverdueBookingPolicy: createGetOverdueBookingPolicy({ bookingPolicySettings }),
     setOverdueBookingPolicy: createSetOverdueBookingPolicy({ bookingPolicySettings }),
+    getHoldDurationPolicy: createGetHoldDurationPolicy({ bookingPolicySettings }),
+    setHoldDurationPolicy: createSetHoldDurationPolicy({ bookingPolicySettings }),
   };
 }

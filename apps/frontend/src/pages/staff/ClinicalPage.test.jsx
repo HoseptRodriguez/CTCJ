@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,6 +31,9 @@ vi.mock('../../api/clinicalClient.js', () => ({
     listMedicalHistory: vi.fn(),
     createMedicalHistoryEntry: vi.fn(),
     resolveMedicalHistoryEntry: vi.fn(),
+    getPhysioSummary: vi.fn(),
+    setFitnessStatus: vi.fn(),
+    listPhysioNotesForAdmin: vi.fn(),
   },
 }));
 
@@ -72,6 +75,20 @@ function renderAs(roles, path = '/staff/clinico') {
     </ToastProvider>,
   );
 }
+const SUMMARY = {
+  upcoming: [],
+  recent: [],
+  attendance: { completed: 3, noShow: 1, cancelled: 0, rate: 75 },
+  hasActiveRecoveryPlan: true,
+  fitness: {
+    status: 'UNFIT',
+    recordedStatus: 'UNFIT',
+    unfitUntil: '2099-01-15',
+    recordedAt: '2026-09-20T12:00:00Z',
+  },
+  notesAccess: { authorized: false, grantedAt: null },
+};
+
 const withPlayer = `/staff/clinico?jugador=${PLAYER_ID}&nombre=Ana%20G%C3%B3mez`;
 
 beforeEach(() => {
@@ -80,6 +97,7 @@ beforeEach(() => {
   clinicalClient.listPlayerNotes.mockResolvedValue({ notes: [] });
   clinicalClient.listRecoveryPlans.mockResolvedValue({ plans: [] });
   clinicalClient.listMedicalHistory.mockResolvedValue({ entries: [] });
+  clinicalClient.getPhysioSummary.mockResolvedValue(SUMMARY);
   membershipClient.searchPlayers.mockResolvedValue({
     players: [{ id: PLAYER_ID, firstName: 'Ana', lastName: 'Gómez' }],
   });
@@ -213,5 +231,77 @@ describe('ClinicalPage (Salud y bienestar)', () => {
       goal: undefined,
       visibility: 'PLAYER_VISIBLE',
     });
+  });
+
+  it('Administrador, fisioterapia: operational summary, and notes locked without the player authorization', async () => {
+    const user = userEvent.setup();
+    renderAs(['ADMINISTRADOR'], withPlayer);
+    await user.click(screen.getByRole('tab', { name: 'Fisioterapia' }));
+    expect(
+      await screen.findByText('No apto para jugar hasta el 15 de enero de 2099'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Activo')).toBeInTheDocument();
+    expect(screen.getByText('75 %')).toBeInTheDocument();
+    expect(await screen.findByText(/no ha autorizado a la administración/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Ver notas de fisioterapia' }),
+    ).not.toBeInTheDocument();
+    expect(clinicalClient.listPhysioNotesForAdmin).not.toHaveBeenCalled();
+  });
+
+  it('Administrador, fisioterapia: with the authorization, opens the notes on request', async () => {
+    clinicalClient.getPhysioSummary.mockResolvedValue({
+      ...SUMMARY,
+      notesAccess: { authorized: true, grantedAt: '2026-09-25T12:00:00Z' },
+    });
+    clinicalClient.listPhysioNotesForAdmin.mockResolvedValue({
+      notes: [
+        {
+          id: 'n1',
+          noteType: 'SESSION_NOTE',
+          content: 'Movilidad mejor',
+          createdAt: '2026-09-24T12:00:00Z',
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    renderAs(['ADMINISTRADOR'], withPlayer);
+    await user.click(screen.getByRole('tab', { name: 'Fisioterapia' }));
+    expect(await screen.findByText(/queda registrado quién las leyó y cuándo/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver notas de fisioterapia' }));
+    expect(await screen.findByText('Movilidad mejor')).toBeInTheDocument();
+    expect(clinicalClient.listPhysioNotesForAdmin).toHaveBeenCalledWith(PLAYER_ID);
+  });
+
+  it('Recepción never sees the physiotherapy summary or notes', async () => {
+    const user = userEvent.setup();
+    renderAs(['RECEPCION'], withPlayer);
+    await user.click(screen.getByRole('tab', { name: 'Fisioterapia' }));
+    await screen.findByRole('heading', { name: 'Citas del jugador' });
+    expect(screen.queryByText('Resumen de fisioterapia')).not.toBeInTheDocument();
+    expect(clinicalClient.getPhysioSummary).not.toHaveBeenCalled();
+  });
+
+  it('Fisioterapeuta marks the player "No apto" until a date, after confirming', async () => {
+    clinicalClient.setFitnessStatus.mockResolvedValue({
+      status: 'UNFIT',
+      unfitUntil: '2099-02-01',
+    });
+    const user = userEvent.setup();
+    renderAs(['FISIOTERAPEUTA'], withPlayer);
+    await user.click(await screen.findByRole('radio', { name: /No apto/ }));
+    fireEvent.change(screen.getByLabelText(/No apto hasta/), { target: { value: '2099-02-01' } });
+    await user.click(screen.getByRole('button', { name: 'Guardar estado' }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: '¿Guardar el estado para jugar?',
+    });
+    expect(dialog).toHaveTextContent('No apto para jugar hasta el 1 de febrero de 2099');
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, guardar' }));
+    await waitFor(() =>
+      expect(clinicalClient.setFitnessStatus).toHaveBeenCalledWith(PLAYER_ID, {
+        status: 'UNFIT',
+        unfitUntil: '2099-02-01',
+      }),
+    );
   });
 });

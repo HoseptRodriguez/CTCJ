@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { PAYMENT_METHOD } from '../constants/payments.js';
+import { MAX_HOLD_DURATION_MINUTES, MIN_HOLD_DURATION_MINUTES } from '../constants/reservations.js';
 
 export const holdSchema = z.object({
   courtId: z.string().uuid(),
@@ -45,4 +46,8 @@ export const listPaymentsQuerySchema = z.object({
 // Cash flow (financial dashboard) -- last N club-local months, newest last.
 export const paymentsMonthlyQuerySchema = z.object({
   months: z.coerce.number().int().min(1).max(24).default(6),
+});
+
+export const holdDurationSchema = z.object({
+  minutes: z.number().int().min(MIN_HOLD_DURATION_MINUTES).max(MAX_HOLD_DURATION_MINUTES),
 });

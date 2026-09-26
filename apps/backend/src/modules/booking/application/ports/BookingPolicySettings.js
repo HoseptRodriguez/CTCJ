@@ -18,4 +18,14 @@ export class BookingPolicySettings {
   async setOverdueBookingBlockEnabled(_enabled, _updatedByUserId) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<number>} minutes a HOLD waits for confirmation */
+  async getHoldDurationMinutes() {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<void>} */
+  async setHoldDurationMinutes(_minutes, _updatedByUserId) {
+    throw new Error('Not implemented');
+  }
 }

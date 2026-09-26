@@ -29,3 +29,14 @@ export function createNullPlayerDirectoryProvider() {
     },
   };
 }
+
+/** Standalone/test default: collects reads in memory (never touches the DB). */
+export function createInMemoryClinicalAuditLog() {
+  const reads = [];
+  return {
+    reads,
+    async recordNoteReads(read) {
+      reads.push(read);
+    },
+  };
+}

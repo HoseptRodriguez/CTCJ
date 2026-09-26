@@ -7,7 +7,14 @@ import { InvalidTimeSlot } from '../errors/InvalidTimeSlot.js';
 export const MAX_ADVANCE_DAYS = 7;
 export const MIN_ADVANCE_MINUTES = 30;
 export const SLOT_DURATION_MINUTES = 60;
-export const HOLD_DURATION_MINUTES = 5;
+// How long a HOLD waits for confirmation. Club-configurable by an admin
+// (SystemSetting 'booking.holdDurationMinutes'); these are the default and
+// the accepted range, shared with the validation schema.
+export {
+  DEFAULT_HOLD_DURATION_MINUTES,
+  MIN_HOLD_DURATION_MINUTES,
+  MAX_HOLD_DURATION_MINUTES,
+} from '@ctcj/shared';
 export const MAX_CONCURRENT_PER_PLAYER = 2;
 
 const MINUTE_MS = 60_000;

@@ -8,7 +8,12 @@ import { ToastProvider } from '../../components/ui/Toast.jsx';
 import { CourtPricingPage } from './CourtPricingPage.jsx';
 
 vi.mock('../../api/bookingClient.js', () => ({
-  bookingClient: { listCourts: vi.fn(), setCourtPrice: vi.fn() },
+  bookingClient: {
+    listCourts: vi.fn(),
+    setCourtPrice: vi.fn(),
+    getHoldDuration: vi.fn(),
+    setHoldDuration: vi.fn(),
+  },
 }));
 
 function renderPage() {
@@ -21,6 +26,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
   bookingClient.listCourts.mockResolvedValue({
     courts: [
       { id: 'court-1', name: 'Cancha 1', priceCop: 60000 },
@@ -69,5 +75,25 @@ describe('CourtPricingPage (Precios de canchas)', () => {
     await user.click(within(panel).getByRole('button', { name: 'Guardar precio' }));
     expect(within(panel).getByRole('alert')).toHaveTextContent('Escribe el precio en pesos');
     expect(bookingClient.setCourtPrice).not.toHaveBeenCalled();
+  });
+
+  it('the admin changes how long a held hour waits, after confirming', async () => {
+    bookingClient.setHoldDuration.mockResolvedValue({ minutes: 20 });
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByText('15 minutos')).toBeInTheDocument();
+    const input = screen.getByLabelText(/Nuevo tiempo/);
+    await user.type(input, '90');
+    await user.click(screen.getByRole('button', { name: 'Guardar tiempo' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('entre 5 y 60');
+    await user.clear(input);
+    await user.type(input, '20');
+    await user.click(screen.getByRole('button', { name: 'Guardar tiempo' }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: '¿Cambiar el tiempo para confirmar?',
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, cambiar tiempo' }));
+    await waitFor(() => expect(bookingClient.setHoldDuration).toHaveBeenCalledWith(20));
+    expect(await screen.findByText('20 minutos')).toBeInTheDocument();
   });
 });

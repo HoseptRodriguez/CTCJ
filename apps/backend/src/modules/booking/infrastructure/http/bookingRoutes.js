@@ -8,6 +8,7 @@ import {
   listPaymentsQuerySchema,
   paymentsMonthlyQuerySchema,
   overduePolicySchema,
+  holdDurationSchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -73,6 +74,16 @@ export function createBookingRoutes(controller) {
     requireRole(ROLE_CODES.ADMINISTRADOR),
     validateBody(overduePolicySchema),
     controller.setOverduePolicy,
+  );
+
+  // Public: the booking page tells everyone "Confirma en N minutos".
+  router.get('/settings/hold-duration', controller.getHoldDuration);
+  router.put(
+    '/settings/hold-duration',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(holdDurationSchema),
+    controller.setHoldDuration,
   );
 
   return router;

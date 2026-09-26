@@ -18,6 +18,7 @@ vi.mock('../api/bookingClient.js', () => ({
     hold: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(),
+    getHoldDuration: vi.fn(),
   },
 }));
 vi.mock('../api/guardianshipClient.js', () => ({
@@ -89,6 +90,7 @@ describe('ReservationPage — booking flow', () => {
     vi.clearAllMocks();
     bookingClient.getSchedule.mockImplementation((date) => Promise.resolve(scheduleFor(date)));
     bookingClient.cancel.mockResolvedValue({});
+    bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
     guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
   });
 
@@ -101,6 +103,13 @@ describe('ReservationPage — booking flow', () => {
       within(screen.getByRole('radiogroup', { name: 'Elige el día' })).getAllByRole('radio'),
     ).toHaveLength(8);
     await waitFor(() => expect(bookingClient.getSchedule).toHaveBeenCalled());
+  });
+
+  it('"Confirma en N minutos" shows the real hold time of the club', async () => {
+    bookingClient.getHoldDuration.mockResolvedValue({ minutes: 20 });
+    useAuth.mockReturnValue({ status: 'anonymous', user: null });
+    renderPage();
+    expect(await screen.findByText('Confirma en 20 minutos')).toBeInTheDocument();
   });
 
   it('without a session, tapping a free hour goes to login and remembers that hour', async () => {

@@ -5,6 +5,7 @@ import {
   createRecoveryPlanSchema,
   discontinueRecoveryPlanSchema,
   createMedicalHistoryEntrySchema,
+  setFitnessStatusSchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
@@ -112,4 +113,29 @@ export const clinicalClient = {
 
   /** @returns {Promise<{entries: Array}>} the caller's own PLAYER_VISIBLE medical history */
   getMyMedicalHistory: () => request('/api/clinical/me/medical-history'),
+
+  // --- Administration's access to Physiotherapy ----------------------------
+
+  /** Admin/physio: appointments, attendance, active plan, "Apto / No apto" -- no clinical text. */
+  getPhysioSummary: (playerId) => request(`/api/admin/clinical/players/${playerId}/physio-summary`),
+
+  /** Physio: @param {{ status: 'FIT'|'UNFIT', unfitUntil?: string }} payload */
+  setFitnessStatus: (playerId, payload) => {
+    setFitnessStatusSchema.parse(payload);
+    return request(`/api/admin/clinical/players/${playerId}/fitness-status`, {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  /** Admin: physiotherapy notes -- 403 unless the player authorized it; every read is audited. */
+  listPhysioNotesForAdmin: (playerId) =>
+    request(`/api/admin/clinical/players/${playerId}/physio-notes`),
+
+  /** The caller's own authorization for the administration to read their physio notes. */
+  getMyPhysioConsent: () => request('/api/clinical/me/consents/admin-physio-notes'),
+  grantMyPhysioConsent: () =>
+    request('/api/clinical/me/consents/admin-physio-notes', { method: 'POST' }),
+  revokeMyPhysioConsent: () =>
+    request('/api/clinical/me/consents/admin-physio-notes', { method: 'DELETE' }),
 };

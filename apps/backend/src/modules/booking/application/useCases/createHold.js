@@ -74,6 +74,7 @@ export function createCreateHold({
       }
     }
 
+    const holdMinutes = await bookingPolicySettings.getHoldDurationMinutes();
     const reservation = Reservation.createHold({
       id: randomUUID(),
       clubId,
@@ -84,6 +85,7 @@ export function createCreateHold({
       createdBy: createdByUserId,
       priceCop: court.priceCop,
       now,
+      holdMinutes,
     });
 
     // Insert is optimistic: the DB exclusion constraint is the authoritative

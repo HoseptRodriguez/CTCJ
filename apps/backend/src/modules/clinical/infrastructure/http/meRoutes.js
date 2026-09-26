@@ -11,5 +11,11 @@ export function createMeRoutes(controller) {
   router.get('/recovery-plans', requireAuth, controller.getMyRecoveryPlans);
   router.get('/medical-history', requireAuth, controller.getMyMedicalHistory);
 
+  // "Autorizo a la administración del club a ver mis notas de fisioterapia":
+  // always about the caller themself (req.user.id), never another player.
+  router.get('/consents/admin-physio-notes', requireAuth, controller.getMyPhysioConsent);
+  router.post('/consents/admin-physio-notes', requireAuth, controller.grantMyPhysioConsent);
+  router.delete('/consents/admin-physio-notes', requireAuth, controller.revokeMyPhysioConsent);
+
   return router;
 }

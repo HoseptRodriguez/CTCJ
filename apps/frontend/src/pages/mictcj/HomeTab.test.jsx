@@ -41,6 +41,9 @@ vi.mock('../../api/clinicalClient.js', () => ({
     getMyNotes: vi.fn(),
     getMyRecoveryPlans: vi.fn(),
     getMyMedicalHistory: vi.fn(),
+    getMyPhysioConsent: vi.fn(),
+    grantMyPhysioConsent: vi.fn(),
+    revokeMyPhysioConsent: vi.fn(),
   },
 }));
 vi.mock('../../api/coachingClient.js', () => ({

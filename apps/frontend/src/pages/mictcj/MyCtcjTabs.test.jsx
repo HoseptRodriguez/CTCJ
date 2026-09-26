@@ -40,6 +40,9 @@ vi.mock('../../api/clinicalClient.js', () => ({
     getMyNotes: vi.fn(),
     getMyRecoveryPlans: vi.fn(),
     getMyMedicalHistory: vi.fn(),
+    getMyPhysioConsent: vi.fn(),
+    grantMyPhysioConsent: vi.fn(),
+    revokeMyPhysioConsent: vi.fn(),
   },
 }));
 vi.mock('../../api/coachingClient.js', () => ({
@@ -551,6 +554,50 @@ describe('Mi CTCJ — Mi perfil', () => {
       screen.getByText('La foto pesa más de 2 MB. Elige una más liviana.'),
     ).toBeInTheDocument();
     expect(membershipClient.uploadMyAvatar).not.toHaveBeenCalled();
+  });
+
+  it('the player authorizes, and later withdraws, admin access to their physio notes', async () => {
+    clinicalClient.grantMyPhysioConsent.mockResolvedValue({
+      authorized: true,
+      grantedAt: '2026-09-26T15:00:00.000Z',
+      revokedAt: null,
+    });
+    clinicalClient.revokeMyPhysioConsent.mockResolvedValue({
+      authorized: false,
+      grantedAt: '2026-09-26T15:00:00.000Z',
+      revokedAt: '2026-09-27T15:00:00.000Z',
+    });
+    const user = userEvent.setup();
+    renderMyCtcj('/mi-ctcj/perfil');
+
+    expect(
+      await screen.findByText(
+        'Autorizo a la administración del club a ver mis notas de fisioterapia',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No autorizado')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Autorizar' }));
+    expect(clinicalClient.grantMyPhysioConsent).not.toHaveBeenCalled();
+    const grant = await screen.findByRole('alertdialog', {
+      name: '¿Autorizar a la administración?',
+    });
+    await user.click(within(grant).getByRole('button', { name: 'Sí, autorizar' }));
+    expect(clinicalClient.grantMyPhysioConsent).toHaveBeenCalled();
+    expect(await screen.findByText(/Autorizado desde el/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retirar autorización' }));
+    const revoke = await screen.findByRole('alertdialog', { name: '¿Retirar la autorización?' });
+    await user.click(within(revoke).getByRole('button', { name: 'Sí, retirar' }));
+    expect(clinicalClient.revokeMyPhysioConsent).toHaveBeenCalled();
+    expect(await screen.findByText(/No autorizado \(retirada el/)).toBeInTheDocument();
+  });
+
+  it('a plain USUARIO (not a player) does not see the physio authorization', async () => {
+    renderMyCtcj('/mi-ctcj/perfil', { roles: ['USUARIO'] });
+    await screen.findByRole('img', { name: 'Aún sin foto' });
+    expect(screen.queryByText(/mis notas de fisioterapia/)).not.toBeInTheDocument();
+    expect(clinicalClient.getMyPhysioConsent).not.toHaveBeenCalled();
   });
 
   it('requests a guardianship link with the chosen permissions and lists it', async () => {

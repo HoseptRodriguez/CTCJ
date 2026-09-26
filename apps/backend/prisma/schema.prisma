@@ -125,6 +125,8 @@ model User {
   // Physiotherapy (Phase 15) -- recovery plans and medical history where this user is the patient
   recoveryPlans         RecoveryPlan[]         @relation("RecoveryPlanSubject")
   medicalHistoryEntries MedicalHistoryEntry[]  @relation("MedicalHistorySubject")
+  physioFitnessStatuses PhysioFitnessStatus[]  @relation("PhysioFitnessSubject")
+  clinicalConsents      ClinicalAccessConsent[] @relation("ClinicalConsentSubject")
 
   // Goals (Phase 2) -- personal goals this user owns
   goals Goal[] @relation("GoalSubject")
@@ -819,6 +821,38 @@ model MedicalHistoryEntry {
   player User @relation("MedicalHistorySubject", fields: [playerId], references: [id], onDelete: Restrict)
 
   @@map("medical_history_entries")
+}
+
+// "Apto / No apto para jugar hasta [fecha]" recorded by a Fisioterapeuta --
+// operational only (no diagnosis). Append-only; newest row = current status.
+// CHECKs (status values, unfit_until only when UNFIT) live in the raw-SQL
+// migration 20260926090000_add_physio_admin_access.
+model PhysioFitnessStatus {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  status         String    @db.VarChar(10) // FIT|UNFIT
+  unfitUntil     DateTime? @map("unfit_until") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  player User @relation("PhysioFitnessSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("physio_fitness_statuses")
+}
+
+// A player's authorization for the club administration to read their
+// physiotherapy notes. Withdrawing sets revokedAt; granting again inserts a
+// new row. One active row per player+scope (partial unique index in SQL).
+model ClinicalAccessConsent {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId  String    @map("player_id") @db.Uuid
+  scope     String    @db.VarChar(40) // ADMIN_PHYSIO_NOTES
+  grantedAt DateTime  @default(now()) @map("granted_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  player User @relation("ClinicalConsentSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("clinical_access_consents")
 }
 
 model OutboxEvent {

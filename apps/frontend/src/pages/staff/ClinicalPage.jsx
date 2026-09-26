@@ -23,6 +23,7 @@ import { useAsync } from '../../lib/useAsync.js';
 import { APPOINTMENT_STATUS_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { clinicalRecordTabs, DISCIPLINE_LABELS, ReasonDialog } from './ClinicalPlayerRecord.jsx';
+import { AdminPhysioNotes, FitnessStatusCard, PhysioSummaryCard } from './PhysioAccess.jsx';
 import { PlayerPicker } from './PlayerPicker.jsx';
 import { dayTitle, StaffDateNav, useSelectedPlayer } from './staffShared.jsx';
 
@@ -49,30 +50,31 @@ function useClinicalRoles() {
   return {
     userId: user?.id,
     isPractitioner,
+    isAdmin: has(ROLE_CODES.ADMINISTRADOR),
     // Recepción coordinates logistics but can't know whether a session happened.
     canMarkOutcome: isPractitioner || has(ROLE_CODES.ADMINISTRADOR),
     disciplines,
   };
 }
 
-function PrivacyNotice({ isPractitioner }) {
+function PrivacyNotice({ isPractitioner, isAdmin }) {
+  let text;
+  if (isPractitioner) {
+    text =
+      'Tus notas solo las ven los profesionales de tu disciplina. Entrenadores y recepción nunca las ven. La administración solo puede leer las de fisioterapia si el jugador lo autoriza, y cada lectura queda registrada. El jugador solo ve lo que marques como “La ve el jugador”.';
+  } else if (isAdmin) {
+    text =
+      'Ves la agenda y, en fisioterapia, un resumen: asistencia, si hay plan de recuperación activo y si el jugador está apto para jugar. Las notas de fisioterapia solo si el jugador lo autorizó desde Mi CTCJ, y cada lectura queda registrada. Las de psicología nunca.';
+  } else {
+    text =
+      'Aquí ves solo la agenda: quién tiene cita, cuándo y con quién. El contenido de las sesiones es privado del profesional y nunca se muestra en esta pantalla.';
+  }
   return (
     <div className="mb-8 flex items-start gap-4 rounded-xl border-2 border-navy-500 bg-navy-50 p-5">
       <LockIcon className="mt-0.5 h-7 w-7 shrink-0 text-navy-500" />
       <div>
         <p className="text-lead font-bold text-navy-500">Información confidencial de salud</p>
-        {isPractitioner ? (
-          <p className="mt-1 text-body text-ink">
-            Tus notas solo las ven los profesionales de tu disciplina. Ni la administración, ni
-            recepción, ni los entrenadores pueden leerlas. El jugador solo ve lo que marques como
-            “La ve el jugador”.
-          </p>
-        ) : (
-          <p className="mt-1 text-body text-ink">
-            Aquí ves solo la agenda: quién tiene cita, cuándo y con quién. El contenido de las
-            sesiones es privado del profesional y nunca se muestra en esta pantalla.
-          </p>
-        )}
+        <p className="mt-1 text-body text-ink">{text}</p>
       </div>
     </div>
   );
@@ -436,17 +438,32 @@ function DisciplineView({ discipline, roles }) {
                   playerId: player.id,
                   discipline,
                   appointmentsTab: (
-                    <PlayerAppointments
-                      key={player.id}
-                      playerId={player.id}
-                      discipline={discipline}
-                      roles={roles}
-                    />
+                    <div className="space-y-6">
+                      {discipline === 'PHYSIOTHERAPY' && (
+                        <FitnessStatusCard key={`fit-${player.id}`} playerId={player.id} />
+                      )}
+                      <PlayerAppointments
+                        key={player.id}
+                        playerId={player.id}
+                        discipline={discipline}
+                        roles={roles}
+                      />
+                    </div>
                   ),
                 })}
               />
             ) : (
-              <PlayerAppointments key={player.id} playerId={player.id} roles={roles} />
+              <>
+                {/* Administration, physiotherapy: operational summary, and the
+                    notes only with the player's own authorization. */}
+                {roles.isAdmin && discipline === 'PHYSIOTHERAPY' && (
+                  <>
+                    <PhysioSummaryCard key={`sum-${player.id}`} playerId={player.id} />
+                    <AdminPhysioNotes key={`notes-${player.id}`} playerId={player.id} />
+                  </>
+                )}
+                <PlayerAppointments key={player.id} playerId={player.id} roles={roles} />
+              </>
             )}
           </>
         ) : (
@@ -491,7 +508,7 @@ export function ClinicalPage() {
             : 'Agenda de psicología y fisioterapia: agenda, cancela y revisa citas.'
         }
       />
-      <PrivacyNotice isPractitioner={roles.isPractitioner} />
+      <PrivacyNotice isPractitioner={roles.isPractitioner} isAdmin={roles.isAdmin} />
       {roles.disciplines.length > 1 ? (
         <Tabs
           label="Disciplina"

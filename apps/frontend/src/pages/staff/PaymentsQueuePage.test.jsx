@@ -51,6 +51,15 @@ const SCHEDULE = {
     },
     {
       ...base,
+      id: 'res-class',
+      reservationType: 'CLASS',
+      periodStart: '2026-08-05T20:00:00.000Z',
+      periodEnd: '2026-08-05T21:00:00.000Z',
+      paymentId: null,
+      holderName: 'Clase academia',
+    },
+    {
+      ...base,
       id: 'res-hold',
       periodStart: '2026-08-05T17:00:00.000Z',
       periodEnd: '2026-08-05T18:00:00.000Z',
@@ -93,11 +102,13 @@ beforeEach(() => {
 });
 
 describe('PaymentsQueuePage (Cobros)', () => {
-  it('splits CONFIRMED reservations into "Sin pagar" and "Pagadas", ignoring holds', async () => {
+  it('splits CONFIRMED reservations into "Sin pagar" and "Pagadas", ignoring holds and classes', async () => {
     renderPage();
     expect(await screen.findByRole('radio', { name: 'Sin pagar (2)' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Pagadas (1)' })).toBeInTheDocument();
     expect(screen.queryByText('En espera')).not.toBeInTheDocument();
+    // Classes are paid in the academy's monthly fee.
+    expect(screen.queryByText('Clase academia')).not.toBeInTheDocument();
   });
 
   it('each row: who, that a guardian booked it, the value and a "Cobrar" button', async () => {

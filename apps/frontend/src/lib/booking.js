@@ -9,7 +9,6 @@ import { HOURS, slotStartIso } from './clubTime.js';
  */
 export const MIN_ADVANCE_MINUTES = 30;
 export const MAX_ADVANCE_DAYS = 7;
-export const HOLD_MINUTES = 5; // informational only -- the countdown uses the server's holdExpiresAt
 export const DAYS_SHOWN = MAX_ADVANCE_DAYS + 1; // today + 7
 
 const MINUTE = 60_000;
@@ -88,10 +87,15 @@ export function formatCountdown(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
-// Court time that is never charged at the desk (the club's own blocks).
-const NOT_CHARGED = [RESERVATION_TYPE.MAINTENANCE, RESERVATION_TYPE.BLOCKED];
+// Court time never charged at the desk: the club's own blocks, and classes
+// (those are paid in the academy's monthly fee, not per hour).
+const NOT_CHARGED = [
+  RESERVATION_TYPE.MAINTENANCE,
+  RESERVATION_TYPE.BLOCKED,
+  RESERVATION_TYPE.CLASS,
+];
 
-/** A confirmed booking the front desk charges for (not maintenance/blocked). */
+/** A confirmed booking the front desk charges for (not maintenance, blocks or classes). */
 export function isChargeable(r) {
   return r.status === 'CONFIRMED' && !NOT_CHARGED.includes(r.reservationType);
 }

@@ -34,3 +34,16 @@ export const MEDICAL_HISTORY_STATUS = Object.freeze({
   ACTIVE: 'ACTIVE',
   RESOLVED: 'RESOLVED',
 });
+
+// Administration's access to Physiotherapy (2026-09-26) ------------------
+
+/** "Apto / No apto para jugar", recorded by a Fisioterapeuta. */
+export const FITNESS_STATUS = Object.freeze({
+  FIT: 'FIT',
+  UNFIT: 'UNFIT',
+});
+
+/** What a player can authorize about their own clinical data. */
+export const CLINICAL_CONSENT_SCOPE = Object.freeze({
+  ADMIN_PHYSIO_NOTES: 'ADMIN_PHYSIO_NOTES',
+});

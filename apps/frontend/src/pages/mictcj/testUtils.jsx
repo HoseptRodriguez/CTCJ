@@ -46,7 +46,15 @@ export const CLIENT_METHODS = {
     'cancelChallenge',
     'submitMatchScore',
   ],
-  clinicalClient: ['getMyAppointments', 'getMyNotes', 'getMyRecoveryPlans', 'getMyMedicalHistory'],
+  clinicalClient: [
+    'getMyAppointments',
+    'getMyNotes',
+    'getMyRecoveryPlans',
+    'getMyMedicalHistory',
+    'getMyPhysioConsent',
+    'grantMyPhysioConsent',
+    'revokeMyPhysioConsent',
+  ],
   coachingClient: ['getMyNotes', 'getMyPerformance'],
   communityClient: ['listPosts'],
   competitionClient: ['getMyCompetitionSummary', 'getRecentClubMatches', 'getStandings'],
@@ -87,6 +95,11 @@ export function setEmptyAccount() {
   clinicalClient.getMyNotes.mockResolvedValue({ notes: [] });
   clinicalClient.getMyRecoveryPlans.mockResolvedValue({ plans: [] });
   clinicalClient.getMyMedicalHistory.mockResolvedValue({ entries: [] });
+  clinicalClient.getMyPhysioConsent.mockResolvedValue({
+    authorized: false,
+    grantedAt: null,
+    revokedAt: null,
+  });
   coachingClient.getMyNotes.mockResolvedValue({ notes: [] });
   coachingClient.getMyPerformance.mockResolvedValue({
     ratings: [],

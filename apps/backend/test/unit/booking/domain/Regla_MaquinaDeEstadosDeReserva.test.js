@@ -21,11 +21,11 @@ function buildHold(now = NOW) {
 }
 
 describe('Regla: maquina de estados de la reserva', () => {
-  it('createHold() sets status HOLD, type PRIVATE, and a 5-minute expiry', () => {
+  it('createHold() sets status HOLD, type PRIVATE, and the default 15-minute expiry', () => {
     const reservation = buildHold();
     expect(reservation.status).toBe('HOLD');
     expect(reservation.reservationType).toBe('PRIVATE');
-    expect(reservation.holdExpiresAt.getTime()).toBe(NOW.getTime() + 5 * 60_000);
+    expect(reservation.holdExpiresAt.getTime()).toBe(NOW.getTime() + 15 * 60_000);
     expect(reservation.isOccupying()).toBe(true);
   });
 
@@ -36,9 +36,9 @@ describe('Regla: maquina de estados de la reserva', () => {
     expect(reservation.status).toBe('CONFIRMED');
   });
 
-  it('confirm() throws HoldExpired past the 5-minute window (defense-in-depth re-check)', () => {
+  it('confirm() throws HoldExpired past the 15-minute window (defense-in-depth re-check)', () => {
     const reservation = buildHold();
-    const confirmAt = new Date(NOW.getTime() + 6 * 60_000);
+    const confirmAt = new Date(NOW.getTime() + 16 * 60_000);
     expect(() => reservation.confirm(confirmAt)).toThrow(HoldExpired);
     expect(reservation.status).toBe('HOLD'); // unchanged
   });
@@ -75,10 +75,10 @@ describe('Regla: maquina de estados de la reserva', () => {
     reservation.expire(new Date(NOW.getTime() + 60_000)); // not yet expired
     expect(reservation.status).toBe('HOLD');
 
-    reservation.expire(new Date(NOW.getTime() + 6 * 60_000)); // now expired
+    reservation.expire(new Date(NOW.getTime() + 16 * 60_000)); // now expired
     expect(reservation.status).toBe('EXPIRED');
 
-    reservation.expire(new Date(NOW.getTime() + 7 * 60_000)); // already EXPIRED, no-op
+    reservation.expire(new Date(NOW.getTime() + 17 * 60_000)); // already EXPIRED, no-op
     expect(reservation.status).toBe('EXPIRED');
   });
 

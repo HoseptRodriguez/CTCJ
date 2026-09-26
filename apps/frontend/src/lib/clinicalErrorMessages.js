@@ -13,6 +13,8 @@ const CLINICAL_ERROR_MESSAGES = {
   invalid_medical_history_entry_state:
     'Esta acción no está disponible en el estado actual del registro.',
   discipline_mismatch: 'Esta acción solo está disponible para Fisioterapeutas.',
+  clinical_consent_required:
+    'El jugador no ha autorizado a la administración a ver sus notas de fisioterapia.',
 };
 
 export function describeClinicalError(err) {

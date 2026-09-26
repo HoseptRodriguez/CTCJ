@@ -111,6 +111,18 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const getHoldDuration = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getHoldDurationPolicy());
+  });
+
+  const setHoldDuration = asyncHandler(async (req, res) => {
+    const result = await container.setHoldDurationPolicy({
+      minutes: req.body.minutes,
+      updatedByUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
   return {
     listCourts,
     getSchedule,
@@ -125,5 +137,7 @@ export function createBookingController(container) {
     getMyReservations,
     getOverduePolicy,
     setOverduePolicy,
+    getHoldDuration,
+    setHoldDuration,
   };
 }

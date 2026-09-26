@@ -1,3 +1,4 @@
+import { MAX_HOLD_DURATION_MINUTES, MIN_HOLD_DURATION_MINUTES } from '@ctcj/shared';
 import { useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
@@ -101,6 +102,93 @@ function PricePanel({ court, onClose, onSaved }) {
   );
 }
 
+/** Admin setting: minutes a player has to confirm a held hour. */
+function HoldDurationCard() {
+  const toast = useToast();
+  const policy = useAsync(() => bookingClient.getHoldDuration(), []);
+  const [value, setValue] = useState('');
+  const [error, setError] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const minutes = Number(value);
+
+  function review() {
+    if (
+      !Number.isInteger(minutes) ||
+      minutes < MIN_HOLD_DURATION_MINUTES ||
+      minutes > MAX_HOLD_DURATION_MINUTES
+    ) {
+      return setError(
+        `Escribe un número de minutos entre ${MIN_HOLD_DURATION_MINUTES} y ${MAX_HOLD_DURATION_MINUTES}.`,
+      );
+    }
+    if (minutes === policy.data?.minutes)
+      return setError('Es el mismo tiempo que ya está configurado.');
+    setError(null);
+    setConfirming(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const result = await bookingClient.setHoldDuration(minutes);
+      policy.setData(() => result);
+      setValue('');
+      toast({
+        title: 'Tiempo actualizado',
+        description: `Las reservas nuevas se guardan ${result.minutes} minutos.`,
+        tone: 'success',
+      });
+    } catch (err) {
+      setError(describeBookingError(err));
+    } finally {
+      setSaving(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Tiempo para confirmar una reserva"
+      description="Cuando alguien toca una hora libre, se la guardamos este tiempo mientras confirma. Si no confirma, la hora vuelve a quedar libre."
+      async={policy}
+      className="mt-8"
+    >
+      {(d) => (
+        <div className="space-y-4">
+          <p className="text-lead text-ink">
+            Ahora: <strong>{d.minutes} minutos</strong>
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <TextField
+              label="Nuevo tiempo (minutos)"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value.replace(/\D/g, ''));
+                setError(null);
+              }}
+              hint={`Entre ${MIN_HOLD_DURATION_MINUTES} y ${MAX_HOLD_DURATION_MINUTES} minutos.`}
+            />
+            <Button onClick={review}>Guardar tiempo</Button>
+          </div>
+          <FormAlert>{error}</FormAlert>
+          <ConfirmDialog
+            open={confirming}
+            tone="primary"
+            title="¿Cambiar el tiempo para confirmar?"
+            description={`Pasa de ${d.minutes} a ${minutes} minutos. Aplica a las reservas nuevas; las que ya están en espera conservan su tiempo.`}
+            confirmLabel="Sí, cambiar tiempo"
+            loading={saving}
+            onConfirm={save}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 export function CourtPricingPage() {
   const courts = useAsync(() => bookingClient.listCourts().then((d) => d.courts), []);
   const [editingId, setEditingId] = useState(null);
@@ -148,6 +236,7 @@ export function CourtPricingPage() {
           </ul>
         )}
       </SectionCard>
+      <HoldDurationCard />
       <PricePanel
         key={editingId ?? 'none'}
         court={editing}

@@ -36,7 +36,10 @@ const visibilityOptions = (discipline) => [
   {
     value: 'PRIVATE',
     label: `Solo ${discipline === 'PHYSIOTHERAPY' ? 'fisioterapia' : 'psicología'}`,
-    description: 'Nadie más la ve: ni el jugador, ni entrenadores, ni administración.',
+    description:
+      discipline === 'PHYSIOTHERAPY'
+        ? 'No la ven el jugador ni los entrenadores. La administración solo si el jugador lo autoriza.'
+        : 'Nadie más la ve: ni el jugador, ni entrenadores, ni administración.',
   },
 ];
 const VISIBILITY_SHORT = { PLAYER_VISIBLE: 'La ve el jugador', PRIVATE: 'Privada' };
