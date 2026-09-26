@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { ClubLogo } from '../components/ui/ClubLogo.jsx';
 import {
   ADDRESS,
   CLUB_NAME,
@@ -23,8 +22,7 @@ export function Footer() {
     <footer id="contacto" className="bg-navy-500 text-white">
       <div className="mx-auto grid max-w-container gap-10 px-4 py-12 md:grid-cols-3 md:px-8">
         <div>
-          <ClubLogo onDark size="lg" decorative />
-          <p className="mt-4 font-display text-h3 font-bold">{CLUB_NAME}</p>
+          <p className="font-display text-h3 font-bold">{CLUB_NAME}</p>
           <p className="mt-2 text-body text-white/85">Academia Orlando Rodríguez · Fusagasugá</p>
         </div>
 

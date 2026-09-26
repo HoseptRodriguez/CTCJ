@@ -22,7 +22,7 @@ import { UsersIcon } from '../components/icons/UsersIcon.jsx';
 import { WalletIcon } from '../components/icons/WalletIcon.jsx';
 import { SlidePanel } from '../components/motion/SlidePanel.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
-import { ClubLogo } from '../components/ui/ClubLogo.jsx';
+import { ClubMark } from '../components/ui/ClubMark.jsx';
 import { cn } from '../components/ui/cn.js';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -206,7 +206,7 @@ export function StaffLayout() {
           to={groups[0]?.items[0]?.to ?? '/staff'}
           className="focus-ring mb-6 flex items-center gap-3 rounded-lg px-2"
         >
-          <ClubLogo onDark decorative />
+          <ClubMark tone="dark" size="md" />
           <span className="font-display text-h3 font-bold leading-tight text-white">
             Consola
             <br />
@@ -237,10 +237,10 @@ export function StaffLayout() {
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-8">
             <Link
               to={groups[0]?.items[0]?.to ?? '/staff'}
-              className="focus-ring rounded-lg lg:hidden"
+              className="focus-ring inline-flex min-h-btn items-center rounded-lg lg:hidden"
               aria-label="Inicio de la consola"
             >
-              <ClubLogo decorative />
+              <ClubMark tone="light" size="sm" />
             </Link>
             {/* Phones: logo, bell and avatar on top; the search gets its own full-width row. */}
             <span aria-hidden="true" className="flex-1 md:hidden" />

@@ -7,7 +7,7 @@ import { MessageIcon } from '../components/icons/MessageIcon.jsx';
 import { TrendingUpIcon } from '../components/icons/TrendingUpIcon.jsx';
 import { TrophyIcon } from '../components/icons/TrophyIcon.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
-import { ClubLogo } from '../components/ui/ClubLogo.jsx';
+import { ClubMark } from '../components/ui/ClubMark.jsx';
 import { cn } from '../components/ui/cn.js';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -58,7 +58,7 @@ function MyCtcjShell() {
             className="focus-ring flex items-center gap-3 rounded-lg"
             aria-label="Club de Tenis Ciudad Jardín, sitio del club"
           >
-            <ClubLogo onDark decorative />
+            <ClubMark tone="dark" size="md" />
             <span className="hidden font-display text-h3 font-bold sm:block">Mi CTCJ</span>
           </Link>
           <div className="flex items-center gap-2 md:gap-3">

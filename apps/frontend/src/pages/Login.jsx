@@ -70,6 +70,7 @@ export function Login() {
   return (
     <AuthSplit
       title="Entrar"
+      tagline="Qué bueno verte de nuevo en la cancha."
       description={
         comingFromBooking
           ? 'Entra para reservar la hora que elegiste. Te llevamos de vuelta enseguida.'

@@ -6,7 +6,7 @@ import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
 import { CloseIcon } from '../components/icons/CloseIcon.jsx';
 import { MenuIcon } from '../components/icons/MenuIcon.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { ClubLogo } from '../components/ui/ClubLogo.jsx';
+import { ClubMark } from '../components/ui/ClubMark.jsx';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { resolvePostLoginRoute } from '../lib/postLoginRoute.js';
@@ -51,13 +51,17 @@ export function Header() {
       <div className="mx-auto flex min-h-[84px] max-w-container items-center justify-between gap-4 px-4 py-3 md:px-8">
         <Link
           to="/"
-          className="focus-ring flex items-center gap-3 rounded-lg"
+          className="focus-ring flex min-h-btn min-w-0 items-center gap-2 rounded-lg sm:gap-3 xl:shrink-0"
           aria-label="Club de Tenis Ciudad Jardín, inicio"
         >
-          <ClubLogo onDark decorative />
-          <span className="hidden flex-col leading-tight sm:flex">
+          {/* Smaller mark on phones and when the full menu shares the row. */}
+          <ClubMark tone="dark" size="sm" className="sm:hidden xl:inline-block" />
+          <ClubMark tone="dark" size="md" className="hidden sm:inline-block xl:hidden" />
+          <span className="flex flex-col whitespace-nowrap leading-tight">
             <strong className="font-display text-h3 font-bold">Ciudad Jardín</strong>
-            <span className="text-body-sm text-white/85">Club de Tenis · Fusagasugá</span>
+            <span className="hidden text-body-sm text-white/85 sm:block">
+              Club de Tenis · Fusagasugá
+            </span>
           </span>
         </Link>
 

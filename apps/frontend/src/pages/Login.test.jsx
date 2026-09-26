@@ -62,6 +62,14 @@ describe('Login', () => {
     expect(await screen.findByText('Estás en /staff/panel')).toBeInTheDocument();
   });
 
+  it('the photo carries only a short sentence: no crest and no big title', () => {
+    renderLogin();
+    expect(screen.getByText('Qué bueno verte de nuevo en la cancha.')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /Escudo/ })).not.toBeInTheDocument();
+    expect(document.querySelector('img[src*="logo-club"]')).toBeNull();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('explains wrong credentials in plain words', async () => {
     authClient.login.mockRejectedValue(
       Object.assign(new Error('Invalid'), { status: 401, code: 'invalid_credentials' }),

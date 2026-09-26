@@ -126,6 +126,7 @@ export function Register() {
   return (
     <AuthSplit
       title="Crear cuenta"
+      tagline="Tu cancha te espera."
       description="Con tu cuenta puedes reservar canchas y seguir tu progreso."
     >
       <FormError>{apiError}</FormError>
