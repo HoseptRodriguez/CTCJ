@@ -23,13 +23,13 @@ const QUICK_ACTIONS = [
     Icon: CalendarIcon,
   },
   {
-    to: '/mi-ctcj?seccion=progreso',
+    to: '/mi-ctcj/progreso',
     title: 'Mi progreso',
     text: 'Tus metas, tu rendimiento y las notas de tu entrenador.',
     Icon: TrendingUpIcon,
   },
   {
-    to: '/mi-ctcj?seccion=ranking',
+    to: '/mi-ctcj/ranking',
     title: 'Ranking del club',
     text: 'Tu posición, puntos y partidos de la temporada.',
     Icon: TrophyIcon,

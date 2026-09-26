@@ -59,6 +59,7 @@ export function createBookingRoutes(controller) {
   );
 
   router.get('/me/training-frequency', requireAuth, controller.getMyTrainingFrequency);
+  router.get('/my-reservations', requireAuth, controller.getMyReservations);
 
   router.get(
     '/settings/overdue-policy',

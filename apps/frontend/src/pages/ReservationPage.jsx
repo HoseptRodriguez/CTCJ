@@ -77,7 +77,9 @@ export function ReservationPage() {
     };
   }, [dateKey, reloadKey]);
 
-  // Guardians can book for their approved minors.
+  // Guardians can book for their approved minors. ?para=<minorUserId> (from
+  // Mi CTCJ "Reservar para") preselects that minor once the list arrives.
+  const requestedHolder = searchParams.get('para');
   useEffect(() => {
     if (!authenticated) {
       setMinors([]);
@@ -87,8 +89,12 @@ export function ReservationPage() {
     guardianshipClient
       .listMine()
       .then((data) => {
-        if (!cancelled)
-          setMinors(data.guardianships.filter((g) => g.status === 'APPROVED' && g.canBook));
+        if (cancelled) return;
+        const bookable = data.guardianships.filter((g) => g.status === 'APPROVED' && g.canBook);
+        setMinors(bookable);
+        if (requestedHolder && bookable.some((g) => g.minorUserId === requestedHolder)) {
+          setHolderUserId(requestedHolder);
+        }
       })
       .catch(() => {
         // Without the list, the person simply books for themselves.
@@ -96,7 +102,7 @@ export function ReservationPage() {
     return () => {
       cancelled = true;
     };
-  }, [authenticated]);
+  }, [authenticated, requestedHolder]);
 
   const forLabel = holderUserId
     ? minors.find((m) => m.minorUserId === holderUserId)?.minorEmail

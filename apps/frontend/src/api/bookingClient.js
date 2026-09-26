@@ -13,6 +13,13 @@ import { request } from './httpClient.js';
 export const bookingClient = {
   listCourts: () => request('/api/booking/courts'),
 
+  /**
+   * The caller's own upcoming reservations (HOLD/CONFIRMED), today (club
+   * time) through the next 8 days -- including ones they made for a minor.
+   * @returns {Promise<{from: string, to: string, reservations: Array}>}
+   */
+  getMyReservations: () => request('/api/booking/my-reservations'),
+
   getSchedule: (date) => {
     scheduleQuerySchema.parse({ date });
     return request('/api/booking/schedule', { params: { date } });

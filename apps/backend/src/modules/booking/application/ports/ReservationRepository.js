@@ -41,6 +41,17 @@ export class ReservationRepository {
   }
 
   /**
+   * Occupying (HOLD/CONFIRMED) reservations over [from, to) where `userId`
+   * is the holder OR the one who created it (a guardian booking for a
+   * minor) -- the same "own booking" rule reservationPrivacy.js applies.
+   * Ordered by start.
+   * @returns {Promise<Reservation[]>}
+   */
+  async listOccupyingByParticipantAndDateRange(_userId, _from, _to) {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Atomically transitions status only if the row is currently in one of
    * `fromStatuses` -- a 0 result means the row changed underneath the call
    * (e.g. the expiry job fired first), which the caller must handle.

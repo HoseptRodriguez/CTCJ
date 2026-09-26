@@ -118,6 +118,49 @@ describe('Booking HTTP API (real Postgres)', () => {
     expect(typeof cancelRes.body.withoutPenalty).toBe('boolean');
   });
 
+  it('GET /api/booking/my-reservations: only my upcoming occupying reservations, with the court name', async () => {
+    const me = await seedVerifiedUser();
+    const other = await seedVerifiedUser();
+    const myToken = await login(app, me.email, me.password);
+    const otherToken = await login(app, other.email, other.password);
+    const mine = futureSlot(4);
+    const theirs = futureSlot(5);
+
+    const myHold = await request(app)
+      .post('/api/booking/hold')
+      .set('Authorization', `Bearer ${myToken}`)
+      .send({ courtId, ...mine })
+      .expect(201);
+    await request(app)
+      .post('/api/booking/confirm')
+      .set('Authorization', `Bearer ${myToken}`)
+      .send({ reservationId: myHold.body.reservationId })
+      .expect(200);
+    await request(app)
+      .post('/api/booking/hold')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({ courtId, ...theirs })
+      .expect(201);
+
+    const res = await request(app)
+      .get('/api/booking/my-reservations')
+      .set('Authorization', `Bearer ${myToken}`)
+      .expect(200);
+
+    expect(res.body.reservations).toHaveLength(1);
+    expect(res.body.reservations[0]).toMatchObject({
+      id: myHold.body.reservationId,
+      courtId,
+      status: 'CONFIRMED',
+      isOwnBooking: true,
+      bookedForOther: false,
+    });
+    expect(res.body.reservations[0].courtName).toBeTruthy();
+    expect(new Date(res.body.to) - new Date(res.body.from)).toBe(8 * 24 * 60 * 60 * 1000);
+
+    await request(app).get('/api/booking/my-reservations').expect(401);
+  });
+
   it('rejects a double-booked slot on the same court with 409', async () => {
     const player = await seedVerifiedUser();
     const token = await login(app, player.email, player.password);

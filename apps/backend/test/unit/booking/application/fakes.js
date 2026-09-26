@@ -93,6 +93,18 @@ export function createFakeReservationRepository(byId = new Map()) {
         )
         .map(cloneReservation);
     },
+    async listOccupyingByParticipantAndDateRange(userId, from, to) {
+      return Array.from(byId.values())
+        .filter(
+          (r) =>
+            (r.holderUserId === userId || r.createdBy === userId) &&
+            OCCUPYING_STATUSES.includes(r.status) &&
+            r.periodStart >= from &&
+            r.periodStart < to,
+        )
+        .sort((a, b) => a.periodStart - b.periodStart)
+        .map(cloneReservation);
+    },
     async transitionStatus({ id, fromStatuses, toStatus, extra = {} }) {
       const reservation = byId.get(id);
       if (!reservation || !fromStatuses.includes(reservation.status)) {

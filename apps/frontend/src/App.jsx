@@ -12,6 +12,8 @@ import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
+import { MyCtcjLayout } from './layout/MyCtcjLayout.jsx';
+import { RequireJugador } from './pages/mictcj/RequireJugador.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
 import { RequireRole } from './routes/RequireRole.jsx';
 import { resolvePostLoginRoute } from './lib/postLoginRoute.js';
@@ -28,7 +30,13 @@ function lazyPage(load, name) {
 
 const CommunityPage = lazyPage(() => import('./pages/CommunityPage.jsx'), 'CommunityPage');
 const HomePage = lazyPage(() => import('./pages/HomePage.jsx'), 'HomePage');
-const MyCtcjPage = lazyPage(() => import('./pages/MyCtcjPage.jsx'), 'MyCtcjPage');
+const MyCtcjHome = lazyPage(() => import('./pages/mictcj/HomeTab.jsx'), 'HomeTab');
+const MyReservations = lazyPage(
+  () => import('./pages/mictcj/ReservationsTab.jsx'),
+  'ReservationsTab',
+);
+const MyProgress = lazyPage(() => import('./pages/mictcj/ProgressTab.jsx'), 'ProgressTab');
+const MyRanking = lazyPage(() => import('./pages/mictcj/RankingTab.jsx'), 'RankingTab');
 const PlayerProfilePage = lazyPage(
   () => import('./pages/PlayerProfilePage.jsx'),
   'PlayerProfilePage',
@@ -93,10 +101,19 @@ export function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route element={<RequireAuth />}>
-                <Route path="/mi-ctcj" element={<MyCtcjPage />} />
+            </Route>
+
+            {/* Mi CTCJ: its own shell (header with tabs), any signed-in user. */}
+            <Route element={<RequireAuth />}>
+              <Route element={<MyCtcjLayout />}>
+                <Route path="/mi-ctcj" element={<MyCtcjHome />} />
+                <Route path="/mi-ctcj/reservas" element={<MyReservations />} />
                 <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
-                <Route path="/mi-ctcj/comunidad" element={<CommunityPage />} />
+                <Route element={<RequireJugador />}>
+                  <Route path="/mi-ctcj/progreso" element={<MyProgress />} />
+                  <Route path="/mi-ctcj/ranking" element={<MyRanking />} />
+                  <Route path="/mi-ctcj/comunidad" element={<CommunityPage />} />
+                </Route>
               </Route>
             </Route>
 

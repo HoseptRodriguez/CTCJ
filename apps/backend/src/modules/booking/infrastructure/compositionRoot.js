@@ -11,6 +11,7 @@ import { createRecordPayment } from '../application/useCases/recordPayment.js';
 import { createListPaymentsByDateRange } from '../application/useCases/listPaymentsByDateRange.js';
 import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
 import { createGetMyTrainingFrequency } from '../application/useCases/getMyTrainingFrequency.js';
+import { createGetMyReservations } from '../application/useCases/getMyReservations.js';
 import { createGetOverdueBookingPolicy } from '../application/useCases/getOverdueBookingPolicy.js';
 import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
@@ -74,6 +75,12 @@ export function buildBookingContainer({
     listPaymentsByDateRange: createListPaymentsByDateRange({ paymentRepository }),
     getMonthlyRevenue: createGetMonthlyRevenue({ paymentRepository, clock }),
     getMyTrainingFrequency: createGetMyTrainingFrequency({ reservationRepository, clock }),
+    getMyReservations: createGetMyReservations({
+      reservationRepository,
+      courtRepository,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
     getOverdueBookingPolicy: createGetOverdueBookingPolicy({ bookingPolicySettings }),
     setOverdueBookingPolicy: createSetOverdueBookingPolicy({ bookingPolicySettings }),
   };

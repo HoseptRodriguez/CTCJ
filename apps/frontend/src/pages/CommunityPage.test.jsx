@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { communityClient } from '../api/communityClient.js';
+import { ToastProvider } from '../components/ui/Toast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 import { CommunityPage } from './CommunityPage.jsx';
@@ -29,9 +30,11 @@ vi.mock('../context/AuthContext.jsx', () => ({
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <CommunityPage />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <CommunityPage />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -142,9 +145,12 @@ describe('CommunityPage', () => {
     renderPage();
     await screen.findByText('Buen partido hoy!');
     await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+    // Irreversible: nothing is deleted until the person confirms.
+    expect(communityClient.deletePost).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: 'Sí, eliminar publicación' }));
 
     await waitFor(() => expect(communityClient.deletePost).toHaveBeenCalledWith('post-1'));
-    expect(screen.queryByText('Buen partido hoy!')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Buen partido hoy!')).not.toBeInTheDocument());
   });
 
   it('reports a post with an optional reason', async () => {

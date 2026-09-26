@@ -100,6 +100,18 @@ export function createPrismaReservationRepository(prisma) {
       return rows.map(toDomainReservation);
     },
 
+    async listOccupyingByParticipantAndDateRange(userId, from, to) {
+      const rows = await prisma.reservation.findMany({
+        where: {
+          OR: [{ holderUserId: userId }, { createdBy: userId }],
+          status: { in: OCCUPYING_STATUSES },
+          periodStart: { gte: from, lt: to },
+        },
+        orderBy: { periodStart: 'asc' },
+      });
+      return rows.map(toDomainReservation);
+    },
+
     /**
      * Atomic conditional update -- a 0 result tells the caller the row was
      * no longer in `fromStatuses` (e.g. the expiry job already moved it),
