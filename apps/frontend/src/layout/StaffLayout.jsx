@@ -21,6 +21,7 @@ import { TrophyIcon } from '../components/icons/TrophyIcon.jsx';
 import { UsersIcon } from '../components/icons/UsersIcon.jsx';
 import { WalletIcon } from '../components/icons/WalletIcon.jsx';
 import { SlidePanel } from '../components/motion/SlidePanel.jsx';
+import { Avatar } from '../components/ui/Avatar.jsx';
 import { ClubLogo } from '../components/ui/ClubLogo.jsx';
 import { cn } from '../components/ui/cn.js';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
@@ -160,19 +161,14 @@ function StaffAvatar() {
       .then(setProfile)
       .catch(() => {});
   }, []);
-  const initial = profile?.firstName?.[0]?.toUpperCase() ?? '?';
   return (
     <span className="flex items-center gap-2">
-      {profile?.avatarUrl ? (
-        <img src={profile.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-500 font-display text-h3 font-bold text-white"
-        >
-          {initial}
-        </span>
-      )}
+      <Avatar
+        src={profile?.avatarUrl}
+        firstName={profile?.firstName}
+        lastName={profile?.lastName}
+        size="sm"
+      />
       <span className="hidden text-body font-semibold text-ink xl:inline">
         {profile?.firstName ?? ''}
       </span>

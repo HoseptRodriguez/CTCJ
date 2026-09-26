@@ -13,6 +13,8 @@ const ACCENTS = {
  * One number that matters, with a plain-language label ("Reservas de hoy").
  * With `to`, the whole card is a link to where that number can be acted on,
  * and `actionLabel` says where it goes ("Ver reservas").
+ * With `emptyText`, the card says that instead of a bare "0" ("Aún no hay
+ * reservas hoy") -- a zero with no context reads like an error.
  */
 export function StatCard({
   label,
@@ -23,6 +25,7 @@ export function StatCard({
   accent = 'navy',
   to,
   actionLabel,
+  emptyText,
   className,
 }) {
   const body = (
@@ -35,12 +38,16 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-2 font-display text-stat font-bold text-ink">
-        {value}
-        {unit && (
-          <span className="ml-2 font-sans text-lead font-semibold text-ink-soft">{unit}</span>
-        )}
-      </p>
+      {emptyText ? (
+        <p className="mt-3 text-lead font-bold text-ink">{emptyText}</p>
+      ) : (
+        <p className="mt-2 font-display text-stat font-bold text-ink">
+          {value}
+          {unit && (
+            <span className="ml-2 font-sans text-lead font-semibold text-ink-soft">{unit}</span>
+          )}
+        </p>
+      )}
       {hint && <p className="mt-2 text-body-sm text-ink-soft">{hint}</p>}
       {to && actionLabel && (
         <p className="mt-4 text-body font-semibold text-navy-500 underline underline-offset-4">

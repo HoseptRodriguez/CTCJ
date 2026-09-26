@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
+import { Avatar } from '../components/ui/Avatar.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { RadioCards, TextAreaField, TextField } from '../components/ui/Field.jsx';
@@ -62,21 +63,14 @@ function AvatarSection({ profile, onUpdated }) {
 
   return (
     <div className="flex flex-wrap items-center gap-6">
-      {displayUrl ? (
-        <img
-          src={displayUrl}
-          alt="Tu foto de perfil"
-          className="h-28 w-28 rounded-full object-cover"
-        />
-      ) : (
-        <div
-          aria-label="Aún sin foto"
-          role="img"
-          className="flex h-28 w-28 items-center justify-center rounded-full bg-lime font-display text-[3rem] font-bold text-navy-500"
-        >
-          {profile.firstName?.[0]?.toUpperCase() ?? '?'}
-        </div>
-      )}
+      <Avatar
+        src={displayUrl}
+        firstName={profile.firstName}
+        lastName={profile.lastName}
+        size="xl"
+        alt="Tu foto de perfil"
+        fallbackAlt="Aún sin foto"
+      />
       <div>
         <Button
           variant="secondary"

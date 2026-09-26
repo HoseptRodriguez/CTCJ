@@ -142,7 +142,7 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     expect(guardianshipClient.listGuardianships).not.toHaveBeenCalled();
   });
 
-  it('shows the 4 figures: reservations + occupancy, to charge, month income, active + overdue', async () => {
+  it('shows the 4 figures: reservations + occupancy, to charge, month income, players by state', async () => {
     renderPage();
     const stats = await screen.findByRole('region', { name: 'Cifras del club' });
     // 3 hours booked out of 2 courts × 17 hours.
@@ -150,8 +150,41 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     expect(within(stats).getByText('3')).toBeInTheDocument();
     expect(within(stats).getByText('$ 35.000')).toBeInTheDocument();
     expect(await within(stats).findByText('$ 150.000')).toBeInTheDocument();
-    expect(await within(stats).findByText('12')).toBeInTheDocument();
-    expect(within(stats).getByText('2 con pago vencido')).toBeInTheDocument();
+    expect(await within(stats).findByText('15')).toBeInTheDocument();
+    expect(within(stats).getByText('12 al día · 2 con pago vencido')).toBeInTheDocument();
+  });
+
+  it('players: 0 "al día" and 2 overdue never contradict each other', async () => {
+    membershipClient.getPlayerCounts.mockResolvedValue({
+      ACTIVE: 0,
+      OVERDUE: 2,
+      NONE: 23,
+      total: 25,
+    });
+    renderPage();
+    const stats = await screen.findByRole('region', { name: 'Cifras del club' });
+    expect(await within(stats).findByText('25')).toBeInTheDocument();
+    expect(
+      within(stats).getByText('0 al día · 2 con pago vencido · 23 sin membresía'),
+    ).toBeInTheDocument();
+    expect(within(stats).queryByText(/Jugadores activos/)).not.toBeInTheDocument();
+  });
+
+  it('a zero because there is no data yet shows a useful sentence, not a bare "0"', async () => {
+    bookingClient.getSchedule.mockResolvedValue({
+      courts: [{ id: 'c1', name: 'Cancha 1' }],
+      reservations: [],
+    });
+    bookingClient.getMonthlyRevenue.mockResolvedValue({ months: [] });
+    billingClient.getMonthlyRevenue.mockResolvedValue({ months: [] });
+    membershipClient.getPlayerCounts.mockResolvedValue({ ACTIVE: 0, OVERDUE: 0, total: 0 });
+    renderPage();
+    const stats = await screen.findByRole('region', { name: 'Cifras del club' });
+    expect(await within(stats).findByText('Aún no hay reservas hoy')).toBeInTheDocument();
+    expect(within(stats).getByText('Nada por cobrar hoy')).toBeInTheDocument();
+    expect(await within(stats).findByText('Aún no hay ingresos este mes')).toBeInTheDocument();
+    expect(await within(stats).findByText('Aún no hay jugadores registrados')).toBeInTheDocument();
+    expect(within(stats).queryByText('0')).not.toBeInTheDocument();
   });
 
   it('"Canchas hoy" lists every court with who booked and the classes (phone layout)', async () => {

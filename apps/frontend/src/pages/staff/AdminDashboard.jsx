@@ -206,6 +206,11 @@ function StatsSection({ schedule }) {
 
   const value = (async, render) =>
     async.status === 'ready' ? render(async.data) : async.status === 'error' ? '—' : '…';
+  // A real zero gets a sentence instead of a bare "0" (only once loaded).
+  const whenZero = (async, isZero, text) =>
+    async.status === 'ready' && isZero(async.data) ? text : undefined;
+  const p = players.data;
+  const totalPlayers = p?.total ?? 0;
 
   return (
     <section
@@ -216,13 +221,19 @@ function StatsSection({ schedule }) {
         label="Reservas hoy"
         icon={<CalendarIcon />}
         value={value(schedule, () => bookings.length)}
-        hint={schedule.status === 'ready' ? `${occupancy} % de ocupación` : undefined}
+        emptyText={whenZero(schedule, () => bookings.length === 0, 'Aún no hay reservas hoy')}
+        hint={
+          schedule.status === 'ready' && bookings.length > 0
+            ? `${occupancy} % de ocupación`
+            : undefined
+        }
         accent="clay"
       />
       <StatCard
         label="Por cobrar hoy"
         icon={<WalletIcon />}
         value={value(schedule, () => formatCop(toCharge))}
+        emptyText={whenZero(schedule, () => toCharge === 0, 'Nada por cobrar hoy')}
         to="/staff/pagos"
         actionLabel="Ir a cobros"
         accent="amber"
@@ -231,15 +242,28 @@ function StatsSection({ schedule }) {
         label="Ingresos del mes"
         icon={<TrendingUpIcon />}
         value={value(revenue, formatCop)}
+        emptyText={whenZero(revenue, (total) => total === 0, 'Aún no hay ingresos este mes')}
         hint="Canchas y membresías"
         accent="lime"
       />
+      {/* All JUGADOR accounts, split by membership state -- "al día" (ACTIVE)
+          and "vencido" (OVERDUE) are separate states, so neither number
+          contradicts the other. */}
       <StatCard
-        label="Jugadores activos"
+        label="Jugadores"
         icon={<UsersIcon />}
-        value={value(players, (d) => d.ACTIVE ?? 0)}
+        value={value(players, () => totalPlayers)}
+        emptyText={whenZero(players, () => totalPlayers === 0, 'Aún no hay jugadores registrados')}
         hint={
-          players.status === 'ready' ? `${players.data.OVERDUE ?? 0} con pago vencido` : undefined
+          players.status === 'ready' && totalPlayers > 0
+            ? [
+                `${p.ACTIVE ?? 0} al día`,
+                `${p.OVERDUE ?? 0} con pago vencido`,
+                p.NONE ? `${p.NONE} sin membresía` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : undefined
         }
         to="/staff/membresias"
         actionLabel="Ver membresías"

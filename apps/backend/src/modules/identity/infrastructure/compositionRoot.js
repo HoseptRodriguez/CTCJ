@@ -51,6 +51,7 @@ import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
 import { createResendEmailSender } from './email/resendEmailSender.js';
 import { createLocalDiskAvatarStorage } from './storage/localDiskAvatarStorage.js';
 import { createVercelBlobAvatarStorage } from './storage/vercelBlobAvatarStorage.js';
+import { createSharpAvatarImageProcessor } from './images/sharpAvatarImageProcessor.js';
 import {
   createNullCompetitionProgressProvider,
   createNullPerformanceProgressProvider,
@@ -169,7 +170,11 @@ export function buildIdentityContainer({
       trainingFrequencyProvider,
     }),
     updateMyProfile: createUpdateMyProfile({ userRepository }),
-    uploadMyAvatar: createUploadMyAvatar({ userRepository, avatarStorage }),
+    uploadMyAvatar: createUploadMyAvatar({
+      userRepository,
+      avatarStorage,
+      avatarImageProcessor: createSharpAvatarImageProcessor(),
+    }),
     getPlayerCounts: createGetPlayerCounts({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getMembershipStatus: createGetMembershipStatus({ userRepository }),
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),

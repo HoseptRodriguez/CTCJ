@@ -5,6 +5,7 @@ import { bookingClient } from '../../api/bookingClient.js';
 import { coachingClient } from '../../api/coachingClient.js';
 import { SkillRadar } from '../../components/charts/SkillRadar.jsx';
 import { InfoIcon } from '../../components/icons/InfoIcon.jsx';
+import { Avatar } from '../../components/ui/Avatar.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { cn } from '../../components/ui/cn.js';
@@ -450,12 +451,11 @@ export function PlayerWorkspace({ player, onClear }) {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-navy-500 p-5 text-white md:p-6">
         <div className="flex items-center gap-4">
-          <span
-            aria-hidden="true"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white font-display text-h2 font-bold text-navy-500"
-          >
-            {player.name.charAt(0).toUpperCase()}
-          </span>
+          <Avatar
+            firstName={player.name.split(' ')[0]}
+            lastName={player.name.split(' ').slice(1).join(' ')}
+            size="lg"
+          />
           <div>
             <p className="text-body text-white/90">Jugador</p>
             <h2 className="font-display text-h2 font-bold">{player.name}</h2>

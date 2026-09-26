@@ -6,6 +6,7 @@ import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
 import { MessageIcon } from '../components/icons/MessageIcon.jsx';
 import { TrendingUpIcon } from '../components/icons/TrendingUpIcon.jsx';
 import { TrophyIcon } from '../components/icons/TrophyIcon.jsx';
+import { Avatar } from '../components/ui/Avatar.jsx';
 import { ClubLogo } from '../components/ui/ClubLogo.jsx';
 import { cn } from '../components/ui/cn.js';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
@@ -29,24 +30,6 @@ export function MyCtcjLayout() {
     <MyCtcjProvider>
       <MyCtcjShell />
     </MyCtcjProvider>
-  );
-}
-
-function Avatar({ profile }) {
-  const initial = profile?.firstName?.[0]?.toUpperCase() ?? '?';
-  return profile?.avatarUrl ? (
-    <img
-      src={profile.avatarUrl}
-      alt=""
-      className="h-12 w-12 rounded-full object-cover ring-2 ring-white"
-    />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="flex h-12 w-12 items-center justify-center rounded-full bg-lime font-display text-h3 font-bold text-navy-500"
-    >
-      {initial}
-    </span>
   );
 }
 
@@ -86,7 +69,12 @@ function MyCtcjShell() {
               className="focus-ring flex items-center gap-2 rounded-full pr-1"
               aria-label={profile?.firstName ? `Mi perfil (${profile.firstName})` : 'Mi perfil'}
             >
-              <Avatar profile={profile} />
+              <Avatar
+                src={profile?.avatarUrl}
+                firstName={profile?.firstName}
+                lastName={profile?.lastName}
+                className="ring-2 ring-white"
+              />
             </Link>
             <button
               type="button"
