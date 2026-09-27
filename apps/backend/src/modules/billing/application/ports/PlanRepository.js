@@ -19,13 +19,42 @@ export class PlanRepository {
     throw new Error('Not implemented');
   }
 
+  /** @returns {Promise<PlanRow|null>} same name ignoring case and surrounding spaces */
+  async findByName(_clubId, _name) {
+    throw new Error('Not implemented');
+  }
+
   /** @returns {Promise<PlanRow[]>} */
   async listByClub(_clubId) {
     throw new Error('Not implemented');
   }
 
-  /** @returns {Promise<PriceRow|null>} the vigente (validTo === null) row, if any */
+  /** @returns {Promise<string[]>} every plan code of the club */
+  async listCodes(_clubId) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * @param {string} _id
+   * @param {{ name?: string, description?: string|null, isActive?: boolean }} _changes
+   * @returns {Promise<PlanRow>}
+   */
+  async update(_id, _changes) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * The last-added row (validTo === null). It may not have started yet: a
+   * price scheduled in advance is the open row while the previous one still
+   * applies. Use findPriceAt() for "what does this plan cost on day X".
+   * @returns {Promise<PriceRow|null>}
+   */
   async findCurrentPrice(_planId) {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<PriceRow|null>} the price in effect on `date` (validFrom <= date < validTo) */
+  async findPriceAt(_planId, _date) {
     throw new Error('Not implemented');
   }
 
@@ -41,6 +70,16 @@ export class PlanRepository {
    * @returns {Promise<PriceRow>} the newly-inserted vigente row
    */
   async supersedePrice(_planId, _input) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Undoes a price that has not started yet, in one transaction: deletes it
+   * and reopens the one it would have replaced (validTo back to null). Safe
+   * because no invoice can have used a price that never applied.
+   * @param {{ scheduledId: string, previousId: string|null }} _input
+   */
+  async cancelScheduledPrice(_input) {
     throw new Error('Not implemented');
   }
 }

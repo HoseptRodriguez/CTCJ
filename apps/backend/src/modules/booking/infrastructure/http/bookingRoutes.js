@@ -35,6 +35,12 @@ export function createBookingRoutes(controller) {
     validateBody(setCourtPriceSchema),
     controller.setCourtPrice,
   );
+  router.get(
+    '/courts/:id/price-history',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    controller.getCourtPriceHistory,
+  );
   router.post(
     '/:id/payment',
     requireAuth,

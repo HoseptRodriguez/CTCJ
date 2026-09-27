@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { supersedePrice } from '../../../../src/modules/billing/domain/services/supersedePrice.js';
 import { InvalidPriceValidFrom } from '../../../../src/modules/billing/domain/errors/InvalidPriceValidFrom.js';
-import { NegativePrice } from '../../../../src/modules/billing/domain/errors/NegativePrice.js';
+import { PriceNotPositive } from '../../../../src/modules/billing/domain/errors/PriceNotPositive.js';
 
 describe('Regla: un solo precio vigente por plan', () => {
   it('setting a first price on a plan with none produces one open-ended row, no closure', () => {
@@ -34,9 +34,9 @@ describe('Regla: un solo precio vigente por plan', () => {
     ).toThrow(InvalidPriceValidFrom);
   });
 
-  it('rejects a negative basePriceCop', () => {
-    expect(() =>
-      supersedePrice(null, { basePriceCop: -1, validFrom: new Date('2026-01-01') }),
-    ).toThrow(NegativePrice);
+  it.each([-1, 0])('rejects a price of %s: a price is always above 0', (basePriceCop) => {
+    expect(() => supersedePrice(null, { basePriceCop, validFrom: new Date('2026-01-01') })).toThrow(
+      PriceNotPositive,
+    );
   });
 });

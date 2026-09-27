@@ -67,6 +67,8 @@ import { createMeController as createBillingMeController } from './modules/billi
 import { createMeRoutes as createBillingMeRoutes } from './modules/billing/infrastructure/http/meRoutes.js';
 import { createIdentityPlayerEligibilityProvider } from './modules/billing/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider } from './modules/billing/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { createIdentitySystemSettingBillingSettings } from './modules/billing/infrastructure/adapters/billingSettingsAdapter.js';
+import { createNotificationsSenderAdapter as createBillingNotificationSender } from './modules/billing/infrastructure/adapters/notificationSenderAdapter.js';
 import { buildCoachingContainer } from './modules/coaching/infrastructure/compositionRoot.js';
 import { createCoachingAdminController } from './modules/coaching/infrastructure/http/coachingAdminController.js';
 import { createCoachingAdminRoutes } from './modules/coaching/infrastructure/http/coachingAdminRoutes.js';
@@ -279,6 +281,13 @@ export function createApp() {
   const billingContainer = buildBillingContainer({
     playerEligibilityProvider,
     playerDirectoryProvider,
+    billingSettings: createIdentitySystemSettingBillingSettings({
+      getSystemSetting: identityContainer.getSystemSetting,
+      setSystemSetting: identityContainer.setSystemSetting,
+    }),
+    notificationSender: createBillingNotificationSender({
+      createNotification: notificationsContainer.createNotification,
+    }),
   });
   const billingAdminController = createBillingAdminController(billingContainer);
   const billingMeController = createBillingMeController(billingContainer);

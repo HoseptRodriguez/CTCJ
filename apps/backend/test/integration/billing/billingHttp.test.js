@@ -11,6 +11,9 @@ import { resetUsers } from '../identity/testDb.js';
 import { prisma, resetBilling, TEST_CLUB_ID } from './testDb.js';
 
 const PASSWORD = 'ClaveSegura123';
+// A date-only key N days from now (a margin of days keeps it clear of the
+// club/UTC midnight difference).
+const inDays = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 
 async function seedVerifiedUser({ roleCode } = {}) {
   const passwordHasher = createArgon2PasswordHasher();
@@ -80,10 +83,16 @@ describe('Billing HTTP API (real Postgres)', () => {
       .send({ basePriceCop: 50000, validFrom: '2026-01-01' })
       .expect(200);
 
+    // A change can't be dated in the past; this one waits 10 days.
     await request(app)
       .put(`/api/admin/billing/plans/${planId}/price`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ basePriceCop: 60000, validFrom: '2026-03-01' })
+      .expect(409);
+    await request(app)
+      .put(`/api/admin/billing/plans/${planId}/price`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ basePriceCop: 60000, validFrom: inDays(10) })
       .expect(200);
 
     const pricesRes = await request(app)
@@ -100,7 +109,10 @@ describe('Billing HTTP API (real Postgres)', () => {
       .get('/api/admin/billing/plans')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    expect(plansRes.body.plans.find((p) => p.id === planId).currentPriceCop).toBe(60000);
+    expect(plansRes.body.plans.find((p) => p.id === planId)).toMatchObject({
+      currentPriceCop: 50000,
+      scheduledPrice: { basePriceCop: 60000 },
+    });
 
     const enrollRes = await request(app)
       .post('/api/admin/billing/memberships')

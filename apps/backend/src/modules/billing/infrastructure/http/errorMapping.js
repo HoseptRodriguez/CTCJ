@@ -4,12 +4,16 @@ import { DomainError } from '../../domain/errors/DomainError.js';
 const STATUS_BY_CODE = {
   plan_not_found: 404,
   plan_code_already_exists: 409,
+  plan_name_already_exists: 409,
+  price_start_too_early: 409,
+  price_change_pending: 409,
+  no_scheduled_price: 409,
   membership_not_found: 404,
   player_not_eligible: 409,
   plan_not_active: 409,
   invalid_membership_status_transition: 409,
   invalid_price_valid_from: 409,
-  negative_price: 400,
+  price_not_positive: 400,
   membership_not_active: 409,
   plan_price_not_set: 409,
   invoice_already_exists: 409,
@@ -20,7 +24,11 @@ const STATUS_BY_CODE = {
 export function mapBillingError(err) {
   if (err instanceof DomainError) {
     const status = STATUS_BY_CODE[err.code] ?? 400;
-    return new HttpError(status, err.code, err.message);
+    const httpError = new HttpError(status, err.code, err.message);
+    // Dates the UI needs to explain the refusal ("desde el 26 de octubre").
+    if (err.earliestValidFrom) httpError.details = { earliestValidFrom: err.earliestValidFrom };
+    if (err.pendingValidFrom) httpError.details = { pendingValidFrom: err.pendingValidFrom };
+    return httpError;
   }
   return err;
 }

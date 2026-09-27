@@ -23,3 +23,24 @@ export const ADJUSTMENT_TYPE = Object.freeze({
   SURCHARGE: 'SURCHARGE',
   CUSTOM_PRICE: 'CUSTOM_PRICE',
 });
+
+/**
+ * Price rules shared by membership plans and courts: whole pesos, above 0,
+ * with a sanity ceiling that catches an extra zero typed by mistake.
+ */
+export const PRICE_LIMITS = Object.freeze({
+  MIN_COP: 1,
+  MAX_COP: 50_000_000,
+});
+
+/**
+ * How many days in advance the players of a plan are told about a new price
+ * (SystemSetting 'billing.priceChangeNoticeDays'). A change on a plan with
+ * active players can't take effect sooner than this; the first price of a
+ * plan, or a plan nobody has yet, can apply right away.
+ */
+export const PRICE_CHANGE_NOTICE_DAYS = Object.freeze({
+  DEFAULT: 30,
+  MIN: 0,
+  MAX: 120,
+});

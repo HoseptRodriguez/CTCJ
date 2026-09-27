@@ -50,6 +50,7 @@ export async function request(path, { method = 'GET', body, params } = {}) {
     const error = new Error(data?.title ?? `Request failed with status ${res.status}`);
     error.status = res.status;
     error.code = data?.code;
+    error.details = data?.details;
     if (res.status === 401) {
       unauthorizedHandler?.();
     }

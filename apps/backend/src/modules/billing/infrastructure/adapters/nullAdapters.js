@@ -1,3 +1,5 @@
+import { PRICE_CHANGE_NOTICE_DAYS } from '@ctcj/shared';
+
 /**
  * Safe default so buildBillingContainer() still works standalone (e.g. in
  * tests) without requiring the cross-module wiring app.js normally supplies.
@@ -23,5 +25,28 @@ export function createNullPlayerDirectoryProvider() {
     async getPlayerSummaries() {
       return new Map();
     },
+  };
+}
+
+/**
+ * Standalone default: the documented notice period (30 days), and nothing
+ * stored -- app.js wires the real SystemSetting-backed adapter.
+ */
+export function createDefaultBillingSettings() {
+  let noticeDays = PRICE_CHANGE_NOTICE_DAYS.DEFAULT;
+  return {
+    async getPriceNoticeDays() {
+      return noticeDays;
+    },
+    async setPriceNoticeDays(days) {
+      noticeDays = days;
+    },
+  };
+}
+
+/** Standalone default: price-change notices go nowhere when notifications isn't wired. */
+export function createNullNotificationSender() {
+  return {
+    async notify() {},
   };
 }

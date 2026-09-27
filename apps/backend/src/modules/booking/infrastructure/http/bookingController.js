@@ -60,8 +60,14 @@ export function createBookingController(container) {
     const result = await container.setCourtPrice({
       courtId: req.params.id,
       priceCop: req.body.priceCop,
+      actorUserId: req.user.id,
+      actorRoles: req.user.roles ?? [],
     });
     res.status(200).json(result);
+  });
+
+  const getCourtPriceHistory = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getCourtPriceHistory({ courtId: req.params.id }));
   });
 
   const recordPayment = asyncHandler(async (req, res) => {
@@ -130,6 +136,7 @@ export function createBookingController(container) {
     confirm,
     cancel,
     setCourtPrice,
+    getCourtPriceHistory,
     recordPayment,
     listPayments,
     getMonthlyRevenue,

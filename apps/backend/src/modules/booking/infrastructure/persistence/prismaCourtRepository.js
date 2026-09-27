@@ -29,14 +29,40 @@ export function createPrismaCourtRepository(prisma) {
       return row ? toCourtSummary(row) : null;
     },
 
-    async setPrice(clubId, courtId, priceCop) {
-      const result = await prisma.court.updateMany({
-        where: { id: courtId, clubId, isActive: true },
-        data: { defaultPriceCop: BigInt(priceCop) },
+    async setPrice(clubId, courtId, priceCop, changedBy) {
+      return prisma.$transaction(async (tx) => {
+        const before = await tx.court.findFirst({
+          where: { id: courtId, clubId, isActive: true },
+        });
+        if (!before) return null;
+        const row = await tx.court.update({
+          where: { id: courtId },
+          data: { defaultPriceCop: BigInt(priceCop) },
+        });
+        await tx.courtPriceHistory.create({
+          data: {
+            courtId,
+            previousPriceCop: before.defaultPriceCop,
+            newPriceCop: BigInt(priceCop),
+            changedBy,
+          },
+        });
+        return { court: toCourtSummary(row), previousPriceCop: before.defaultPriceCop };
       });
-      if (result.count === 0) return null;
-      const row = await prisma.court.findUnique({ where: { id: courtId } });
-      return toCourtSummary(row);
+    },
+
+    async listPriceHistory(courtId) {
+      const rows = await prisma.courtPriceHistory.findMany({
+        where: { courtId },
+        orderBy: { changedAt: 'desc' },
+      });
+      return rows.map((r) => ({
+        id: r.id,
+        previousPriceCop: r.previousPriceCop,
+        newPriceCop: r.newPriceCop,
+        changedBy: r.changedBy,
+        changedAt: r.changedAt,
+      }));
     },
   };
 }

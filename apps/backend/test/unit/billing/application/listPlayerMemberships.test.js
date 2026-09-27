@@ -8,9 +8,11 @@ import { createSetPlanPrice } from '../../../../src/modules/billing/application/
 import { MembershipNotFound } from '../../../../src/modules/billing/application/errors/MembershipNotFound.js';
 
 import {
-  createFakePlanRepository,
-  createFakeMembershipRepository,
   createFakeAdjustmentRepository,
+  createFakeAuditLog,
+  createFakeMembershipRepository,
+  createFakePlanRepository,
+  priceDepsFor,
 } from './fakes.js';
 
 const CLUB_ID = 'club-1';
@@ -39,8 +41,12 @@ describe('listPlayerMemberships / getMyPlayerMemberships', () => {
   });
 
   it('returns enriched rows with plan name and current price', async () => {
-    const createPlan = createCreatePlan({ planRepository: deps.planRepository, clubId: CLUB_ID });
-    const setPlanPrice = createSetPlanPrice({ planRepository: deps.planRepository });
+    const createPlan = createCreatePlan({
+      planRepository: deps.planRepository,
+      auditLog: createFakeAuditLog(),
+      clubId: CLUB_ID,
+    });
+    const setPlanPrice = createSetPlanPrice(priceDepsFor(deps.planRepository));
     const plan = await createPlan({ code: 'INICIACION', name: 'Iniciación' });
     await setPlanPrice({
       planId: plan.id,
@@ -63,7 +69,11 @@ describe('listPlayerMemberships / getMyPlayerMemberships', () => {
   });
 
   it('getMyPlayerMemberships scopes to the given playerId, same enrichment', async () => {
-    const createPlan = createCreatePlan({ planRepository: deps.planRepository, clubId: CLUB_ID });
+    const createPlan = createCreatePlan({
+      planRepository: deps.planRepository,
+      auditLog: createFakeAuditLog(),
+      clubId: CLUB_ID,
+    });
     const plan = await createPlan({ code: 'INICIACION', name: 'Iniciación' });
     await deps.membershipRepository.create({
       playerId: 'player-1',

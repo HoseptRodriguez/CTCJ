@@ -16,8 +16,52 @@ import { SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, StaffRow } from './staffShared.jsx';
 
+const CHANGED_AT = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'America/Bogota',
+});
+
+const reservationsKeepPrice = (n) =>
+  n === 0
+    ? 'No hay reservas próximas en esta cancha.'
+    : n === 1
+      ? '1 reserva próxima conserva el precio con el que se hizo.'
+      : `${n} reservas próximas conservan el precio con el que se hicieron.`;
+
+/** Previous → new price, who and when, newest first. */
+function CourtPriceHistory({ async: history }) {
+  if (history.status === 'loading')
+    return <p className="text-body text-ink-soft">Cargando historial…</p>;
+  if (history.status === 'error')
+    return <p className="text-body text-ink">No pudimos cargar el historial.</p>;
+  if (history.status !== 'ready') return null;
+  if (history.data.history.length === 0)
+    return <p className="text-body text-ink-soft">Todavía no hay cambios registrados.</p>;
+  return (
+    <ul className="divide-y divide-line">
+      {history.data.history.map((h) => (
+        <li key={h.id} className="py-3 text-body">
+          <p className="font-semibold text-ink">
+            {h.previousPriceCop != null ? `${formatCop(h.previousPriceCop)} → ` : ''}
+            {formatCop(h.newPriceCop)}
+          </p>
+          <p className="text-ink-soft">
+            {CHANGED_AT.format(new Date(h.changedAt))}
+            {h.changedByName ? ` · ${h.changedByName}` : ''}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function PricePanel({ court, onClose, onSaved }) {
   const toast = useToast();
+  const history = useAsync(() => bookingClient.getCourtPriceHistory(court.id), [court?.id], {
+    enabled: court != null,
+  });
+  const upcoming = history.status === 'ready' ? history.data.upcomingReservations : null;
   const [value, setValue] = useState(court?.priceCop != null ? String(court.priceCop) : '');
   const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -38,7 +82,7 @@ function PricePanel({ court, onClose, onSaved }) {
       const result = await bookingClient.setCourtPrice(court.id, price);
       toast({
         title: 'Precio actualizado',
-        description: `${court.name}: ${formatCop(result.priceCop)} por hora`,
+        description: `${court.name}: ${formatCop(result.priceCop)} por hora. ${reservationsKeepPrice(result.upcomingReservations)}`,
         tone: 'success',
       });
       onSaved(court.id, result.priceCop);
@@ -81,10 +125,17 @@ function PricePanel({ court, onClose, onSaved }) {
               hint={value ? `Quedaría en ${formatCop(price)}` : 'Ejemplo: 35000'}
             />
             <p className="rounded-lg bg-navy-50 p-4 text-body text-ink">
-              Las reservas ya hechas conservan el precio con el que se reservaron. El nuevo precio
-              aplica a las reservas nuevas.
+              El nuevo precio aplica a las reservas nuevas. Las reservas ya hechas conservan el
+              precio con el que se reservaron.
+              {upcoming != null && (
+                <strong className="mt-2 block">{reservationsKeepPrice(upcoming)}</strong>
+              )}
             </p>
             <FormAlert>{error}</FormAlert>
+            <div>
+              <h3 className="mb-2 text-lead font-bold text-ink">Historial de precios</h3>
+              <CourtPriceHistory async={history} />
+            </div>
           </div>
         )}
       </SlidePanel>
@@ -92,7 +143,7 @@ function PricePanel({ court, onClose, onSaved }) {
         open={confirming}
         tone="primary"
         title={`¿Cambiar el precio de ${court?.name ?? ''}?`}
-        description={`Pasa de ${court?.priceCop != null ? formatCop(court.priceCop) : 'sin precio'} a ${formatCop(price)} por hora para las reservas nuevas.`}
+        description={`Pasa de ${court?.priceCop != null ? formatCop(court.priceCop) : 'sin precio'} a ${formatCop(price)} por hora para las reservas nuevas.${upcoming ? ` ${reservationsKeepPrice(upcoming)}` : ''}`}
         confirmLabel="Sí, cambiar precio"
         loading={saving}
         onConfirm={save}

@@ -7,6 +7,7 @@ import { createCreateHold } from '../application/useCases/createHold.js';
 import { createConfirmReservation } from '../application/useCases/confirmReservation.js';
 import { createCancelReservation } from '../application/useCases/cancelReservation.js';
 import { createSetCourtPrice } from '../application/useCases/setCourtPrice.js';
+import { createGetCourtPriceHistory } from '../application/useCases/getCourtPriceHistory.js';
 import { createRecordPayment } from '../application/useCases/recordPayment.js';
 import { createListPaymentsByDateRange } from '../application/useCases/listPaymentsByDateRange.js';
 import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
@@ -18,6 +19,7 @@ import { createSetHoldDurationPolicy } from '../application/useCases/setHoldDura
 import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
 import { createPrismaReservationRepository } from './persistence/prismaReservationRepository.js';
+import { createPrismaBookingAuditLog } from './persistence/prismaBookingAuditLog.js';
 import { createPrismaCourtRepository } from './persistence/prismaCourtRepository.js';
 import { createPrismaPaymentRepository } from './persistence/prismaPaymentRepository.js';
 import {
@@ -48,6 +50,7 @@ export function buildBookingContainer({
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
   const paymentRepository = createPrismaPaymentRepository(prismaClient);
+  const auditLog = createPrismaBookingAuditLog(prismaClient, DEFAULT_CLUB_ID);
   const clock = systemClock;
 
   return {
@@ -70,7 +73,20 @@ export function buildBookingContainer({
     }),
     confirmReservation: createConfirmReservation({ reservationRepository, clock }),
     cancelReservation: createCancelReservation({ reservationRepository, clock }),
-    setCourtPrice: createSetCourtPrice({ courtRepository, clubId: DEFAULT_CLUB_ID }),
+    setCourtPrice: createSetCourtPrice({
+      courtRepository,
+      reservationRepository,
+      auditLog,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    getCourtPriceHistory: createGetCourtPriceHistory({
+      courtRepository,
+      reservationRepository,
+      playerDirectoryProvider,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
     recordPayment: createRecordPayment({
       reservationRepository,
       paymentRepository,

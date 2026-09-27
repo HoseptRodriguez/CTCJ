@@ -11,6 +11,7 @@ vi.mock('../../api/bookingClient.js', () => ({
   bookingClient: {
     listCourts: vi.fn(),
     setCourtPrice: vi.fn(),
+    getCourtPriceHistory: vi.fn(),
     getHoldDuration: vi.fn(),
     setHoldDuration: vi.fn(),
   },
@@ -27,6 +28,19 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
+  bookingClient.getCourtPriceHistory.mockResolvedValue({
+    priceCop: 60000,
+    upcomingReservations: 3,
+    history: [
+      {
+        id: 'h1',
+        previousPriceCop: 50000,
+        newPriceCop: 60000,
+        changedAt: '2026-08-01T15:00:00.000Z',
+        changedByName: 'Marta Gómez',
+      },
+    ],
+  });
   bookingClient.listCourts.mockResolvedValue({
     courts: [
       { id: 'court-1', name: 'Cancha 1', priceCop: 60000 },
@@ -50,6 +64,13 @@ describe('CourtPricingPage (Precios de canchas)', () => {
     await user.click(await screen.findByRole('button', { name: 'Cambiar precio' }));
 
     const panel = await screen.findByRole('dialog', { name: 'Precio de Cancha 1' });
+    // The history (previous -> new, who) and the reservations that keep their price.
+    expect(await within(panel).findByText('$ 50.000 → $ 60.000')).toBeInTheDocument();
+    expect(within(panel).getByText(/Marta Gómez/)).toBeInTheDocument();
+    expect(
+      within(panel).getByText('3 reservas próximas conservan el precio con el que se hicieron.'),
+    ).toBeInTheDocument();
+    expect(bookingClient.getCourtPriceHistory).toHaveBeenCalledWith('court-1');
     const input = within(panel).getByLabelText(/Nuevo precio por hora/);
     await user.clear(input);
     await user.type(input, '70.000');
@@ -61,6 +82,7 @@ describe('CourtPricingPage (Precios de canchas)', () => {
       name: '¿Cambiar el precio de Cancha 1?',
     });
     expect(dialog).toHaveTextContent('Pasa de $ 60.000 a $ 70.000 por hora');
+    expect(dialog).toHaveTextContent('3 reservas próximas conservan el precio');
     await user.click(within(dialog).getByRole('button', { name: 'Sí, cambiar precio' }));
 
     await waitFor(() => expect(bookingClient.setCourtPrice).toHaveBeenCalledWith('court-1', 70000));

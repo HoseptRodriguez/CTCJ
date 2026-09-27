@@ -13,8 +13,23 @@ export class CourtRepository {
     throw new Error('Not implemented');
   }
 
-  /** @returns {Promise<CourtSummary|null>} null if no active court matches. */
-  async setPrice(_clubId, _courtId, _priceCop) {
+  /**
+   * Sets the price and records the change in court_price_history, in one
+   * transaction. Only new reservations use it: each reservation keeps the
+   * price it was made with.
+   * @param {string} _clubId @param {string} _courtId @param {number} _priceCop
+   * @param {string} _changedBy
+   * @returns {Promise<{ court: CourtSummary, previousPriceCop: bigint|null }|null>} null if no active court matches.
+   */
+  async setPrice(_clubId, _courtId, _priceCop, _changedBy) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * @returns {Promise<{ id: string, previousPriceCop: bigint|null, newPriceCop: bigint,
+   *   changedBy: string, changedAt: Date }[]>} newest first
+   */
+  async listPriceHistory(_courtId) {
     throw new Error('Not implemented');
   }
 }

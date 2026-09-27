@@ -319,7 +319,8 @@ describe('Booking HTTP API (real Postgres)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ priceCop: 60000 })
         .expect(200);
-      expect(res.body).toEqual({ courtId, priceCop: 60000 });
+      // It also reports the previous price and how many upcoming reservations keep theirs.
+      expect(res.body).toMatchObject({ courtId, priceCop: 60000, upcomingReservations: 0 });
 
       await request(app)
         .put(`/api/booking/courts/${courtId}/price`)

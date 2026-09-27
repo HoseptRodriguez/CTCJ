@@ -65,4 +65,13 @@ export class ReservationRepository {
   }) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Reservations of a court that still hold it (HOLD or CONFIRMED) and start
+   * after `from` -- the ones a price change leaves at their own price.
+   * @returns {Promise<number>}
+   */
+  async countUpcomingByCourt(_courtId, _from) {
+    throw new Error('Not implemented');
+  }
 }

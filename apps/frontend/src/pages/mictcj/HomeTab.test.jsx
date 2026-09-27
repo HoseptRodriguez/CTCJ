@@ -374,6 +374,27 @@ describe('Mi CTCJ — Inicio', () => {
     expect(screen.getByText('Pago en línea — Próximamente.')).toBeInTheDocument();
   });
 
+  it('"Membresía y pagos": a scheduled price change is announced to the player', async () => {
+    billingClient.getMyMemberships.mockResolvedValue({
+      memberships: [
+        {
+          id: 'm1',
+          planName: 'Iniciación',
+          status: 'ACTIVE',
+          currentPriceCop: 180000,
+          upcomingPriceCop: 200000,
+          upcomingPriceFrom: '2026-10-26T00:00:00.000Z',
+        },
+      ],
+    });
+    billingClient.getMyInvoices.mockResolvedValue({ invoices: [] });
+    renderMyCtcj();
+    expect(await screen.findByText('$ 180.000 al mes')).toBeInTheDocument();
+    const notice = screen.getByText(/el plan pasa a/);
+    expect(notice).toHaveTextContent(/2026 el plan pasa a \$\s200\.000 al mes/);
+    expect(notice).toHaveTextContent('Las facturas ya emitidas no cambian.');
+  });
+
   it('a guardian gets the big "Reservar para: Yo / {menor}" shortcut', async () => {
     guardianshipClient.listMine.mockResolvedValue({
       guardianships: [

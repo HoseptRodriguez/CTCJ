@@ -199,7 +199,7 @@ Sin cambios de esquema: los arreglos no añadieron migraciones.
 - tabla `audit_logs` particionada por rango: `default`, `2026_07`, `2026_08` y `2026_09`;
 - `CHECK` en lugar de ENUM (ADR-0002) e índices parciales.
 
-### 3.2 Migraciones (24)
+### 3.2 Migraciones (25)
 
 | #   | Migración                                          | Líneas SQL |
 | --- | -------------------------------------------------- | ---------- |
@@ -227,10 +227,11 @@ Sin cambios de esquema: los arreglos no añadieron migraciones.
 | 22  | `20260815091500_widen_notification_type_community` | 10         |
 | 23  | `20260926090000_add_physio_admin_access`           | 56         |
 | 24  | `20260927090000_add_community_media`               | 54         |
+| 25  | `20260928090000_plan_admin_and_price_history`      | 67         |
 
 **Verificado con `npx prisma migrate status`** (solo lectura): tanto `ctcj_dev` como `ctcj_test` dicen "22 migrations found — Database schema is up to date!". No hay migraciones pendientes ni fallidas. Las 24 filas que mencionaba el informe de la otra copia no se reflejan como problema.
 
-**Actualización (2026-09-26):** la 23 está aplicada en `ctcj_test` y `ctcj_dev`. La 24 (`add_community_media`) está aplicada **solo en `ctcj_test`**; en `ctcj_dev` queda pendiente de confirmación, con copia previa en `C:\Users\KTFUS\ctcj-backups\ctcj_dev_antes_media.sql`. Aplicarla con `npx prisma migrate deploy` (nunca `migrate dev`) y reiniciar el backend.
+**Actualización (2026-09-26):** las 23 y 24 están aplicadas en `ctcj_test` y `ctcj_dev`. La 25 (`plan_admin_and_price_history`) está aplicada **solo en `ctcj_test`**; en `ctcj_dev` queda pendiente de confirmación. Antes de aplicarla hay que hacer copia con `pg_dump`, usar `npx prisma migrate deploy` (nunca `migrate dev`) y reiniciar el backend.
 
 ---
 
@@ -376,3 +377,22 @@ Se ejecutan contra `ctcj_test` con `npm run -w apps/backend test:integration`.
 - **"Reportar"** ofrece primero el motivo "Aparece un menor sin autorización".
 - **Ocultado automático:** con **3 reportes pendientes**, la publicación se oculta para todos menos su autor (`hidden_reason = AUTO_REPORTS`). Si Administración descarta reportes y quedan menos de 3, vuelve a verse.
 - **Staff** (ADMIN, RECEPCION) en `/staff/comunidad`: ve las fotos o el video reportado y puede **ocultar** (`STAFF`, que no se revierte al descartar reportes), **volver a mostrar** o **borrar**. Endpoints: `POST /api/admin/community/posts/:id/hide|unhide`.
+
+---
+
+## 8. Planes y precios
+
+- **Planes** (`/staff/planes`, solo ADMINISTRADOR):
+  - se pueden editar el nombre (obligatorio y único sin distinguir mayúsculas; lo respalda un índice en la base de datos) y la descripción;
+  - un plan se puede activar o desactivar: el desactivado no se ofrece a jugadores nuevos, pero los que ya lo tienen lo conservan;
+  - el **código** se genera del nombre al crear el plan (`INICIACION_NINOS`) y nunca cambia.
+- **Precios de planes:** `membership_plan_prices` ya era un historial con fechas de vigencia en el que solo se añaden filas. La vista `plan_price_history` le suma el precio anterior, quién lo cambió y cuándo.
+  - Cada factura usa el precio **vigente al inicio de su periodo**; antes usaba el último registrado.
+  - Un cambio nunca se fecha en el pasado. El primer precio de un plan sí puede tener fecha pasada, porque aún no hay facturas que alterar.
+  - Si el plan tiene jugadores activos, el cambio empieza como pronto tras el aviso: 30 días por defecto, configurable en `billing.priceChangeNoticeDays` de 0 a 120 días.
+  - Al programar el cambio, cada jugador recibe una notificación `PLAN_PRICE_CHANGED`, y lo ve también en Mi CTCJ.
+  - Solo puede haber un cambio programado a la vez. Se puede cancelar mientras no haya empezado.
+  - Todo precio debe ser mayor que 0, en pesos sin decimales.
+- **Precios de canchas** (`/staff/precios`): cada cambio queda en `court_price_history` (precio anterior, nuevo, quién y cuándo). La reserva conserva el precio con el que se hizo (`reservations.price_cop`). El panel muestra el historial y cuántas reservas próximas mantienen su precio.
+- **`audit_logs`** registra: `PLAN_CREATED`, `PLAN_UPDATED`, `PLAN_ACTIVATED`, `PLAN_DEACTIVATED`, `PLAN_PRICE_SET`, `PLAN_PRICE_CANCELLED`, `PRICE_NOTICE_DAYS_CHANGED` y `COURT_PRICE_CHANGED`.
+- **Pagos:** siguen siendo presenciales en recepción. No hay pasarela de pago.

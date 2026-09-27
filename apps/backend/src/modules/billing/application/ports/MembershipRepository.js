@@ -22,4 +22,9 @@ export class MembershipRepository {
   async listByPlayer(_playerId) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<string[]>} player ids with an ACTIVE membership in the plan */
+  async listActivePlayerIdsByPlan(_planId) {
+    throw new Error('Not implemented');
+  }
 }

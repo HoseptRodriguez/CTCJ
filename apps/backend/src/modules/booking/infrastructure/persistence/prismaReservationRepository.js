@@ -83,6 +83,12 @@ export function createPrismaReservationRepository(prisma) {
       return rows.map(toDomainReservation);
     },
 
+    async countUpcomingByCourt(courtId, from) {
+      return prisma.reservation.count({
+        where: { courtId, status: { in: OCCUPYING_STATUSES }, periodStart: { gt: from } },
+      });
+    },
+
     async countOccupyingByHolder(holderUserId) {
       return prisma.reservation.count({
         where: { holderUserId, status: { in: OCCUPYING_STATUSES } },

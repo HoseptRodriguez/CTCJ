@@ -9,11 +9,13 @@ import { PlanPriceNotSet } from '../../../../src/modules/billing/application/err
 import { InvoiceAlreadyExists } from '../../../../src/modules/billing/application/errors/InvoiceAlreadyExists.js';
 
 import {
-  createFakePlanRepository,
-  createFakeMembershipRepository,
   createFakeAdjustmentRepository,
-  createFakeInvoiceRepository,
+  createFakeAuditLog,
   createFakeClock,
+  createFakeInvoiceRepository,
+  createFakeMembershipRepository,
+  createFakePlanRepository,
+  priceDepsFor,
 } from './fakes.js';
 
 const CLUB_ID = 'club-1';
@@ -29,8 +31,12 @@ function buildDeps() {
 }
 
 async function seedPricedPlanAndMembership(deps, { billingDay = 5 } = {}) {
-  const createPlan = createCreatePlan({ planRepository: deps.planRepository, clubId: CLUB_ID });
-  const setPlanPrice = createSetPlanPrice({ planRepository: deps.planRepository });
+  const createPlan = createCreatePlan({
+    planRepository: deps.planRepository,
+    auditLog: createFakeAuditLog(),
+    clubId: CLUB_ID,
+  });
+  const setPlanPrice = createSetPlanPrice(priceDepsFor(deps.planRepository));
 
   const plan = await createPlan({ code: 'INICIACION', name: 'Iniciación' });
   await setPlanPrice({
@@ -103,7 +109,11 @@ describe('generateInvoice', () => {
   });
 
   it('throws PlanPriceNotSet when the plan has no vigente price', async () => {
-    const createPlan = createCreatePlan({ planRepository: deps.planRepository, clubId: CLUB_ID });
+    const createPlan = createCreatePlan({
+      planRepository: deps.planRepository,
+      auditLog: createFakeAuditLog(),
+      clubId: CLUB_ID,
+    });
     const plan = await createPlan({ code: 'SIN_PRECIO', name: 'Sin precio' });
     const membership = await deps.membershipRepository.create({
       playerId: 'player-1',

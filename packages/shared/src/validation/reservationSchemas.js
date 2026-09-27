@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { PAYMENT_METHOD } from '../constants/payments.js';
 import { MAX_HOLD_DURATION_MINUTES, MIN_HOLD_DURATION_MINUTES } from '../constants/reservations.js';
 
+import { priceCopSchema } from './billingSchemas.js';
+
 export const holdSchema = z.object({
   courtId: z.string().uuid(),
   start: z
@@ -30,7 +32,7 @@ export const scheduleQuerySchema = z.object({
 });
 
 export const setCourtPriceSchema = z.object({
-  priceCop: z.number().int().positive(),
+  priceCop: priceCopSchema,
 });
 
 export const recordPaymentSchema = z.object({

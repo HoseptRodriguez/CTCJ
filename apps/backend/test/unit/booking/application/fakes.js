@@ -23,7 +23,9 @@ function cloneReservation(reservation) {
 
 export function createFakeCourtRepository(courts = []) {
   const byId = new Map(courts.map((c) => [c.id, c]));
+  const history = []; // newest last
   return {
+    history,
     async listActive(_clubId) {
       return Array.from(byId.values()).filter((c) => c.isActive !== false);
     },
@@ -31,12 +33,26 @@ export function createFakeCourtRepository(courts = []) {
       const court = byId.get(courtId);
       return court && court.isActive !== false ? court : null;
     },
-    async setPrice(_clubId, courtId, priceCop) {
+    async setPrice(_clubId, courtId, priceCop, changedBy) {
       const court = byId.get(courtId);
       if (!court || court.isActive === false) return null;
       const updated = { ...court, priceCop: BigInt(priceCop) };
       byId.set(courtId, updated);
-      return updated;
+      history.push({
+        id: `h${history.length + 1}`,
+        courtId,
+        previousPriceCop: court.priceCop ?? null,
+        newPriceCop: BigInt(priceCop),
+        changedBy,
+        changedAt: new Date(Date.UTC(2026, 2, 1 + history.length)),
+      });
+      return { court: updated, previousPriceCop: court.priceCop ?? null };
+    },
+    async listPriceHistory(courtId) {
+      return history
+        .filter((h) => h.courtId === courtId)
+        .map(({ courtId: _c, ...row }) => row)
+        .reverse();
     },
   };
 }
@@ -49,6 +65,12 @@ export function createFakeCourtRepository(courts = []) {
  */
 export function createFakeReservationRepository(byId = new Map()) {
   return {
+    async countUpcomingByCourt(courtId, from) {
+      return Array.from(byId.values()).filter(
+        (r) =>
+          r.courtId === courtId && OCCUPYING_STATUSES.includes(r.status) && r.periodStart > from,
+      ).length;
+    },
     async createHold(reservation) {
       const conflict = Array.from(byId.values()).some(
         (existing) =>

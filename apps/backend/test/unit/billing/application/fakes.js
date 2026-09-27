@@ -17,6 +17,12 @@ function cloneInvoice(invoice) {
 export function createFakePlanRepository(plans = []) {
   const byId = new Map(plans.map((p) => [p.id, p]));
   const pricesByPlan = new Map(); // planId -> PriceRow[]
+  const planIdOf = (priceId) => {
+    for (const [planId, prices] of pricesByPlan) {
+      if (prices.some((p) => p.id === priceId)) return planId;
+    }
+    return null;
+  };
 
   return {
     async create({ clubId, code, name, description }) {
@@ -35,12 +41,43 @@ export function createFakePlanRepository(plans = []) {
       }
       return null;
     },
+    async findByName(clubId, name) {
+      const wanted = name.trim().toLowerCase();
+      for (const plan of byId.values()) {
+        if (plan.clubId === clubId && plan.name.trim().toLowerCase() === wanted) return plan;
+      }
+      return null;
+    },
     async listByClub(clubId) {
       return Array.from(byId.values()).filter((p) => p.clubId === clubId);
+    },
+    async listCodes(clubId) {
+      return Array.from(byId.values())
+        .filter((p) => p.clubId === clubId)
+        .map((p) => p.code);
+    },
+    async update(id, changes) {
+      const plan = { ...byId.get(id), ...changes };
+      byId.set(id, plan);
+      return plan;
     },
     async findCurrentPrice(planId) {
       const prices = pricesByPlan.get(planId) ?? [];
       return prices.find((p) => p.validTo === null) ?? null;
+    },
+    async findPriceAt(planId, date) {
+      const prices = pricesByPlan.get(planId) ?? [];
+      return (
+        prices.find((p) => p.validFrom <= date && (p.validTo === null || p.validTo > date)) ?? null
+      );
+    },
+    async cancelScheduledPrice({ scheduledId, previousId }) {
+      const prices = (pricesByPlan.get(planIdOf(scheduledId)) ?? []).filter(
+        (p) => p.id !== scheduledId,
+      );
+      const previous = prices.find((p) => p.id === previousId);
+      if (previous) previous.validTo = null;
+      pricesByPlan.set(planIdOf(scheduledId), prices);
     },
     async listPrices(planId) {
       return (pricesByPlan.get(planId) ?? []).slice().sort((a, b) => b.validFrom - a.validFrom);
@@ -96,6 +133,15 @@ export function createFakeMembershipRepository() {
       return Array.from(byId.values())
         .filter((m) => m.playerId === playerId)
         .map(cloneMembership);
+    },
+    async listActivePlayerIdsByPlan(planId) {
+      return [
+        ...new Set(
+          Array.from(byId.values())
+            .filter((m) => m.planId === planId && m.status === 'ACTIVE')
+            .map((m) => m.playerId),
+        ),
+      ];
     },
   };
 }
@@ -235,4 +281,56 @@ export function createFakePlayerDirectoryProvider(summariesById = new Map()) {
 
 export function createFakeClock(now = new Date('2026-03-05T12:00:00.000Z')) {
   return { now: () => now };
+}
+
+/** Records every entry, for assertions. */
+export function createFakeAuditLog() {
+  const entries = [];
+  return {
+    entries,
+    async record(entry) {
+      entries.push(entry);
+    },
+  };
+}
+
+export function createFakeBillingSettings(noticeDays = 30) {
+  let days = noticeDays;
+  return {
+    async getPriceNoticeDays() {
+      return days;
+    },
+    async setPriceNoticeDays(value) {
+      days = value;
+    },
+  };
+}
+
+/** Records every notification; `failFor` makes the send to those recipients fail. */
+export function createFakeNotificationSender({ failFor = [] } = {}) {
+  const sent = [];
+  return {
+    sent,
+    async notify(notification) {
+      if (failFor.includes(notification.recipientId)) throw new Error('inbox down');
+      sent.push(notification);
+    },
+  };
+}
+
+/**
+ * Everything setPlanPrice needs, for tests that only use it to give a plan
+ * a price. The clock is set before the 2026 dates those tests use, so
+ * their prices start in the future as the rule requires.
+ */
+export function priceDepsFor(planRepository, overrides = {}) {
+  return {
+    planRepository,
+    membershipRepository: createFakeMembershipRepository(),
+    billingSettings: createFakeBillingSettings(),
+    notificationSender: createFakeNotificationSender(),
+    auditLog: createFakeAuditLog(),
+    clock: createFakeClock(new Date('2025-12-01T12:00:00.000Z')),
+    ...overrides,
+  };
 }

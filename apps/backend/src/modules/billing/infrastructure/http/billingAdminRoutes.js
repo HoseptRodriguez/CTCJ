@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import {
   createPlanSchema,
+  updatePlanSchema,
+  setPlanActiveSchema,
   setPlanPriceSchema,
+  setPriceNoticeDaysSchema,
   enrollPlayerSchema,
   setPlayerMembershipStatusSchema,
   addAdjustmentSchema,
@@ -33,7 +36,40 @@ export function createBillingAdminRoutes(controller) {
     validateBody(createPlanSchema),
     controller.createPlan,
   );
+  router.put(
+    '/plans/:id',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(updatePlanSchema),
+    controller.updatePlan,
+  );
+  router.put(
+    '/plans/:id/active',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(setPlanActiveSchema),
+    controller.setPlanActive,
+  );
   router.get('/plans/:id/prices', requireAuth, requireRole(STAFF_ROLES), controller.listPlanPrices);
+  router.delete(
+    '/plans/:id/price/scheduled',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    controller.cancelScheduledPlanPrice,
+  );
+  router.get(
+    '/settings/price-notice',
+    requireAuth,
+    requireRole(STAFF_ROLES),
+    controller.getPriceNoticeDays,
+  );
+  router.put(
+    '/settings/price-notice',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(setPriceNoticeDaysSchema),
+    controller.setPriceNoticeDays,
+  );
   router.put(
     '/plans/:id/price',
     requireAuth,

@@ -47,5 +47,14 @@ export function createPrismaMembershipRepository(prisma) {
       });
       return records.map(toDomain);
     },
+
+    async listActivePlayerIdsByPlan(planId) {
+      const records = await prisma.playerMembership.findMany({
+        where: { planId, status: 'ACTIVE' },
+        select: { playerId: true },
+        distinct: ['playerId'],
+      });
+      return records.map((r) => r.playerId);
+    },
   };
 }

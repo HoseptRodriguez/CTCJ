@@ -54,11 +54,21 @@ export const bookingClient = {
 
   cancel: (reservationId) => request(`/api/booking/${reservationId}/cancel`, { method: 'POST' }),
 
-  /** @param {string} courtId @param {number} priceCop */
+  /**
+   * Applies to new reservations; the ones already made keep their price.
+   * @param {string} courtId @param {number} priceCop
+   * @returns {Promise<{courtId, priceCop, previousPriceCop, upcomingReservations}>}
+   */
   setCourtPrice: (courtId, priceCop) => {
     setCourtPriceSchema.parse({ priceCop });
     return request(`/api/booking/courts/${courtId}/price`, { method: 'PUT', body: { priceCop } });
   },
+
+  /**
+   * @param {string} courtId
+   * @returns {Promise<{priceCop, upcomingReservations, history: Array}>} history newest first
+   */
+  getCourtPriceHistory: (courtId) => request(`/api/booking/courts/${courtId}/price-history`),
 
   /** @param {string} reservationId @param {{method: string, notes?: string}} payload */
   recordPayment: (reservationId, payload) => {

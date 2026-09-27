@@ -13,13 +13,53 @@ export function createBillingAdminController(container) {
     res.status(200).json({ plans });
   });
 
+  const actor = (req) => ({ actorUserId: req.user.id, actorRoles: req.user.roles ?? [] });
+  const dateOnly = (key) => (key ? new Date(`${key}T00:00:00Z`) : undefined);
+
   const createPlan = asyncHandler(async (req, res) => {
     const plan = await container.createPlan({
-      code: req.body.code,
       name: req.body.name,
       description: req.body.description,
+      ...actor(req),
     });
     res.status(201).json(plan);
+  });
+
+  const updatePlan = asyncHandler(async (req, res) => {
+    const plan = await container.updatePlan({
+      planId: req.params.id,
+      name: req.body.name,
+      description: req.body.description,
+      ...actor(req),
+    });
+    res.status(200).json(plan);
+  });
+
+  const setPlanActive = asyncHandler(async (req, res) => {
+    const plan = await container.setPlanActive({
+      planId: req.params.id,
+      isActive: req.body.isActive,
+      ...actor(req),
+    });
+    res.status(200).json(plan);
+  });
+
+  const cancelScheduledPlanPrice = asyncHandler(async (req, res) => {
+    const result = await container.cancelScheduledPlanPrice({
+      planId: req.params.id,
+      ...actor(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const getPriceNoticeDays = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getPriceNoticeDays());
+  });
+
+  const setPriceNoticeDays = asyncHandler(async (req, res) => {
+    res
+      .status(200)
+      .json(await container.setPriceNoticeDays({ days: req.body.days, ...actor(req) }));
   });
 
   const listPlanPrices = asyncHandler(async (req, res) => {
@@ -31,8 +71,8 @@ export function createBillingAdminController(container) {
     const price = await container.setPlanPrice({
       planId: req.params.id,
       basePriceCop: req.body.basePriceCop,
-      validFrom: new Date(req.body.validFrom),
-      createdByUserId: req.user.id,
+      validFrom: dateOnly(req.body.validFrom),
+      ...actor(req),
     });
     res.status(200).json(price);
   });
@@ -136,6 +176,11 @@ export function createBillingAdminController(container) {
   return {
     listPlans,
     createPlan,
+    updatePlan,
+    setPlanActive,
+    cancelScheduledPlanPrice,
+    getPriceNoticeDays,
+    setPriceNoticeDays,
     listPlanPrices,
     setPlanPrice,
     enrollPlayer,

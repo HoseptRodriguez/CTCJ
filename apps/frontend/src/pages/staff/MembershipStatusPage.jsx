@@ -257,13 +257,16 @@ function EnrollPanel({ playerId, open, onClose, onSaved }) {
             disabled={plans.status !== 'ready'}
             options={[
               { value: '', label: plans.status === 'ready' ? 'Elige un plan' : 'Cargando planes…' },
-              ...(plans.data ?? []).map((p) => ({
-                value: p.id,
-                label:
-                  p.currentPriceCop != null
-                    ? `${p.name} · ${formatCop(p.currentPriceCop)}`
-                    : `${p.name} (sin precio)`,
-              })),
+              // A deactivated plan is not offered to new players.
+              ...(plans.data ?? [])
+                .filter((p) => p.isActive)
+                .map((p) => ({
+                  value: p.id,
+                  label:
+                    p.currentPriceCop != null
+                      ? `${p.name} · ${formatCop(p.currentPriceCop)}`
+                      : `${p.name} (sin precio)`,
+                })),
             ]}
           />
         )}

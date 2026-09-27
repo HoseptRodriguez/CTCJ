@@ -502,6 +502,16 @@ export function MembershipCard() {
                 {m.currentPriceCop != null && (
                   <p className="text-body text-ink-soft">{formatCop(m.currentPriceCop)} al mes</p>
                 )}
+                {m.upcomingPriceCop != null && m.status === 'ACTIVE' && (
+                  <p className="mt-2 rounded-lg bg-navy-50 p-3 text-body text-ink">
+                    Desde el{' '}
+                    {DATE_MEDIUM.format(
+                      new Date(`${String(m.upcomingPriceFrom).slice(0, 10)}T12:00:00Z`),
+                    )}{' '}
+                    el plan pasa a <strong>{formatCop(m.upcomingPriceCop)}</strong> al mes. Las
+                    facturas ya emitidas no cambian.
+                  </p>
+                )}
                 {invoices.length > 0 && (
                   <ul className="mt-3 divide-y divide-line rounded-lg border border-line">
                     {invoices.map((inv) => {
