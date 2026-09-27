@@ -101,11 +101,11 @@ export function Login() {
           Entrar
         </Button>
       </form>
-      <div className="mt-8 space-y-3 text-body">
+      <div className="mt-6 space-y-1 text-body">
         <p>
           <Link
             to="/forgot-password"
-            className="focus-ring rounded font-semibold text-navy-500 underline underline-offset-4"
+            className="focus-ring inline-flex min-h-btn items-center rounded font-semibold text-navy-500 underline underline-offset-4"
           >
             Olvidé mi contraseña
           </Link>
@@ -115,7 +115,7 @@ export function Login() {
           <Link
             to="/register"
             state={from ? { from } : undefined}
-            className="focus-ring rounded font-semibold text-navy-500 underline underline-offset-4"
+            className="focus-ring inline-flex min-h-btn items-center rounded font-semibold text-navy-500 underline underline-offset-4"
           >
             Crea una cuenta
           </Link>

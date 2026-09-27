@@ -42,6 +42,12 @@ export function Header() {
   const { status, user, logout } = useAuth();
   const location = useLocation();
   const account = accountLinkFor(user?.roles);
+  // Signed in, the account buttons fill the row (it never grows past 1280 px),
+  // so the main links stay in the "Menú" panel; signed out they join the row
+  // from 1280 px.
+  const signedIn = status === 'authenticated';
+  const navInRow = signedIn ? '' : 'xl:flex';
+  const untilNavInRow = signedIn ? '' : 'xl:hidden';
 
   // Close the phone menu whenever the route changes.
   useEffect(() => setMobileOpen(false), [location.pathname, location.hash]);
@@ -65,7 +71,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 xl:flex" aria-label="Principal">
+        <nav className={`hidden items-center gap-1 ${navInRow}`} aria-label="Principal">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.to}
@@ -79,7 +85,7 @@ export function Header() {
 
         <div className="hidden items-center gap-3 whitespace-nowrap lg:flex">
           <FontSizeToggle tone="dark" />
-          {status === 'authenticated' ? (
+          {signedIn ? (
             <>
               <NotificationBell tone="dark" />
               <Button tone="dark" variant="secondary" to={account.to}>
@@ -100,8 +106,12 @@ export function Header() {
         </div>
 
         {/* Phones: the bell stays next to the menu button, never buried. */}
-        <div className="flex items-center gap-2 lg:hidden">
-          {status === 'authenticated' ? <NotificationBell tone="dark" /> : null}
+        <div className={`flex items-center gap-2 ${untilNavInRow}`}>
+          {signedIn ? (
+            <span className="lg:hidden">
+              <NotificationBell tone="dark" />
+            </span>
+          ) : null}
           <button
             type="button"
             className="focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 border-white px-3 text-body font-semibold text-white"
@@ -117,7 +127,12 @@ export function Header() {
       </div>
 
       {mobileOpen ? (
-        <MobileMenu account={account} onNavigate={() => setMobileOpen(false)} onLogout={logout} />
+        <MobileMenu
+          className={untilNavInRow}
+          account={account}
+          onNavigate={() => setMobileOpen(false)}
+          onLogout={logout}
+        />
       ) : null}
     </header>
   );

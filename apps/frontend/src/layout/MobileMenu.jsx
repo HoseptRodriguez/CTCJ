@@ -7,12 +7,15 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 import { NAV_LINKS } from './Header.jsx';
 
-/** Phone menu of the public header: big links, then the account actions. */
-export function MobileMenu({ account, onNavigate, onLogout }) {
+/**
+ * Menu panel of the public header (phones and mid-size screens): big links,
+ * then the account actions. `className` hides it once the links fit in the row.
+ */
+export function MobileMenu({ account, onNavigate, onLogout, className = 'lg:hidden' }) {
   const { status } = useAuth();
 
   return (
-    <div className="border-t border-white/20 bg-navy-500 lg:hidden" id="mobile-menu">
+    <div className={`border-t border-white/20 bg-navy-500 ${className}`} id="mobile-menu">
       <nav className="flex flex-col px-4 py-2" aria-label="Principal, móvil">
         {NAV_LINKS.map((link) => (
           <Link
