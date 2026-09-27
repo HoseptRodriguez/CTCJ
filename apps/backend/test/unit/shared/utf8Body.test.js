@@ -39,7 +39,7 @@ describe('JSON bodies must be valid UTF-8', () => {
     expect(res.body.name).toBe('Iniciación ñ ¿sábado?');
   });
 
-  it('refuses a Windows-1252 body instead of storing "Iniciaci�n"', async () => {
+  it('refuses a Windows-1252 body instead of storing a replacement character', async () => {
     const res = await post(Buffer.from('{"name":"Iniciación"}', 'latin1'));
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('invalid_encoding');

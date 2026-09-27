@@ -35,7 +35,7 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', 'uploads']);
 
 // U+FFFD, and UTF-8 bytes read as Latin-1/Windows-1252: Ã + (¡..¿ or the
 // C1 range), Â + ¡..¿, and â€ (curly quotes / dashes).
-const DAMAGED = /�|Ã[\u0080-¿]|Â[¡-¿]|â€/;
+const DAMAGED = /\uFFFD|\u00C3[\u0080-\u00BF]|\u00C2[\u00A1-\u00BF]|\u00E2\u20AC/;
 const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
 
 function* textFiles(path) {
@@ -91,9 +91,9 @@ describe('text encoding of seeds, migrations and the UI', () => {
   });
 
   it('the detector does catch what it looks for', () => {
-    expect(DAMAGED.test('Iniciaci�n')).toBe(true);
-    expect(DAMAGED.test('IniciaciÃ³n')).toBe(true); // "IniciaciÃ³n"
-    expect(DAMAGED.test('Â¿Jugamos?')).toBe(true); // "Â¿Jugamos?"
+    expect(DAMAGED.test('Iniciaci\uFFFDn')).toBe(true);
+    expect(DAMAGED.test('Iniciaci\u00C3\u00B3n')).toBe(true); // "IniciaciÃ³n"
+    expect(DAMAGED.test('\u00C2\u00BFJugamos?')).toBe(true); // "Â¿Jugamos?"
     expect(DAMAGED.test('Iniciación · ¿Jugamos el sábado? Ñandú — «Ánimo»')).toBe(false);
   });
 });
