@@ -55,7 +55,7 @@ function MyCtcjShell() {
         <div className="mx-auto flex max-w-container items-center justify-between gap-3 px-4 pb-2 pt-3 md:px-8">
           <Link
             to="/"
-            className="focus-ring flex items-center gap-3 rounded-lg"
+            className="focus-ring flex min-h-btn items-center gap-3 rounded-lg"
             aria-label="Club de Tenis Ciudad Jardín, sitio del club"
           >
             <ClubMark tone="dark" size="md" />
