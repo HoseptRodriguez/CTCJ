@@ -13,6 +13,8 @@ vi.mock('../../api/communityAdminClient.js', () => ({
     dismissReport: vi.fn(),
     deletePost: vi.fn(),
     deleteComment: vi.fn(),
+    hidePost: vi.fn(),
+    unhidePost: vi.fn(),
   },
 }));
 
@@ -105,5 +107,41 @@ describe('CommunityModerationPage (Moderar comunidad)', () => {
     await waitFor(() =>
       expect(communityAdminClient.deleteComment).toHaveBeenCalledWith('comment-1'),
     );
+  });
+
+  it('a photo post hidden by 3 reports: shows its photos and can be shown again', async () => {
+    communityAdminClient.listReports.mockResolvedValue({
+      reports: [
+        {
+          ...REPORT,
+          targetContent: '',
+          targetHidden: true,
+          targetHiddenReason: 'AUTO_REPORTS',
+          targetMedia: [
+            { id: 'm1', type: 'IMAGE', url: '/f1.webp', width: 1600, height: 1200, sortOrder: 0 },
+          ],
+          reason: 'Aparece un menor sin autorización',
+        },
+      ],
+    });
+    communityAdminClient.unhidePost.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByText('Oculta por 3 reportes')).toBeInTheDocument();
+    expect(screen.getByText(/con 1 foto/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Revisar' }));
+    const panel = await screen.findByRole('dialog', { name: 'Revisar reporte' });
+    expect(
+      within(panel).getByRole('button', { name: 'Ver la foto en pantalla completa' }),
+    ).toBeInTheDocument();
+    // A post with only photos can still be deleted.
+    expect(within(panel).getByRole('button', { name: 'Eliminar publicación' })).toBeEnabled();
+
+    await user.click(within(panel).getByRole('button', { name: 'Mostrar de nuevo en el muro' }));
+    await waitFor(() => expect(communityAdminClient.unhidePost).toHaveBeenCalledWith('post-1'));
+    expect(
+      await within(panel).findByRole('button', { name: 'Ocultar mientras reviso' }),
+    ).toBeInTheDocument();
   });
 });

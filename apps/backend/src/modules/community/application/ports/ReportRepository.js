@@ -15,6 +15,11 @@ export class ReportRepository {
     throw new Error('Not implemented');
   }
 
+  /** @returns {Promise<number>} PENDING reports on this target (one per reporter) */
+  async countPendingByTarget(_targetType, _targetId) {
+    throw new Error('Not implemented');
+  }
+
   /** @returns {Promise<object[]>} newest first */
   async listByStatus(_status) {
     throw new Error('Not implemented');

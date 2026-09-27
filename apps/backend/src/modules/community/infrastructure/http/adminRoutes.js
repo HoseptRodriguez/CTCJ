@@ -26,6 +26,8 @@ export function createAdminRoutes(controller) {
     controller.dismissReport,
   );
   router.delete('/posts/:id', requireAuth, requireRole(STAFF_ROLES), controller.deletePost);
+  router.post('/posts/:id/hide', requireAuth, requireRole(STAFF_ROLES), controller.hidePost);
+  router.post('/posts/:id/unhide', requireAuth, requireRole(STAFF_ROLES), controller.unhidePost);
   router.delete('/comments/:id', requireAuth, requireRole(STAFF_ROLES), controller.deleteComment);
 
   return router;

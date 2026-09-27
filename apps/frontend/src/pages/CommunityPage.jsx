@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { MINOR_WITHOUT_CONSENT_REASON } from '@ctcj/shared';
 
 import { communityClient } from '../api/communityClient.js';
 import { MessageIcon } from '../components/icons/MessageIcon.jsx';
 import { HeartIcon } from '../components/icons/HeartIcon.jsx';
+import { AnimatedList } from '../components/motion/AnimatedList.jsx';
+import { Avatar } from '../components/ui/Avatar.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
-import { TextAreaField, TextField } from '../components/ui/Field.jsx';
+import { RadioCards, TextField } from '../components/ui/Field.jsx';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Skeleton, SkeletonGroup } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
@@ -16,6 +19,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { describeCommunityError } from '../lib/communityErrorMessages.js';
 
+import { MediaComposer } from './community/MediaComposer.jsx';
+import { PostMediaView } from './community/PostMediaView.jsx';
 import { DATE_TIME_MEDIUM } from './mictcj/shared.jsx';
 
 const PAGE_SIZE = 20;
@@ -24,10 +29,21 @@ function authorLabel(author) {
   return author ? `${author.firstName} ${author.lastName}` : 'Jugador';
 }
 
-/** "Reportar" with an optional reason. The API's 409 on a repeat report is the backstop. */
-function ReportControl({ onReport }) {
+const REPORT_REASONS = [
+  { value: MINOR_WITHOUT_CONSENT_REASON, label: MINOR_WITHOUT_CONSENT_REASON },
+  { value: 'Es ofensivo o inapropiado', label: 'Es ofensivo o inapropiado' },
+  { value: 'otro', label: 'Otro motivo' },
+];
+
+/**
+ * "Reportar" with a reason -- "Aparece un menor sin autorización" first.
+ * Three reports from different players hide a post until staff review it.
+ * The API's 409 on a repeat report is the backstop.
+ */
+function ReportControl({ onReport, withReasons = true }) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
+  const [choice, setChoice] = useState(null);
+  const [other, setOther] = useState('');
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -35,7 +51,7 @@ function ReportControl({ onReport }) {
   if (done)
     return (
       <span className="inline-flex min-h-btn items-center text-body-sm text-ink-soft">
-        Reportado
+        Reportado. Gracias, el club lo revisará.
       </span>
     );
 
@@ -48,10 +64,15 @@ function ReportControl({ onReport }) {
   }
 
   async function handleSubmit() {
+    const reason = !withReasons || choice === 'otro' ? other.trim() : choice;
+    if (withReasons && !choice) {
+      setError('Elige por qué lo reportas.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      await onReport(reason.trim() || undefined);
+      await onReport(reason || undefined);
       setDone(true);
     } catch (err) {
       setError(describeCommunityError(err));
@@ -62,13 +83,32 @@ function ReportControl({ onReport }) {
 
   return (
     <div className="w-full space-y-3 rounded-lg bg-page p-3">
-      <TextField
-        label="¿Por qué lo reportas?"
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-        placeholder="Motivo (opcional)"
-        error={error}
-      />
+      {withReasons && (
+        <RadioCards
+          legend="¿Por qué lo reportas?"
+          name={`motivo-${Math.random().toString(36).slice(2)}`}
+          options={REPORT_REASONS}
+          value={choice}
+          onChange={(v) => {
+            setChoice(v);
+            setError(null);
+          }}
+        />
+      )}
+      {(!withReasons || choice === 'otro') && (
+        <TextField
+          label={withReasons ? 'Cuéntanos el motivo' : '¿Por qué lo reportas?'}
+          value={other}
+          maxLength={300}
+          onChange={(e) => setOther(e.target.value)}
+          placeholder="Motivo (opcional)"
+        />
+      )}
+      {error && (
+        <p role="alert" className="text-body font-semibold text-danger">
+          {error}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
         <Button
           variant="secondary"
@@ -150,7 +190,10 @@ function CommentList({ comments, currentUserId, onCommentDeleted }) {
                 }}
               />
             ) : null}
-            <ReportControl onReport={(reason) => communityClient.reportComment(c.id, { reason })} />
+            <ReportControl
+              withReasons={false}
+              onReport={(reason) => communityClient.reportComment(c.id, { reason })}
+            />
           </div>
         </li>
       ))}
@@ -196,81 +239,94 @@ function PostCard({ post, currentUserId, onDeleted, onToggleLike }) {
   }
 
   return (
-    <li>
-      <article className="rounded-xl border border-line bg-surface p-5 shadow-sm">
-        <header className="flex flex-wrap items-center justify-between gap-2">
+    <article className="rounded-xl border border-line bg-surface p-5 shadow-sm">
+      {post.hiddenAt && (
+        <p className="mb-4 rounded-lg bg-amber-soft p-3 text-body font-semibold text-amber-dark">
+          Tu publicación está oculta mientras la administración del club la revisa.
+        </p>
+      )}
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-3">
+          <Avatar
+            firstName={post.author?.firstName ?? 'J'}
+            lastName={post.author?.lastName}
+            size="sm"
+          />
           <span className="font-display text-h3 font-bold text-ink">
             {authorLabel(post.author)}
           </span>
-          <span className="text-body-sm text-ink-soft">
-            {DATE_TIME_MEDIUM.format(new Date(post.createdAt))}
-          </span>
-        </header>
+        </span>
+        <span className="text-body-sm text-ink-soft">
+          {DATE_TIME_MEDIUM.format(new Date(post.createdAt))}
+        </span>
+      </header>
+      {post.content && (
         <p className="mt-3 whitespace-pre-wrap text-lead text-ink">{post.content}</p>
+      )}
+      <PostMediaView media={post.media} />
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-          <button
-            type="button"
-            onClick={() => onToggleLike(post)}
-            aria-pressed={post.likedByMe}
-            className={cn(
-              'focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 px-4 text-body font-semibold',
-              post.likedByMe
-                ? 'border-navy-500 bg-lime text-navy-500'
-                : 'border-line-strong text-ink hover:bg-page',
-            )}
-          >
-            <HeartIcon className="h-5 w-5" />
-            {post.likedByMe ? 'Te gusta' : 'Me gusta'} ({post.likeCount})
-          </button>
-          <button
-            type="button"
-            onClick={toggleComments}
-            aria-expanded={expanded}
-            className="focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 border-line-strong px-4 text-body font-semibold text-ink hover:bg-page"
-          >
-            <MessageIcon className="h-5 w-5" />
-            Comentarios ({post.commentCount})
-          </button>
-          {post.authorId === currentUserId ? (
-            <DeleteButton
-              what="publicación"
-              onConfirm={async () => {
-                await communityClient.deletePost(post.id);
-                onDeleted(post.id);
-              }}
-            />
-          ) : null}
-          <ReportControl onReport={(reason) => communityClient.reportPost(post.id, { reason })} />
-        </div>
-
-        {expanded ? (
-          <div className="mt-4 space-y-4">
-            <CommentList
-              comments={comments ?? []}
-              currentUserId={currentUserId}
-              onCommentDeleted={(id) =>
-                setComments((prev) => (prev ?? []).filter((c) => c.id !== id))
-              }
-            />
-            <form onSubmit={handleAddComment} className="flex flex-wrap items-end gap-3">
-              <div className="min-w-[14rem] flex-1">
-                <TextField
-                  label="Tu comentario"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Escribe un comentario..."
-                  error={error}
-                />
-              </div>
-              <Button type="submit" variant="secondary" loading={posting} loadingText="Enviando…">
-                Comentar
-              </Button>
-            </form>
-          </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+        <button
+          type="button"
+          onClick={() => onToggleLike(post)}
+          aria-pressed={post.likedByMe}
+          className={cn(
+            'focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 px-4 text-body font-semibold',
+            post.likedByMe
+              ? 'border-navy-500 bg-lime text-navy-500'
+              : 'border-line-strong text-ink hover:bg-page',
+          )}
+        >
+          <HeartIcon className="h-5 w-5" />
+          {post.likedByMe ? 'Te gusta' : 'Me gusta'} ({post.likeCount})
+        </button>
+        <button
+          type="button"
+          onClick={toggleComments}
+          aria-expanded={expanded}
+          className="focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 border-line-strong px-4 text-body font-semibold text-ink hover:bg-page"
+        >
+          <MessageIcon className="h-5 w-5" />
+          Comentarios ({post.commentCount})
+        </button>
+        {post.authorId === currentUserId ? (
+          <DeleteButton
+            what="publicación"
+            onConfirm={async () => {
+              await communityClient.deletePost(post.id);
+              onDeleted(post.id);
+            }}
+          />
         ) : null}
-      </article>
-    </li>
+        <ReportControl onReport={(reason) => communityClient.reportPost(post.id, { reason })} />
+      </div>
+
+      {expanded ? (
+        <div className="mt-4 space-y-4">
+          <CommentList
+            comments={comments ?? []}
+            currentUserId={currentUserId}
+            onCommentDeleted={(id) =>
+              setComments((prev) => (prev ?? []).filter((c) => c.id !== id))
+            }
+          />
+          <form onSubmit={handleAddComment} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[14rem] flex-1">
+              <TextField
+                label="Tu comentario"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Escribe un comentario..."
+                error={error}
+              />
+            </div>
+            <Button type="submit" variant="secondary" loading={posting} loadingText="Enviando…">
+              Comentar
+            </Button>
+          </form>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -281,8 +337,6 @@ export function CommunityPage() {
   const [posts, setPosts] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [content, setContent] = useState('');
-  const [posting, setPosting] = useState(false);
   const [error, setError] = useState(null);
 
   function refetch() {
@@ -301,26 +355,6 @@ export function CommunityPage() {
   useEffect(() => {
     refetch();
   }, []);
-
-  async function handlePublish(e) {
-    e.preventDefault();
-    const trimmed = content.trim();
-    if (!trimmed) {
-      setError('Escribe algo antes de publicar.');
-      return;
-    }
-    setPosting(true);
-    setError(null);
-    try {
-      await communityClient.createPost({ content: trimmed });
-      setContent('');
-      await refetch();
-    } catch (err) {
-      setError(describeCommunityError(err));
-    } finally {
-      setPosting(false);
-    }
-  }
 
   async function handleLoadMore() {
     const last = posts[posts.length - 1];
@@ -365,21 +399,13 @@ export function CommunityPage() {
         className="mb-0 md:mb-0"
       />
       <Card>
-        <form onSubmit={handlePublish} className="space-y-4">
-          <TextAreaField
-            label="Publicar algo"
-            rows={3}
-            maxLength={1000}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            hint="Máximo 1.000 caracteres. Todos los jugadores del club lo verán."
-            error={error}
-          />
-          <Button type="submit" loading={posting} loadingText="Publicando…">
-            Publicar
-          </Button>
-        </form>
+        <MediaComposer userId={user.id} onPublished={refetch} />
       </Card>
+      {error && (
+        <p role="alert" className="text-body font-semibold text-danger">
+          {error}
+        </p>
+      )}
 
       {posts === null && (
         <SkeletonGroup label="Cargando publicaciones…" className="space-y-4">
@@ -395,17 +421,20 @@ export function CommunityPage() {
         />
       )}
       {posts?.length > 0 && (
-        <ul className="space-y-5" aria-label="Publicaciones">
-          {posts.map((post) => (
+        <AnimatedList
+          aria-label="Publicaciones"
+          className="space-y-5"
+          items={posts}
+          getKey={(post) => post.id}
+          renderItem={(post) => (
             <PostCard
-              key={post.id}
               post={post}
               currentUserId={user.id}
               onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
               onToggleLike={handleToggleLike}
             />
-          ))}
-        </ul>
+          )}
+        />
       )}
       {posts?.length > 0 && hasMore && (
         <Button

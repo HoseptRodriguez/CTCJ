@@ -1090,8 +1090,12 @@ model ChallengeMatchResult {
 model CommunityPost {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   authorId  String   @map("author_id") @db.Uuid
-  content   String   @db.VarChar(1000)
+  content   String   @db.VarChar(1000) // '' when the post is media only
   createdAt DateTime @default(now()) @map("created_at")
+  // Hidden (automatically after 3 reports, or by staff) until reviewed.
+  hiddenAt     DateTime? @map("hidden_at")
+  hiddenBy     String?   @map("hidden_by") @db.Uuid // no FK, audit-only; null = automatic
+  hiddenReason String?   @map("hidden_reason") @db.VarChar(20) // AUTO_REPORTS|STAFF
 
   author   User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   // Real relation fields (unlike ChallengeMatchResult's plain-scalar
@@ -1099,6 +1103,7 @@ model CommunityPost {
   // listPosts.js, which nothing in the challenges module ever required.
   comments CommunityComment[]
   likes    CommunityPostLike[]
+  media    PostMedia[]
 
   // content-not-blank CHECK + created_at index added via raw-SQL migration.
   @@map("community_posts")
@@ -1134,6 +1139,26 @@ model CommunityPostLike {
   // toggle in likePost.js.
   @@unique([postId, userId])
   @@map("community_post_likes")
+}
+
+// Up to 4 photos OR 1 video per post (rule enforced by the app); files in
+// Vercel Blob. CHECKs + (post_id, sort_order) unique index in the raw-SQL
+// migration 20260927090000_add_community_media.
+model PostMedia {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId          String   @map("post_id") @db.Uuid
+  type            String   @db.VarChar(10) // IMAGE|VIDEO
+  url             String
+  posterUrl       String?  @map("poster_url") // VIDEO only
+  width           Int?
+  height          Int?
+  durationSeconds Decimal? @map("duration_seconds") @db.Decimal(6, 2) // VIDEO only
+  sortOrder       Int      @default(0) @map("sort_order") @db.SmallInt
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_media")
 }
 
 model CommunityReport {

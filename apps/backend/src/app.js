@@ -49,6 +49,9 @@ import { createAdminRoutes as createCommunityAdminRoutes } from './modules/commu
 import { createIdentityPlayerEligibilityProvider as createCommunityPlayerEligibilityProvider } from './modules/community/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createCommunityPlayerDirectoryProvider } from './modules/community/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createNotificationsSenderAdapter as createCommunityNotificationSender } from './modules/community/infrastructure/adapters/notificationSenderAdapter.js';
+import { createIdentityMinorStatusProvider as createCommunityMinorStatusProvider } from './modules/community/infrastructure/adapters/minorStatusProviderAdapter.js';
+import { createVercelBlobMediaStorage } from './modules/community/infrastructure/storage/vercelBlobMediaStorage.js';
+import { createLocalDiskMediaStorage } from './modules/community/infrastructure/storage/localDiskMediaStorage.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
 import { createBookingController } from './modules/booking/infrastructure/http/bookingController.js';
 import { createBookingRoutes } from './modules/booking/infrastructure/http/bookingRoutes.js';
@@ -119,7 +122,15 @@ export function createApp() {
           // Avatars live in Vercel Blob (an absolute URL on its own CDN host)
           // whenever BLOB_READ_WRITE_TOKEN is set -- helmet's default img-src
           // ('self' data:) would block them on the production-served frontend.
-          'img-src': ["'self'", 'data:', 'https://*.public.blob.vercel-storage.com'],
+          'img-src': ["'self'", 'data:', 'blob:', 'https://*.public.blob.vercel-storage.com'],
+          // Community videos (Blob CDN) and local previews before upload.
+          'media-src': ["'self'", 'blob:', 'https://*.public.blob.vercel-storage.com'],
+          // Direct browser -> Vercel Blob video uploads.
+          'connect-src': [
+            "'self'",
+            'https://blob.vercel-storage.com',
+            'https://*.blob.vercel-storage.com',
+          ],
         },
       },
     }),
@@ -212,12 +223,23 @@ export function createApp() {
   const communityNotificationSender = createCommunityNotificationSender({
     createNotification: notificationsContainer.createNotification,
   });
+  // Post photos/videos: Vercel Blob whenever a token is configured (always
+  // in production), local disk under uploads/community otherwise.
+  const communityMediaStorage = config.blob.readWriteToken
+    ? createVercelBlobMediaStorage({ token: config.blob.readWriteToken })
+    : createLocalDiskMediaStorage({ uploadsDir: UPLOADS_DIR });
   const communityContainer = buildCommunityContainer({
     playerEligibilityProvider: communityPlayerEligibilityProvider,
     playerDirectoryProvider: communityPlayerDirectoryProvider,
     notificationSender: communityNotificationSender,
+    minorStatusProvider: createCommunityMinorStatusProvider({
+      checkIsMinor: identityContainer.checkIsMinor,
+    }),
+    mediaStorage: communityMediaStorage,
   });
-  const communityController = createCommunityController(communityContainer);
+  const communityController = createCommunityController(communityContainer, {
+    blobToken: config.blob.readWriteToken,
+  });
   app.use('/api/community', createCommunityRoutes(communityController));
   const communityAdminController = createCommunityAdminController(communityContainer);
   app.use('/api/admin/community', createCommunityAdminRoutes(communityAdminController));

@@ -12,15 +12,20 @@ import { createReportContent } from '../application/useCases/reportContent.js';
 import { createListReportedContent } from '../application/useCases/listReportedContent.js';
 import { createDismissReport } from '../application/useCases/dismissReport.js';
 import { createDeleteContentAsStaff } from '../application/useCases/deleteContentAsStaff.js';
+import { createAuthorizeVideoUpload } from '../application/useCases/authorizeVideoUpload.js';
+import { createGetMediaCapabilities } from '../application/useCases/getMediaCapabilities.js';
+import { createSetPostVisibility } from '../application/useCases/setPostVisibility.js';
 
 import { createPrismaPostRepository } from './persistence/prismaPostRepository.js';
 import { createPrismaCommentRepository } from './persistence/prismaCommentRepository.js';
 import { createPrismaPostLikeRepository } from './persistence/prismaPostLikeRepository.js';
 import { createPrismaReportRepository } from './persistence/prismaReportRepository.js';
+import { createSharpImageProcessor } from './images/sharpImageProcessor.js';
 import {
   createNullPlayerEligibilityProvider,
   createNullPlayerDirectoryProvider,
   createNullNotificationSender,
+  createNullMinorStatusProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -41,6 +46,10 @@ export function buildCommunityContainer({
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
   notificationSender = createNullNotificationSender(),
+  minorStatusProvider = createNullMinorStatusProvider(),
+  // Required only for posts with photos/videos (app.js passes Blob or local disk).
+  mediaStorage,
+  imageProcessor = createSharpImageProcessor(),
 } = {}) {
   const postRepository = createPrismaPostRepository(prismaClient);
   const commentRepository = createPrismaCommentRepository(prismaClient);
@@ -49,9 +58,30 @@ export function buildCommunityContainer({
   const clock = systemClock;
 
   return {
-    createPost: createCreatePost({ postRepository, playerEligibilityProvider, clock }),
+    createPost: createCreatePost({
+      postRepository,
+      playerEligibilityProvider,
+      clock,
+      minorStatusProvider,
+      mediaStorage,
+      imageProcessor,
+    }),
+    authorizeVideoUpload: createAuthorizeVideoUpload({
+      playerEligibilityProvider,
+      minorStatusProvider,
+      postRepository,
+      mediaStorage,
+      clock,
+    }),
+    getMediaCapabilities: createGetMediaCapabilities({
+      minorStatusProvider,
+      postRepository,
+      mediaStorage,
+      clock,
+    }),
+    ...createSetPostVisibility({ postRepository, clock }),
     listPosts: createListPosts({ postRepository, postLikeRepository, playerDirectoryProvider }),
-    deleteMyPost: createDeleteMyPost({ postRepository }),
+    deleteMyPost: createDeleteMyPost({ postRepository, mediaStorage }),
     createComment: createCreateComment({
       postRepository,
       commentRepository,
@@ -77,7 +107,11 @@ export function buildCommunityContainer({
       commentRepository,
       playerDirectoryProvider,
     }),
-    dismissReport: createDismissReport({ reportRepository, clock }),
-    deleteContentAsStaff: createDeleteContentAsStaff({ postRepository, commentRepository }),
+    dismissReport: createDismissReport({ reportRepository, postRepository, clock }),
+    deleteContentAsStaff: createDeleteContentAsStaff({
+      postRepository,
+      commentRepository,
+      mediaStorage,
+    }),
   };
 }

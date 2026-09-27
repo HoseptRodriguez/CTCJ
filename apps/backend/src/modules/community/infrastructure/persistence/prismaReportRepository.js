@@ -44,6 +44,10 @@ export function createPrismaReportRepository(prisma) {
       return row ? toDomain(row) : null;
     },
 
+    async countPendingByTarget(targetType, targetId) {
+      return prisma.communityReport.count({ where: { targetType, targetId, status: 'PENDING' } });
+    },
+
     async listByStatus(status) {
       const rows = await prisma.communityReport.findMany({
         where: { status },

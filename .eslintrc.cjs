@@ -29,6 +29,9 @@ module.exports = {
       },
     ],
     'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    // eslint-plugin-import can't read package.json "exports" subpaths;
+    // @vercel/blob/client is one (it resolves fine at runtime).
+    'import/no-unresolved': ['error', { ignore: ['^@vercel/blob/client$'] }],
     'import/order': [
       'warn',
       {
@@ -62,7 +65,11 @@ module.exports = {
       parserOptions: {
         ecmaFeatures: { jsx: true },
       },
-      extends: ['plugin:react/recommended', 'plugin:react/jsx-runtime', 'plugin:react-hooks/recommended'],
+      extends: [
+        'plugin:react/recommended',
+        'plugin:react/jsx-runtime',
+        'plugin:react-hooks/recommended',
+      ],
       plugins: ['react', 'react-hooks'],
       settings: {
         react: { version: 'detect' },

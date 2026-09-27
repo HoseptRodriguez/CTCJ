@@ -32,6 +32,7 @@ import { createListGuardianships } from '../application/useCases/listGuardianshi
 import { createListMyGuardianships } from '../application/useCases/listMyGuardianships.js';
 import { createCanBookForMinor } from '../application/useCases/canBookForMinor.js';
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
+import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
@@ -201,6 +202,7 @@ export function buildIdentityContainer({
     listMyGuardianships: createListMyGuardianships({ guardianshipRepository, userRepository }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),
+    checkIsMinor: createCheckIsMinor({ userRepository, guardianshipRepository }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
     searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),

@@ -93,3 +93,44 @@ export async function requestMultipart(path, { method = 'POST', formData } = {})
 
   return data;
 }
+
+/** The current access token (for third-party upload helpers that need the header). */
+export function getAccessToken() {
+  return accessToken;
+}
+
+/**
+ * multipart/form-data with REAL upload progress (fetch can't report it, so
+ * this uses XMLHttpRequest). onProgress(0..100) as bytes leave the browser.
+ */
+export function requestMultipartWithProgress(path, { formData, onProgress, method = 'POST' }) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, new URL(path, window.location.origin));
+    xhr.withCredentials = true;
+    if (accessToken) xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      let data = null;
+      try {
+        data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        data = null;
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.(100);
+        resolve(data);
+        return;
+      }
+      const error = new Error(data?.title ?? `Request failed with status ${xhr.status}`);
+      error.status = xhr.status;
+      error.code = data?.code;
+      if (xhr.status === 401) unauthorizedHandler?.();
+      reject(error);
+    };
+    xhr.onerror = () => reject(Object.assign(new Error('network'), { code: 'network_error' }));
+    xhr.send(formData);
+  });
+}

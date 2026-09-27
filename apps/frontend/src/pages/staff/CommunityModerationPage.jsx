@@ -7,10 +7,12 @@ import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { describeCommunityError } from '../../lib/communityErrorMessages.js';
 import { formatDayShort, formatTime } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { PostMediaView } from '../community/PostMediaView.jsx';
 import { SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, StaffRow } from './staffShared.jsx';
@@ -33,8 +35,31 @@ const WORDS = {
 };
 const person = (p) => (p ? `${p.firstName} ${p.lastName}` : 'Un jugador');
 const when = (iso) => `${formatDayShort(iso)} · ${formatTime(iso)}`;
+// null = the content was already deleted ('' is a post with only photos/video).
+const exists = (report) => report.targetContent != null;
 
-function ReviewPanel({ report, onClose, onResolved }) {
+function mediaSummary(media = []) {
+  const photos = media.filter((m) => m.type === 'IMAGE').length;
+  if (media.some((m) => m.type === 'VIDEO')) return 'con un video';
+  if (photos) return photos === 1 ? 'con 1 foto' : `con ${photos} fotos`;
+  return null;
+}
+
+function HiddenBadge({ report }) {
+  if (!report.targetHidden) return null;
+  return (
+    <StatusBadge
+      status="pendiente"
+      label={
+        report.targetHiddenReason === 'AUTO_REPORTS'
+          ? 'Oculta por 3 reportes'
+          : 'Oculta por el club'
+      }
+    />
+  );
+}
+
+function ReviewPanel({ report, onClose, onResolved, onUpdated }) {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(null);
@@ -42,9 +67,22 @@ function ReviewPanel({ report, onClose, onResolved }) {
   const words = WORDS[report?.targetType] ?? WORDS.POST;
 
   async function run(kind) {
-    setBusy(kind);
+    setBusy(kind === 'hide' || kind === 'unhide' ? 'visibility' : kind);
     setError(null);
     try {
+      if (kind === 'hide' || kind === 'unhide') {
+        // Visibility only: the report stays open for review.
+        if (kind === 'hide') await communityAdminClient.hidePost(report.targetId);
+        else await communityAdminClient.unhidePost(report.targetId);
+        const hidden = kind === 'hide';
+        toast({
+          title: hidden ? 'Publicación oculta' : 'Publicación visible de nuevo',
+          description: hidden ? 'Nadie la ve en el muro mientras la revisas.' : undefined,
+          tone: 'success',
+        });
+        onUpdated(report.id, { targetHidden: hidden, targetHiddenReason: hidden ? 'STAFF' : null });
+        return;
+      }
       if (kind === 'dismiss') {
         await communityAdminClient.dismissReport(report.id);
         toast({ title: 'Reporte descartado', description: words.stays, tone: 'success' });
@@ -75,7 +113,7 @@ function ReviewPanel({ report, onClose, onResolved }) {
                 variant="danger"
                 size="lg"
                 fullWidth
-                disabled={!report.targetContent || busy != null}
+                disabled={!exists(report) || busy != null}
                 onClick={() => setConfirmDelete(true)}
               >
                 Eliminar {words.noun}
@@ -90,6 +128,18 @@ function ReviewPanel({ report, onClose, onResolved }) {
               >
                 Descartar el reporte
               </Button>
+              {report.targetType === 'POST' && exists(report) && (
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  fullWidth
+                  loading={busy === 'visibility'}
+                  loadingText="Guardando…"
+                  onClick={() => run(report.targetHidden ? 'unhide' : 'hide')}
+                >
+                  {report.targetHidden ? 'Mostrar de nuevo en el muro' : 'Ocultar mientras reviso'}
+                </Button>
+              )}
             </div>
           )
         }
@@ -101,10 +151,16 @@ function ReviewPanel({ report, onClose, onResolved }) {
                 {TARGET_LABELS[report.targetType] ?? 'Contenido'} de {person(report.targetAuthor)}
               </p>
               <blockquote className="mt-2 whitespace-pre-line rounded-xl border-l-4 border-navy-500 bg-page p-4 text-lead text-ink">
-                {report.targetContent ?? (
+                {exists(report) ? (
+                  report.targetContent || <em className="text-ink-soft">Sin texto.</em>
+                ) : (
                   <em className="text-ink-soft">El contenido ya fue eliminado.</em>
                 )}
               </blockquote>
+              <div className="mt-3">
+                <HiddenBadge report={report} />
+              </div>
+              <PostMediaView media={report.targetMedia} />
             </div>
             <div className="rounded-xl bg-amber-soft p-4">
               <p className="text-body font-semibold text-amber-dark">
@@ -159,9 +215,13 @@ export function CommunityModerationPage() {
             renderItem={(r) => (
               <StaffRow
                 title={`${TARGET_LABELS[r.targetType] ?? 'Contenido'} de ${person(r.targetAuthor)}`}
+                badge={<HiddenBadge report={r} />}
                 subtitle={
-                  r.targetContent ? (
-                    <span className="line-clamp-2">{r.targetContent}</span>
+                  exists(r) ? (
+                    <span className="line-clamp-2">
+                      {r.targetContent || <em className="text-ink-soft">Sin texto</em>}
+                      {mediaSummary(r.targetMedia) && ` (${mediaSummary(r.targetMedia)})`}
+                    </span>
                   ) : (
                     <em className="text-ink-soft">Contenido ya eliminado</em>
                   )
@@ -177,6 +237,9 @@ export function CommunityModerationPage() {
         key={reviewingId ?? 'none'}
         report={reviewing}
         onClose={() => setReviewingId(null)}
+        onUpdated={(id, patch) =>
+          reports.setData((list) => list.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+        }
         onResolved={(id) => {
           setReviewingId(null);
           reports.setData((list) => list.filter((r) => r.id !== id));

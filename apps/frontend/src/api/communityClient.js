@@ -1,6 +1,6 @@
 import { createPostSchema, createCommentSchema, reportContentSchema } from '@ctcj/shared';
 
-import { request } from './httpClient.js';
+import { getAccessToken, request, requestMultipartWithProgress } from './httpClient.js';
 
 // request() puts every entry verbatim into the query string, including
 // literal "undefined" for an unset key -- strip those before sending,
@@ -14,6 +14,40 @@ export const communityClient = {
   createPost: (payload) => {
     createPostSchema.parse(payload);
     return request('/api/community/posts', { method: 'POST', body: payload });
+  },
+
+  /** @returns {Promise<{canUploadMedia: boolean, isMinor: boolean, videoUpload: 'direct'|'server',
+   *   remainingMediaPostsToday: number, limits: object}>} */
+  getMediaCapabilities: () => request('/api/community/me/media-capabilities'),
+
+  /**
+   * A post with photos or a video (multipart), reporting upload progress.
+   * @param {FormData} formData -- content, images[], or video + videoMeta + poster, or video (JSON ref)
+   * @param {(percent: number) => void} [onProgress]
+   */
+  createMediaPost: (formData, onProgress) =>
+    requestMultipartWithProgress('/api/community/posts', { formData, onProgress }),
+
+  /**
+   * Production: uploads the video straight from the browser to Vercel Blob
+   * (the server only signs it), so 50 MB never go through our server.
+   * @returns {Promise<{url: string}>}
+   */
+  uploadVideoDirect: async (file, { userId, durationSeconds, onProgress }) => {
+    const { upload } = await import('@vercel/blob/client');
+    const ext = file.type === 'video/webm' ? 'webm' : 'mp4';
+    return upload(`community/${userId}/video.${ext}`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/community/media/video-upload',
+      headers: { Authorization: `Bearer ${getAccessToken()}` },
+      clientPayload: JSON.stringify({
+        contentType: file.type,
+        sizeBytes: file.size,
+        durationSeconds,
+      }),
+      contentType: file.type,
+      onUploadProgress: ({ percentage }) => onProgress?.(Math.round(percentage)),
+    });
   },
 
   /** @param {{limit?: number, before?: string}} [params]
