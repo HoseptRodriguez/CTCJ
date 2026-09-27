@@ -12,6 +12,7 @@ import { pinoHttp } from 'pino-http';
 import { config } from './config/env.js';
 import { logger } from './shared/logger.js';
 import { toProblemDetail } from './shared/errors/httpError.js';
+import { assertUtf8Body, toBodyParserHttpError } from './shared/utf8Body.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
 import { createGetMyAchievements } from './modules/identity/application/useCases/getMyAchievements.js';
 import { createCompetitionProgressProviderAdapter } from './modules/identity/infrastructure/adapters/competitionProgressProviderAdapter.js';
@@ -143,7 +144,7 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  app.use(express.json({ verify: assertUtf8Body }));
   app.use(cookieParser());
   app.use(pinoHttp({ logger, autoLogging: !config.isTest }));
 
@@ -439,7 +440,7 @@ export function createApp() {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    const { status, body } = toProblemDetail(err);
+    const { status, body } = toProblemDetail(toBodyParserHttpError(err));
     if (status >= 500) {
       req.log?.error({ err }, 'Unhandled error');
     }
