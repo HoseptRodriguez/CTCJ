@@ -8,6 +8,7 @@ import { MaxConcurrentReservationsExceeded } from '../../../../src/modules/booki
 import { SlotNotAvailable } from '../../../../src/modules/booking/application/errors/SlotNotAvailable.js';
 import { MembershipOverdueBookingBlocked } from '../../../../src/modules/booking/application/errors/MembershipOverdueBookingBlocked.js';
 import { NotAuthorizedToBookForUser } from '../../../../src/modules/booking/application/errors/NotAuthorizedToBookForUser.js';
+import { MinorPendingGuardianAuthorization } from '../../../../src/modules/booking/application/errors/MinorPendingGuardianAuthorization.js';
 
 import {
   createFakeCourtRepository,
@@ -54,6 +55,26 @@ describe('createHold', () => {
   beforeEach(() => {
     deps = buildDeps();
     createHold = createCreateHold(deps);
+  });
+
+  it("a minor pending the guardian's authorization cannot book, not even through the guardian", async () => {
+    const pending = new Set(['hijo']);
+    createHold = createCreateHold({
+      ...deps,
+      minorAuthorizationProvider: { isPendingGuardianAuthorization: async (id) => pending.has(id) },
+      guardianshipProvider: createFakeGuardianshipProvider([['mama', 'hijo']]),
+    });
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo' }),
+    ).rejects.toThrow(MinorPendingGuardianAuthorization);
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo', createdByUserId: 'mama' }),
+    ).rejects.toThrow(MinorPendingGuardianAuthorization);
+
+    pending.delete('hijo'); // the guardian authorized
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo' }),
+    ).resolves.toMatchObject({ reservationId: expect.any(String) });
   });
 
   it('creates a HOLD reservation and returns its expiry and price', async () => {

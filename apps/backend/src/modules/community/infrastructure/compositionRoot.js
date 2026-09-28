@@ -83,6 +83,7 @@ export function buildCommunityContainer({
     listPosts: createListPosts({ postRepository, postLikeRepository, playerDirectoryProvider }),
     deleteMyPost: createDeleteMyPost({ postRepository, mediaStorage }),
     createComment: createCreateComment({
+      minorStatusProvider,
       postRepository,
       commentRepository,
       playerEligibilityProvider,

@@ -820,6 +820,11 @@ describe('Booking HTTP API (real Postgres)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ decision: 'APPROVED' })
         .expect(200);
+      // The minor's account stays pending until the guardian authorizes.
+      await request(app)
+        .post(`/api/identity/me/guardianships/${requestRes.body.id}/minor-authorization`)
+        .set('Authorization', `Bearer ${guardianToken}`)
+        .expect(200);
     }
 
     it('end-to-end: an approved+canBook guardian can hold, and createdBy differs from holderUserId', async () => {

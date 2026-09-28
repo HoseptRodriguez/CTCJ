@@ -59,6 +59,7 @@ import { createBookingRoutes } from './modules/booking/infrastructure/http/booki
 import { createIdentityMembershipStatusProvider } from './modules/booking/infrastructure/adapters/membershipStatusProviderAdapter.js';
 import { createIdentitySystemSettingBookingPolicy } from './modules/booking/infrastructure/adapters/bookingPolicySettingsAdapter.js';
 import { createIdentityGuardianshipProvider } from './modules/booking/infrastructure/adapters/guardianshipProviderAdapter.js';
+import { createIdentityMinorAuthorizationProvider } from './modules/booking/infrastructure/adapters/minorAuthorizationProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createBookingPlayerDirectoryProvider } from './modules/booking/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { buildBillingContainer } from './modules/billing/infrastructure/compositionRoot.js';
 import { createBillingAdminController } from './modules/billing/infrastructure/http/billingAdminController.js';
@@ -237,6 +238,7 @@ export function createApp() {
     notificationSender: communityNotificationSender,
     minorStatusProvider: createCommunityMinorStatusProvider({
       checkIsMinor: identityContainer.checkIsMinor,
+      isPendingGuardianAuthorization: identityContainer.isPendingGuardianAuthorization,
     }),
     mediaStorage: communityMediaStorage,
   });
@@ -264,6 +266,9 @@ export function createApp() {
     membershipStatusProvider,
     bookingPolicySettings,
     guardianshipProvider,
+    minorAuthorizationProvider: createIdentityMinorAuthorizationProvider({
+      isPendingGuardianAuthorization: identityContainer.isPendingGuardianAuthorization,
+    }),
     // Staff-only names on the schedule (who to charge at the front desk).
     playerDirectoryProvider: createBookingPlayerDirectoryProvider({
       getUserSummaries: identityContainer.getUserSummaries,

@@ -51,6 +51,15 @@ export function createMeRoutes(controller) {
     controller.requestGuardianship,
   );
   router.get('/guardianships', requireAuth, controller.listMyGuardianships);
+  // The guardian's authorization for the linked minor's data and image.
+  router.post('/guardianships/:id/minor-authorization', requireAuth, controller.authorizeMinor);
+  router.delete(
+    '/guardianships/:id/minor-authorization',
+    requireAuth,
+    controller.withdrawMinorAuthorization,
+  );
+  // What the signed-in person can't do yet (a minor pending authorization).
+  router.get('/account-restrictions', requireAuth, controller.getAccountRestrictions);
 
   return router;
 }

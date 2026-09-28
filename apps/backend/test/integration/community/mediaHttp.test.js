@@ -193,6 +193,32 @@ describe('Community posts with photos and videos (real Postgres, local storage)'
     const minor = await seedUser({ birthDate: new Date('2012-03-01') });
     const minorToken = await login(app, minor);
 
+    // Pending the guardian's authorization: nothing at all can be posted.
+    const pending = await request(app)
+      .post('/api/community/posts')
+      .set('Authorization', `Bearer ${minorToken}`)
+      .send({ content: 'Solo texto' })
+      .expect(403);
+    expect(pending.body.code).toBe('minor_pending_guardian_authorization');
+
+    // A guardian links the account (approved) and authorizes it.
+    const guardian = await seedUser();
+    const link = await prisma.guardianship.create({
+      data: {
+        guardianUserId: guardian.id,
+        minorUserId: minor.id,
+        canPay: false,
+        canBook: true,
+        status: 'APPROVED',
+        decidedAt: new Date(),
+        decidedBy: guardian.id, // audit-only column; any staff id would do
+      },
+    });
+    await request(app)
+      .post(`/api/identity/me/guardianships/${link.id}/minor-authorization`)
+      .set('Authorization', `Bearer ${await login(app, guardian)}`)
+      .expect(200);
+
     const caps = await request(app)
       .get('/api/community/me/media-capabilities')
       .set('Authorization', `Bearer ${minorToken}`)

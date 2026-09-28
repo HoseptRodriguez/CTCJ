@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { setMembershipStatusSchema, lookupUserQuerySchema, ROLE_CODES } from '@ctcj/shared';
+import {
+  setMembershipStatusSchema,
+  setUserDocumentSchema,
+  lookupUserQuerySchema,
+  ROLE_CODES,
+} from '@ctcj/shared';
 
 import { requireAuth } from './middleware/requireAuth.js';
 import { requireRole } from './middleware/requireRole.js';
@@ -33,6 +38,21 @@ export function createUserAdminRoutes(controller) {
     requireAuth,
     requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
     controller.getPlayerCounts,
+  );
+
+  // Identity document: optional, filled by reception only when needed.
+  router.get(
+    '/:id/document',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    controller.getDocument,
+  );
+  router.put(
+    '/:id/document',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    validateBody(setUserDocumentSchema),
+    controller.setDocument,
   );
 
   return router;

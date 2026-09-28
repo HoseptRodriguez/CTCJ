@@ -1,6 +1,7 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { guardianshipClient } from '../api/guardianshipClient.js';
 import { HomeIcon } from '../components/icons/HomeIcon.jsx';
 import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
 import { MessageIcon } from '../components/icons/MessageIcon.jsx';
@@ -24,6 +25,38 @@ export const MY_CTCJ_TABS = [
   { to: '/mi-ctcj/ranking', label: 'Ranking', Icon: TrophyIcon, jugadorOnly: true },
   { to: '/mi-ctcj/comunidad', label: 'Comunidad', Icon: MessageIcon, jugadorOnly: true },
 ];
+
+/**
+ * A minor's account waiting for the guardian's authorization: it can look
+ * around, but not book or post. Says so up front, and what to do.
+ */
+function PendingGuardianNotice() {
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => guardianshipClient.getAccountRestrictions())
+      .then((r) => !cancelled && setPending(r?.pendingGuardianAuthorization === true))
+      .catch(() => {}); // unknown => no notice; the server still enforces the rule
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!pending) return null;
+  return (
+    <div
+      role="status"
+      className="mb-6 rounded-xl border-2 border-amber bg-amber-soft p-4 text-body text-ink"
+    >
+      <p className="font-semibold">Tu cuenta está pendiente de la autorización de tu acudiente.</p>
+      <p className="mt-1">
+        Puedes entrar y ver la información del club, pero todavía no puedes reservar ni publicar en
+        la Comunidad. Pídele a tu acudiente que vincule tu cuenta desde su perfil («Cuentas
+        vinculadas») y dé la autorización.
+      </p>
+    </div>
+  );
+}
 
 export function MyCtcjLayout() {
   return (
@@ -110,6 +143,7 @@ function MyCtcjShell() {
         </nav>
       </header>
       <main id="contenido" className="mx-auto w-full max-w-container flex-1 px-4 py-8 md:px-8">
+        <PendingGuardianNotice />
         <Suspense fallback={<RouteLoading />}>
           <Outlet />
         </Suspense>

@@ -40,6 +40,10 @@ export class User {
     phone = null,
     birthDate = null,
     bio = null,
+    dominantHand = null,
+    backhand = null,
+    documentType = null,
+    documentNumber = null,
     avatarUrl = null,
   }) {
     this.id = id;
@@ -60,6 +64,10 @@ export class User {
     this.phone = phone;
     this.birthDate = birthDate;
     this.bio = bio;
+    this.dominantHand = dominantHand;
+    this.backhand = backhand;
+    this.documentType = documentType;
+    this.documentNumber = documentNumber;
     this.avatarUrl = avatarUrl;
   }
 
@@ -124,6 +132,12 @@ export class User {
     }
   }
 
+  /** Staff only (reception), when an invoice or a league registration needs it. */
+  setDocument({ documentType, documentNumber }) {
+    this.documentType = documentType ?? null;
+    this.documentNumber = documentNumber ?? null;
+  }
+
   /** Suspended or deactivated accounts (by the club) can't sign in or keep a session. */
   canSignIn() {
     return this.status !== UserStatus.SUSPENDED && this.status !== UserStatus.DEACTIVATED;
@@ -177,10 +191,12 @@ export class User {
    * (documentType/documentNumber) are deliberately not editable here --
    * those stay staff-only, unlike phone/birthDate/bio.
    */
-  updateProfile({ phone, birthDate, bio } = {}) {
+  updateProfile({ phone, birthDate, bio, dominantHand, backhand } = {}) {
     if (phone !== undefined) this.phone = phone;
     if (birthDate !== undefined) this.birthDate = birthDate;
     if (bio !== undefined) this.bio = bio;
+    if (dominantHand !== undefined) this.dominantHand = dominantHand;
+    if (backhand !== undefined) this.backhand = backhand;
   }
 
   setAvatarUrl(url) {

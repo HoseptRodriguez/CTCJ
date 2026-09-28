@@ -134,7 +134,9 @@ function FindUs() {
         >
           Cómo llegar
         </Button>
-        <p className="mt-3 text-body text-ink-soft">Se abre Google Maps en otra pestaña.</p>
+        <p className="mt-3 text-body text-ink-soft">
+          Se abre Google Maps, en otra aplicación o sitio.
+        </p>
       </div>
     </section>
   );
@@ -159,6 +161,9 @@ function Contacts() {
           >
             WhatsApp {WHATSAPP_NUMBER}
           </Button>
+          <p className={`mt-3 text-body ${toneText('navy')}`}>
+            Se abre WhatsApp, en otra aplicación.
+          </p>
           <p className={`mt-8 text-lead ${toneText('navy')}`}>Síguenos como {SOCIAL_HANDLE}</p>
           <ul className="mt-3 flex flex-wrap gap-3" aria-label="Redes sociales">
             {SOCIAL_LINKS.map(({ network, url }) => {
@@ -173,12 +178,15 @@ function Contacts() {
                   >
                     <Icon className="h-5 w-5" />
                     {network}
-                    <span className="sr-only"> (se abre en otra pestaña)</span>
+                    <span className="sr-only"> (se abre en otra aplicación o sitio)</span>
                   </a>
                 </li>
               );
             })}
           </ul>
+          <p className={`mt-3 text-body ${toneText('navy')}`}>
+            Las redes se abren en otra aplicación o sitio.
+          </p>
         </div>
         {/* The full crest: its one appearance on this page. */}
         <ClubLogo size="xl" onDark className="justify-self-center" />

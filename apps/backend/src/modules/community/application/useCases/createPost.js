@@ -6,6 +6,7 @@ import { detectFileType, probeVideoDuration } from '../../domain/services/fileSn
 import { DailyMediaLimitReached } from '../errors/DailyMediaLimitReached.js';
 import { InvalidMedia } from '../errors/InvalidMedia.js';
 import { MediaNotAllowedForMinor } from '../errors/MediaNotAllowedForMinor.js';
+import { MinorPendingGuardianAuthorization } from '../errors/MinorPendingGuardianAuthorization.js';
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { startOfClubDay } from '../services/clubDay.js';
 import { assertImage, assertPostShape, assertVideo } from '../services/mediaPolicy.js';
@@ -24,7 +25,8 @@ const EXTENSION = { 'video/mp4': 'mp4', 'video/webm': 'webm' };
  * and the server checks that it's the caller's own file and reads its first
  * bytes to confirm its real type, size and (when the header allows) duration.
  *
- * Minors' accounts can only post text. At most 10 posts with media per
+ * Minors' accounts can only post text, and nothing at all while pending
+ * their guardian's authorization. At most 10 posts with media per
  * player per club day. If anything fails after files were stored, they are
  * deleted again so nothing is left orphaned.
  *
@@ -62,6 +64,11 @@ export function createCreatePost({
     const eligible = await playerEligibilityProvider.isEligiblePlayer(authorUserId);
     if (!eligible) {
       throw new PlayerNotEligible();
+    }
+    // A minor's account posts nothing (not even text) until the guardian
+    // links it and authorizes the minor's data and image.
+    if (await minorStatusProvider?.isPendingGuardianAuthorization(authorUserId)) {
+      throw new MinorPendingGuardianAuthorization();
     }
     assertPostShape({ content, imageCount: images.length, hasVideo: Boolean(video) });
 

@@ -1,4 +1,10 @@
-import { MEMBERSHIP_STATUS, ROLE_CODES, ROLE_DEFINITIONS } from '@ctcj/shared';
+import {
+  DOCUMENT_TYPE,
+  DOCUMENT_TYPE_LABELS,
+  MEMBERSHIP_STATUS,
+  ROLE_CODES,
+  ROLE_DEFINITIONS,
+} from '@ctcj/shared';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -404,6 +410,105 @@ function MembershipInvoices({ membership, who, canEdit, onPay, onCancel, version
   );
 }
 
+/**
+ * Identity document: optional, never asked at sign-up. Reception fills it
+ * only when needed (electronic invoice in the player's name, league
+ * tournament registration), as the privacy policy explains.
+ */
+function DocumentCard({ userId }) {
+  const toast = useToast();
+  const doc = useAsync(() => membershipClient.getUserDocument(userId), [userId]);
+  const [editing, setEditing] = useState(false);
+  const [type, setType] = useState('');
+  const [number, setNumber] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  function start() {
+    setType(doc.data?.documentType ?? '');
+    setNumber(doc.data?.documentNumber ?? '');
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save() {
+    const cleared = !type && !number.trim();
+    if (!cleared && (!type || !number.trim()))
+      return setError('Escribe el tipo y el número del documento, o deja ambos vacíos.');
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await membershipClient.setUserDocument(userId, {
+        documentType: type || null,
+        documentNumber: number.trim() || null,
+      });
+      doc.setData(() => result);
+      setEditing(false);
+      toast({ title: cleared ? 'Documento borrado' : 'Documento guardado', tone: 'success' });
+    } catch (err) {
+      setError(describeIdentityError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Documento de identidad (opcional)"
+      description="Solo cuando haga falta: factura electrónica a nombre del jugador o inscripción en torneos de liga."
+      async={doc}
+    >
+      {(d) =>
+        editing ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Tipo de documento"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                options={[
+                  { value: '', label: 'Sin documento' },
+                  ...Object.values(DOCUMENT_TYPE).map((v) => ({
+                    value: v,
+                    label: DOCUMENT_TYPE_LABELS[v],
+                  })),
+                ]}
+              />
+              <TextField
+                label="Número"
+                value={number}
+                onChange={(e) => setNumber(e.target.value.replace(/[^A-Za-z0-9-]/g, ''))}
+                hint="Sin puntos ni espacios."
+                maxLength={20}
+              />
+            </div>
+            <FormAlert>{error}</FormAlert>
+            <div className="flex flex-wrap gap-3">
+              <Button loading={saving} loadingText="Guardando…" onClick={save}>
+                Guardar documento
+              </Button>
+              <Button variant="secondary" onClick={() => setEditing(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-body text-ink">
+              {d.documentType
+                ? `${DOCUMENT_TYPE_LABELS[d.documentType] ?? d.documentType} ${d.documentNumber}`
+                : 'Sin documento registrado.'}
+            </p>
+            <Button variant="secondary" onClick={start}>
+              {d.documentType ? 'Cambiar documento' : 'Agregar documento'}
+            </Button>
+          </div>
+        )
+      }
+    </SectionCard>
+  );
+}
+
 function PlayerDetail({ user, isAdmin, onStatusChanged }) {
   const toast = useToast();
   const isPlayer = (user.roleCodes ?? []).includes(ROLE_CODES.JUGADOR);
@@ -444,6 +549,8 @@ function PlayerDetail({ user, isAdmin, onStatusChanged }) {
           )}
         </div>
       </div>
+
+      <DocumentCard userId={user.id} />
 
       {isPlayer ? (
         <SectionCard

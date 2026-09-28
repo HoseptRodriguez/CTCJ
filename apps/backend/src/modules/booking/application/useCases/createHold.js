@@ -7,6 +7,7 @@ import { Reservation } from '../../domain/entities/Reservation.js';
 import { CourtNotFound } from '../errors/CourtNotFound.js';
 import { MaxConcurrentReservationsExceeded } from '../errors/MaxConcurrentReservationsExceeded.js';
 import { MembershipOverdueBookingBlocked } from '../errors/MembershipOverdueBookingBlocked.js';
+import { MinorPendingGuardianAuthorization } from '../errors/MinorPendingGuardianAuthorization.js';
 import { NotAuthorizedToBookForUser } from '../errors/NotAuthorizedToBookForUser.js';
 
 /**
@@ -18,6 +19,7 @@ import { NotAuthorizedToBookForUser } from '../errors/NotAuthorizedToBookForUser
  *   membershipStatusProvider: import('../ports/MembershipStatusProvider.js').MembershipStatusProvider,
  *   bookingPolicySettings: import('../ports/BookingPolicySettings.js').BookingPolicySettings,
  *   guardianshipProvider: import('../ports/GuardianshipProvider.js').GuardianshipProvider,
+ *   minorAuthorizationProvider?: import('../ports/MinorAuthorizationProvider.js').MinorAuthorizationProvider,
  * }} deps
  */
 export function createCreateHold({
@@ -28,6 +30,7 @@ export function createCreateHold({
   membershipStatusProvider,
   bookingPolicySettings,
   guardianshipProvider,
+  minorAuthorizationProvider,
 }) {
   /**
    * @param {{ courtId: string, periodStart: Date, periodEnd: Date, holderUserId: string, createdByUserId?: string }} input
@@ -58,6 +61,12 @@ export function createCreateHold({
       if (!authorized) {
         throw new NotAuthorizedToBookForUser();
       }
+    }
+
+    // A minor's account (whoever books for it) waits for the guardian to
+    // link it and authorize the minor's data and image.
+    if (await minorAuthorizationProvider?.isPendingGuardianAuthorization(holderUserId)) {
+      throw new MinorPendingGuardianAuthorization();
     }
 
     const concurrentCount = await reservationRepository.countOccupyingByHolder(holderUserId);

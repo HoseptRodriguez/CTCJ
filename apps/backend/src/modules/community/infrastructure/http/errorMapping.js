@@ -9,6 +9,7 @@ const STATUS_BY_CODE = {
   report_already_pending: 409,
   player_not_eligible: 409,
   minor_media_not_allowed: 403,
+  minor_pending_guardian_authorization: 403,
   daily_media_limit: 429,
   video_upload_unavailable: 409,
 };

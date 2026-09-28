@@ -7,6 +7,8 @@ const COMMUNITY_ERROR_MESSAGES = {
   report_already_pending: 'Ya reportaste este contenido.',
   player_not_eligible: 'Debes tener el rol Jugador para usar la comunidad.',
   minor_media_not_allowed: 'Las cuentas de menores de edad solo pueden publicar texto.',
+  minor_pending_guardian_authorization:
+    'Tu cuenta está pendiente de la autorización de tu acudiente. Cuando la dé, podrás publicar.',
   daily_media_limit:
     'Ya publicaste 10 veces con fotos o videos hoy. Mañana podrás volver a hacerlo; mientras tanto, puedes publicar texto.',
   video_upload_unavailable: 'No pudimos preparar la subida del video. Intenta de nuevo.',

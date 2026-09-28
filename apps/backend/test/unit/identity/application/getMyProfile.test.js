@@ -36,6 +36,8 @@ describe('getMyProfile', () => {
       phone: null,
       birthDate: null,
       bio: null,
+      dominantHand: null,
+      backhand: null,
       avatarUrl: null,
     });
   });

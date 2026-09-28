@@ -29,6 +29,7 @@ import {
   createStaticBookingPolicySettings,
   createNullGuardianshipProvider,
   createNullPlayerDirectoryProvider,
+  createNullMinorAuthorizationProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -48,6 +49,7 @@ export function buildBookingContainer({
   bookingPolicySettings = createStaticBookingPolicySettings(false),
   guardianshipProvider = createNullGuardianshipProvider(),
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
+  minorAuthorizationProvider = createNullMinorAuthorizationProvider(),
 } = {}) {
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
@@ -72,6 +74,7 @@ export function buildBookingContainer({
       membershipStatusProvider,
       bookingPolicySettings,
       guardianshipProvider,
+      minorAuthorizationProvider,
     }),
     confirmReservation: createConfirmReservation({
       reservationRepository,

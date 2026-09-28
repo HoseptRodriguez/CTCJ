@@ -61,7 +61,13 @@ vi.mock('../../api/goalsClient.js', () => ({
   goalsClient: { getMyGoals: vi.fn(), createGoal: vi.fn(), abandonGoal: vi.fn() },
 }));
 vi.mock('../../api/guardianshipClient.js', () => ({
-  guardianshipClient: { listMine: vi.fn(), requestGuardianship: vi.fn() },
+  guardianshipClient: {
+    listMine: vi.fn(),
+    requestGuardianship: vi.fn(),
+    authorizeMinor: vi.fn(),
+    withdrawMinorAuthorization: vi.fn(),
+    getAccountRestrictions: vi.fn(),
+  },
 }));
 vi.mock('../../api/membershipClient.js', () => ({
   membershipClient: {

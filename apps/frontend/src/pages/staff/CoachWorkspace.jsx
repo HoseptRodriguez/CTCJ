@@ -1,8 +1,9 @@
-import { RESERVATION_TYPE } from '@ctcj/shared';
+import { BACKHAND_LABELS, DOMINANT_HAND_LABELS, RESERVATION_TYPE } from '@ctcj/shared';
 import { useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
 import { coachingClient } from '../../api/coachingClient.js';
+import { membershipClient } from '../../api/membershipClient.js';
 import { SkillRadar } from '../../components/charts/SkillRadar.jsx';
 import { InfoIcon } from '../../components/icons/InfoIcon.jsx';
 import { Avatar } from '../../components/ui/Avatar.jsx';
@@ -445,6 +446,21 @@ function PerformanceTab({ playerId }) {
 
 // ---------------------------------------------------------------------------
 
+/** "Diestro · Revés a dos manos", from the player's own (optional) profile. */
+function PlayStyle({ playerId }) {
+  const style = useAsync(() => membershipClient.getPlayerPlayStyle(playerId), [playerId]);
+  if (style.status !== 'ready') return null;
+  const parts = [
+    style.data.dominantHand && DOMINANT_HAND_LABELS[style.data.dominantHand],
+    style.data.backhand && `Revés ${BACKHAND_LABELS[style.data.backhand].toLowerCase()}`,
+  ].filter(Boolean);
+  return (
+    <p className="text-body text-white/90">
+      {parts.length ? parts.join(' · ') : 'Estilo de juego sin indicar'}
+    </p>
+  );
+}
+
 export function PlayerWorkspace({ player, onClear }) {
   const [tab, setTab] = useState('notas');
   return (
@@ -459,6 +475,7 @@ export function PlayerWorkspace({ player, onClear }) {
           <div>
             <p className="text-body text-white/90">Jugador</p>
             <h2 className="font-display text-h2 font-bold">{player.name}</h2>
+            <PlayStyle playerId={player.id} />
           </div>
         </div>
         <Button variant="secondary" tone="dark" onClick={onClear}>

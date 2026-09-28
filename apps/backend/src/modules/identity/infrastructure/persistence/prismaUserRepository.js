@@ -20,6 +20,10 @@ function toDomainUser(row, roleCodes) {
     phone: row.phone,
     birthDate: row.birthDate,
     bio: row.bio,
+    dominantHand: row.dominantHand,
+    backhand: row.backhand,
+    documentType: row.documentType,
+    documentNumber: row.documentNumber,
     avatarUrl: row.avatarUrl,
   });
 }
@@ -111,6 +115,10 @@ export function createPrismaUserRepository(prisma) {
           phone: user.phone,
           birthDate: user.birthDate,
           bio: user.bio,
+          dominantHand: user.dominantHand,
+          backhand: user.backhand,
+          documentType: user.documentType,
+          documentNumber: user.documentNumber,
           avatarUrl: user.avatarUrl,
         },
       });

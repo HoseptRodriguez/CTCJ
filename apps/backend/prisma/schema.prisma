@@ -31,14 +31,14 @@ model Club {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  users          User[]
-  courts         Court[]
-  reservations   Reservation[]
-  payments       Payment[]
-  systemSettings SystemSetting[]
-  membershipPlans MembershipPlan[]
-  competitionSeasons CompetitionSeason[]
-  tournaments Tournament[]
+  users                User[]
+  courts               Court[]
+  reservations         Reservation[]
+  payments             Payment[]
+  systemSettings       SystemSetting[]
+  membershipPlans      MembershipPlan[]
+  competitionSeasons   CompetitionSeason[]
+  tournaments          Tournament[]
   clinicalAppointments ClinicalAppointment[]
 
   @@map("clubs")
@@ -49,34 +49,35 @@ model Club {
 // ---------------------------------------------------------------------------
 
 model User {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clubId            String    @map("club_id") @db.Uuid
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Restrict)
-  email             String // citext, see raw-SQL migration additions
-  passwordHash      String?   @map("password_hash") @db.VarChar(255)
-  firstName         String    @map("first_name") @db.VarChar(80)
-  lastName          String    @map("last_name") @db.VarChar(80)
-  documentType      String?   @map("document_type") @db.VarChar(10) // CC|TI|CE|PA|NIT
-  documentNumber    String?   @map("document_number")
-  phone             String?
-  birthDate         DateTime? @map("birth_date") @db.Date
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId           String    @map("club_id") @db.Uuid
+  club             Club      @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  email            String // citext, see raw-SQL migration additions
+  passwordHash     String?   @map("password_hash") @db.VarChar(255)
+  firstName        String    @map("first_name") @db.VarChar(80)
+  lastName         String    @map("last_name") @db.VarChar(80)
+  documentType     String?   @map("document_type") @db.VarChar(10) // CC|TI|CE|PA|NIT
+  documentNumber   String?   @map("document_number")
+  phone            String?
+  birthDate        DateTime? @map("birth_date") @db.Date
   // Player Profile (Phase 2) -- self-editable, unlike the identity fields
   // above. See User.updateProfile()/setAvatarUrl().
-  bio               String?
-  avatarUrl         String?   @map("avatar_url") @db.VarChar(255)
-  status            String    @default("PENDING_VERIFICATION") @db.VarChar(20)
-  emailVerifiedAt   DateTime? @map("email_verified_at")
-  mfaEnabled        Boolean   @default(false) @map("mfa_enabled")
-  mfaSecret         String?   @map("mfa_secret")
-  failedLoginCount  Int       @default(0) @map("failed_login_count") @db.SmallInt
-  lockedUntil       DateTime? @map("locked_until")
-  lastLoginAt       DateTime? @map("last_login_at")
-  acceptedTermsAt   DateTime? @map("accepted_terms_at")
-  acceptedPrivacyAt DateTime? @map("accepted_privacy_at")
-  isDemo            Boolean   @default(false) @map("is_demo")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  deletedAt         DateTime? @map("deleted_at")
+  bio              String?
+  avatarUrl        String?   @map("avatar_url") @db.VarChar(255)
+  status           String    @default("PENDING_VERIFICATION") @db.VarChar(20)
+  emailVerifiedAt  DateTime? @map("email_verified_at")
+  mfaEnabled       Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret        String?   @map("mfa_secret")
+  failedLoginCount Int       @default(0) @map("failed_login_count") @db.SmallInt
+  lockedUntil      DateTime? @map("locked_until")
+  lastLoginAt      DateTime? @map("last_login_at")
+  // Optional play style, visible to the player and the coaches.
+  dominantHand     String?   @map("dominant_hand") @db.VarChar(12) // RIGHT|LEFT|AMBIDEXTROUS
+  backhand         String?   @db.VarChar(10) // ONE_HANDED|TWO_HANDED
+  isDemo           Boolean   @default(false) @map("is_demo")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
 
   // Membership/payment status (Phase 5) -- deliberately independent of
   // `status` above (account-verification lifecycle) and of role grants.
@@ -92,6 +93,8 @@ model User {
   userRolesRevoked    UserRole[]          @relation("RevokedBy")
   userRoles           UserRole[]          @relation("UserRoleOwner")
   refreshTokens       RefreshToken[]
+  consents            Consent[]           @relation("ConsentSubject")
+  consentsGiven       Consent[]           @relation("ConsentGivenBy")
   emailVerifications  EmailVerification[]
   passwordResets      PasswordReset[]
   reservationsHeld    Reservation[]       @relation("HolderUser")
@@ -100,8 +103,8 @@ model User {
 
   // Affiliation & guardianship (Phase 6)
   affiliationRequests     AffiliationRequest[]
-  guardianshipsAsGuardian Guardianship[]        @relation("GuardianOfMinor")
-  guardianshipsAsMinor    Guardianship[]        @relation("MinorOfGuardian")
+  guardianshipsAsGuardian Guardianship[]       @relation("GuardianOfMinor")
+  guardianshipsAsMinor    Guardianship[]       @relation("MinorOfGuardian")
 
   // Billing (Phase 7) -- plan enrollments, see PlayerMembership
   playerMemberships PlayerMembership[] @relation("PlayerMemberships")
@@ -123,9 +126,9 @@ model User {
   clinicalNotes        ClinicalNote[]        @relation("ClinicalNoteSubject")
 
   // Physiotherapy (Phase 15) -- recovery plans and medical history where this user is the patient
-  recoveryPlans         RecoveryPlan[]         @relation("RecoveryPlanSubject")
-  medicalHistoryEntries MedicalHistoryEntry[]  @relation("MedicalHistorySubject")
-  physioFitnessStatuses PhysioFitnessStatus[]  @relation("PhysioFitnessSubject")
+  recoveryPlans         RecoveryPlan[]          @relation("RecoveryPlanSubject")
+  medicalHistoryEntries MedicalHistoryEntry[]   @relation("MedicalHistorySubject")
+  physioFitnessStatuses PhysioFitnessStatus[]   @relation("PhysioFitnessSubject")
   clinicalConsents      ClinicalAccessConsent[] @relation("ClinicalConsentSubject")
 
   // Goals (Phase 2) -- personal goals this user owns
@@ -139,10 +142,10 @@ model User {
   challengesAsOpponent   Challenge[] @relation("ChallengeAsOpponent")
 
   // Community (Phase 3c) -- posts/comments/likes/reports this user authored
-  communityPosts       CommunityPost[]       @relation("CommunityPostAuthor")
-  communityComments    CommunityComment[]    @relation("CommunityCommentAuthor")
-  communityPostLikes   CommunityPostLike[]   @relation("CommunityPostLikeUser")
-  communityReportsMade CommunityReport[]     @relation("CommunityReportReporter")
+  communityPosts       CommunityPost[]     @relation("CommunityPostAuthor")
+  communityComments    CommunityComment[]  @relation("CommunityCommentAuthor")
+  communityPostLikes   CommunityPostLike[] @relation("CommunityPostLikeUser")
+  communityReportsMade CommunityReport[]   @relation("CommunityReportReporter")
 
   @@unique([clubId, email])
   @@map("users")
@@ -421,15 +424,15 @@ model MembershipAdjustment {
 // MembershipAdjustment's own precedent of relying on transitive reachability
 // through membership_id rather than duplicating the tenant key.
 model Invoice {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  membershipId String    @map("membership_id") @db.Uuid
-  status       String    @default("PENDING") @db.VarChar(20) // PENDING|PAID|CANCELLED
-  amountCop    BigInt    @map("amount_cop") // frozen total, floored at 0
-  periodStart  DateTime  @map("period_start") @db.Date
-  periodEnd    DateTime  @map("period_end") @db.Date
-  dueDate      DateTime  @map("due_date") @db.Date
-  issuedAt     DateTime  @map("issued_at")
-  generatedBy  String?   @map("generated_by") @db.Uuid // no FK, audit-only; nullable so a future scheduled job can use a system sentinel without a migration
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String   @map("membership_id") @db.Uuid
+  status       String   @default("PENDING") @db.VarChar(20) // PENDING|PAID|CANCELLED
+  amountCop    BigInt   @map("amount_cop") // frozen total, floored at 0
+  periodStart  DateTime @map("period_start") @db.Date
+  periodEnd    DateTime @map("period_end") @db.Date
+  dueDate      DateTime @map("due_date") @db.Date
+  issuedAt     DateTime @map("issued_at")
+  generatedBy  String?  @map("generated_by") @db.Uuid // no FK, audit-only; nullable so a future scheduled job can use a system sentinel without a migration
 
   paidAmountCop BigInt?   @map("paid_amount_cop")
   paidMethod    String?   @map("paid_method") @db.VarChar(20) // CASH|TRANSFER|CARD_IN_PERSON, reuses PAYMENT_METHOD
@@ -733,26 +736,26 @@ model TournamentMatch {
 // ---------------------------------------------------------------------------
 
 model ClinicalAppointment {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clubId         String    @map("club_id") @db.Uuid
-  playerId       String    @map("player_id") @db.Uuid
-  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
-  discipline     String    @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side at scheduling time
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId         String                   @map("club_id") @db.Uuid
+  playerId       String                   @map("player_id") @db.Uuid
+  practitionerId String                   @map("practitioner_id") @db.Uuid // no FK, audit-only
+  discipline     String                   @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side at scheduling time
   // Added via raw-SQL migration (Prisma has no native range-type support),
   // reusing Reservation's exact pattern -- see the
   // 20260731180029_init_identity_booking migration's "reservations: range
   // period + structural double-booking prevention" section.
-  period      Unsupported("tstzrange")
-  periodStart DateTime  @map("period_start") // generated column, read-only from Prisma's POV
-  periodEnd   DateTime  @map("period_end") // generated column, read-only from Prisma's POV
-  status      String    @default("SCHEDULED") @db.VarChar(20) // SCHEDULED|COMPLETED|CANCELLED|NO_SHOW
-  scheduledBy String    @map("scheduled_by") @db.Uuid // no FK, audit-only
-  createdAt   DateTime  @default(now()) @map("created_at")
-  cancelledAt DateTime? @map("cancelled_at")
-  cancelledBy String?   @map("cancelled_by") @db.Uuid
-  cancelReason String?  @map("cancel_reason")
-  resolvedAt  DateTime? @map("resolved_at") // set when COMPLETED or NO_SHOW
-  resolvedBy  String?   @map("resolved_by") @db.Uuid
+  period         Unsupported("tstzrange")
+  periodStart    DateTime                 @map("period_start") // generated column, read-only from Prisma's POV
+  periodEnd      DateTime                 @map("period_end") // generated column, read-only from Prisma's POV
+  status         String                   @default("SCHEDULED") @db.VarChar(20) // SCHEDULED|COMPLETED|CANCELLED|NO_SHOW
+  scheduledBy    String                   @map("scheduled_by") @db.Uuid // no FK, audit-only
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  cancelledAt    DateTime?                @map("cancelled_at")
+  cancelledBy    String?                  @map("cancelled_by") @db.Uuid
+  cancelReason   String?                  @map("cancel_reason")
+  resolvedAt     DateTime?                @map("resolved_at") // set when COMPLETED or NO_SHOW
+  resolvedBy     String?                  @map("resolved_by") @db.Uuid
 
   club   Club           @relation(fields: [clubId], references: [id], onDelete: Restrict)
   player User           @relation("ClinicalAppointmentSubject", fields: [playerId], references: [id], onDelete: Restrict)
@@ -1047,17 +1050,17 @@ model Notification {
 // ---------------------------------------------------------------------------
 
 model Challenge {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  challengerUserId  String    @map("challenger_user_id") @db.Uuid
-  opponentUserId    String    @map("opponent_user_id") @db.Uuid
-  message           String?   @db.VarChar(500)
-  status            String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED|COMPLETED
-  createdAt         DateTime  @default(now()) @map("created_at")
-  respondedAt       DateTime? @map("responded_at")
-  completedAt       DateTime? @map("completed_at")
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengerUserId String    @map("challenger_user_id") @db.Uuid
+  opponentUserId   String    @map("opponent_user_id") @db.Uuid
+  message          String?   @db.VarChar(500)
+  status           String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED|COMPLETED
+  createdAt        DateTime  @default(now()) @map("created_at")
+  respondedAt      DateTime? @map("responded_at")
+  completedAt      DateTime? @map("completed_at")
 
-  challenger User                  @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
-  opponent   User                  @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
+  challenger  User                  @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
+  opponent    User                  @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
   matchResult ChallengeMatchResult?
 
   // status CHECK + self-challenge CHECK + response coherence CHECK +
@@ -1072,17 +1075,17 @@ model ChallengeMatchResult {
   challengeId String @unique @map("challenge_id") @db.Uuid
   status      String @default("PENDING") @db.VarChar(20) // PENDING|CONFIRMED
 
-  challengerCategory     String?   @map("challenger_category") @db.VarChar(20)
-  challengerSetsWonA     Int?      @map("challenger_sets_won_a") @db.SmallInt
-  challengerSetsWonB     Int?      @map("challenger_sets_won_b") @db.SmallInt
-  challengerPlayedAt     DateTime? @map("challenger_played_at") @db.Date
-  challengerSubmittedAt  DateTime? @map("challenger_submitted_at")
+  challengerCategory    String?   @map("challenger_category") @db.VarChar(20)
+  challengerSetsWonA    Int?      @map("challenger_sets_won_a") @db.SmallInt
+  challengerSetsWonB    Int?      @map("challenger_sets_won_b") @db.SmallInt
+  challengerPlayedAt    DateTime? @map("challenger_played_at") @db.Date
+  challengerSubmittedAt DateTime? @map("challenger_submitted_at")
 
-  opponentCategory       String?   @map("opponent_category") @db.VarChar(20)
-  opponentSetsWonA       Int?      @map("opponent_sets_won_a") @db.SmallInt
-  opponentSetsWonB       Int?      @map("opponent_sets_won_b") @db.SmallInt
-  opponentPlayedAt       DateTime? @map("opponent_played_at") @db.Date
-  opponentSubmittedAt    DateTime? @map("opponent_submitted_at")
+  opponentCategory    String?   @map("opponent_category") @db.VarChar(20)
+  opponentSetsWonA    Int?      @map("opponent_sets_won_a") @db.SmallInt
+  opponentSetsWonB    Int?      @map("opponent_sets_won_b") @db.SmallInt
+  opponentPlayedAt    DateTime? @map("opponent_played_at") @db.Date
+  opponentSubmittedAt DateTime? @map("opponent_submitted_at")
 
   // competition_match_id has a real FK + RESTRICT constraint at the DB
   // level (see the raw-SQL migration), but no Prisma @relation field here
@@ -1107,10 +1110,10 @@ model ChallengeMatchResult {
 // see the raw-SQL migration's own comment for why.
 
 model CommunityPost {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authorId  String   @map("author_id") @db.Uuid
-  content   String   @db.VarChar(1000) // '' when the post is media only
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId     String    @map("author_id") @db.Uuid
+  content      String    @db.VarChar(1000) // '' when the post is media only
+  createdAt    DateTime  @default(now()) @map("created_at")
   // Hidden (automatically after 3 reports, or by staff) until reviewed.
   hiddenAt     DateTime? @map("hidden_at")
   hiddenBy     String?   @map("hidden_by") @db.Uuid // no FK, audit-only; null = automatic
@@ -1196,4 +1199,27 @@ model CommunityReport {
   // target_type/status CHECKs + resolved-coherence CHECK + pending-unique
   // index + status/target indexes added via raw-SQL migration.
   @@map("community_reports")
+}
+
+// Proof of every authorization (Ley 1581 de 2012). Append-only: a withdrawal
+// is a new row (a trigger refuses UPDATE; nothing in the app deletes).
+// user = whose data it is about; givenBy = who gave it when not the user
+// (a guardian for a minor's data and image).
+model Consent {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  givenBy         String?  @map("given_by") @db.Uuid
+  consentType     String   @map("consent_type") @db.VarChar(30) // PRIVACY_POLICY|TERMS|MARKETING|MINOR_DATA_IMAGE|HEALTH_DATA|COMMUNITY_RULES|COOKIES
+  documentVersion String   @map("document_version") @db.VarChar(20)
+  action          String   @db.VarChar(10) // ACCEPTED|WITHDRAWN
+  details         Json?
+  ipAddress       String?  @map("ip_address") @db.Inet
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User  @relation("ConsentSubject", fields: [userId], references: [id], onDelete: Restrict)
+  givenByUser User? @relation("ConsentGivenBy", fields: [givenBy], references: [id], onDelete: Restrict)
+
+  @@index([userId, consentType, createdAt(sort: Desc)], map: "consents_user_type_idx")
+  @@map("consents")
 }

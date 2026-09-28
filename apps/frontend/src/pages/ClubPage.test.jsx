@@ -66,7 +66,7 @@ describe('ClubPage (/el-club)', () => {
     expect(
       within(socials)
         .getAllByRole('link')
-        .map((a) => a.textContent.replace(' (se abre en otra pestaña)', '')),
+        .map((a) => a.textContent.replace(' (se abre en otra aplicación o sitio)', '')),
     ).toEqual(['Instagram', 'Facebook', 'TikTok']);
   });
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { NOTIFICATION_TYPE } from '@ctcj/shared';
 
+import { MinorPendingGuardianAuthorization } from '../errors/MinorPendingGuardianAuthorization.js';
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PostNotFound } from '../errors/PostNotFound.js';
 
@@ -13,9 +14,11 @@ import { PostNotFound } from '../errors/PostNotFound.js';
  *   playerDirectoryProvider: import('../ports/PlayerDirectoryProvider.js').PlayerDirectoryProvider,
  *   notificationSender: import('../ports/NotificationSender.js').NotificationSender,
  *   clock: import('../ports/Clock.js').Clock,
+ *   minorStatusProvider?: import('../ports/MinorStatusProvider.js').MinorStatusProvider,
  * }} deps
  */
 export function createCreateComment({
+  minorStatusProvider,
   postRepository,
   commentRepository,
   playerEligibilityProvider,
@@ -28,6 +31,9 @@ export function createCreateComment({
     const eligible = await playerEligibilityProvider.isEligiblePlayer(authorUserId);
     if (!eligible) {
       throw new PlayerNotEligible();
+    }
+    if (await minorStatusProvider?.isPendingGuardianAuthorization(authorUserId)) {
+      throw new MinorPendingGuardianAuthorization();
     }
 
     const post = await postRepository.findById(postId);

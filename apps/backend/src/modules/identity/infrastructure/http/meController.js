@@ -19,6 +19,8 @@ export function createMeController(container) {
       phone: req.body.phone,
       birthDate: req.body.birthDate,
       bio: req.body.bio,
+      dominantHand: req.body.dominantHand,
+      backhand: req.body.backhand,
     });
     res.status(200).json(result);
   });
@@ -70,7 +72,38 @@ export function createMeController(container) {
     res.status(200).json({ guardianships: result });
   });
 
+  // Proof of the authorization: who, when, from where (Ley 1581 de 2012).
+  const origin = (req) => ({
+    ipAddress: req.ip ?? null,
+    userAgent: req.get('user-agent')?.slice(0, 500) ?? null,
+  });
+
+  const authorizeMinor = asyncHandler(async (req, res) => {
+    const result = await container.authorizeMinor({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const withdrawMinorAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.withdrawMinorAuthorization({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const getAccountRestrictions = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getAccountRestrictions({ userId: req.user.id }));
+  });
+
   return {
+    authorizeMinor,
+    withdrawMinorAuthorization,
+    getAccountRestrictions,
     getMyProfile,
     updateMyProfile,
     uploadMyAvatar,

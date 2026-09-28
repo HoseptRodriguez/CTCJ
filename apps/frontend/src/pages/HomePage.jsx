@@ -176,6 +176,7 @@ function Programs() {
         >
           Preguntar por clases
         </Button>
+        <p className="mt-3 text-body text-ink-soft">Se abre WhatsApp, en otra aplicación.</p>
       </div>
     </section>
   );

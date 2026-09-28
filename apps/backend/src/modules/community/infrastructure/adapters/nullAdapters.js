@@ -19,6 +19,9 @@ export function createNullMinorStatusProvider() {
     async isMinor() {
       return true;
     },
+    async isPendingGuardianAuthorization() {
+      return true;
+    },
   };
 }
 

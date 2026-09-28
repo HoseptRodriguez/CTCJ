@@ -16,6 +16,7 @@ const STATUS_BY_CODE = {
   reservation_has_no_price: 409,
   membership_overdue_booking_blocked: 403,
   not_authorized_to_book_for_user: 403,
+  minor_pending_guardian_authorization: 403,
 };
 
 export function mapBookingError(err) {

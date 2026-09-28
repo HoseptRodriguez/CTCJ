@@ -376,6 +376,11 @@ export function createFakeGuardianshipRepository() {
         .filter((r) => r.status === status)
         .map((r) => ({ ...r }));
     },
+    async existsApprovedAsMinor(minorUserId) {
+      return Array.from(byId.values()).some(
+        (r) => r.minorUserId === minorUserId && r.status === 'APPROVED',
+      );
+    },
     async decide(id, status, decidedAt, decidedBy, decisionNotes) {
       const record = byId.get(id);
       record.status = status;
@@ -423,6 +428,33 @@ export function createFakeClock(initial) {
     },
     advanceMs: (ms) => {
       current = new Date(current.getTime() + ms);
+    },
+  };
+}
+
+/** Append-only, like the real table: no update, no delete. */
+export function createFakeConsentRepository() {
+  const rows = [];
+  let tick = 0;
+  return {
+    rows,
+    async append(entry) {
+      tick += 1;
+      const row = {
+        id: `consent-${tick}`,
+        givenBy: null,
+        details: null,
+        ipAddress: null,
+        userAgent: null,
+        ...entry,
+        createdAt: new Date(Date.UTC(2026, 8, 1, 0, 0, tick)),
+      };
+      rows.push(row);
+      return { ...row };
+    },
+    async findLatest(userId, consentType) {
+      const matching = rows.filter((r) => r.userId === userId && r.consentType === consentType);
+      return matching.length ? { ...matching[matching.length - 1] } : null;
     },
   };
 }

@@ -23,6 +23,8 @@ const BOOKING_ERROR_MESSAGES = {
   membership_overdue_booking_blocked:
     'Tu membresía no permite reservar por ahora. Acércate a recepción para ponerte al día.',
   not_authorized_to_book_for_user: 'No tienes autorización para reservar en nombre de esa cuenta.',
+  minor_pending_guardian_authorization:
+    'Esta cuenta es de un menor de edad y está pendiente de la autorización de su acudiente. Cuando la vincule y la autorice desde su perfil, se podrá reservar.',
 };
 
 export function describeBookingError(err) {

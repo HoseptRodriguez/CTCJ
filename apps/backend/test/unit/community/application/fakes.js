@@ -95,10 +95,14 @@ export function createFakeImageProcessor() {
 }
 
 /** @param {Set<string>} minorIds */
-export function createFakeMinorStatusProvider(minorIds = new Set()) {
+/** `pendingIds`: minors whose guardian hasn't authorized them yet. */
+export function createFakeMinorStatusProvider(minorIds = new Set(), pendingIds = new Set()) {
   return {
     async isMinor(userId) {
       return minorIds.has(userId);
+    },
+    async isPendingGuardianAuthorization(userId) {
+      return pendingIds.has(userId);
     },
   };
 }

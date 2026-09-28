@@ -20,6 +20,8 @@ import { createUpdateMyProfile } from '../application/useCases/updateMyProfile.j
 import { createUploadMyAvatar } from '../application/useCases/uploadMyAvatar.js';
 import { createGetPlayerCounts } from '../application/useCases/getPlayerCounts.js';
 import { createLookupUserByEmail } from '../application/useCases/lookupUserByEmail.js';
+import { createGetPlayerPlayStyle } from '../application/useCases/getPlayerPlayStyle.js';
+import { createUserDocumentUseCases } from '../application/useCases/userDocument.js';
 import { createGetSystemSetting } from '../application/useCases/getSystemSetting.js';
 import { createSetSystemSetting } from '../application/useCases/setSystemSetting.js';
 import { createRequestAffiliation } from '../application/useCases/requestAffiliation.js';
@@ -33,6 +35,7 @@ import { createListMyGuardianships } from '../application/useCases/listMyGuardia
 import { createCanBookForMinor } from '../application/useCases/canBookForMinor.js';
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
 import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
+import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
@@ -43,6 +46,7 @@ import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.j
 import { createPrismaRefreshTokenRepository } from './persistence/prismaRefreshTokenRepository.js';
 import { createPrismaEmailVerificationRepository } from './persistence/prismaEmailVerificationRepository.js';
 import { createPrismaPasswordResetRepository } from './persistence/prismaPasswordResetRepository.js';
+import { createPrismaConsentRepository } from './persistence/prismaConsentRepository.js';
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
@@ -84,6 +88,13 @@ export function buildIdentityContainer({
   const systemSettingRepository = createPrismaSystemSettingRepository(prismaClient);
   const affiliationRequestRepository = createPrismaAffiliationRequestRepository(prismaClient);
   const guardianshipRepository = createPrismaGuardianshipRepository(prismaClient);
+  const consentRepository = createPrismaConsentRepository(prismaClient);
+  const checkIsMinor = createCheckIsMinor({ userRepository, guardianshipRepository });
+  const minorAuthorization = createMinorAuthorizationUseCases({
+    consentRepository,
+    guardianshipRepository,
+    checkIsMinor,
+  });
   const passwordHasher = createArgon2PasswordHasher();
   const tokenService = createJwtTokenService({
     accessSecret: config.jwt.accessSecret,
@@ -179,6 +190,8 @@ export function buildIdentityContainer({
     getPlayerCounts: createGetPlayerCounts({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getMembershipStatus: createGetMembershipStatus({ userRepository }),
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),
+    getPlayerPlayStyle: createGetPlayerPlayStyle({ userRepository }),
+    ...createUserDocumentUseCases({ userRepository }),
     getSystemSetting: createGetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
     setSystemSetting: createSetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
     requestAffiliation: createRequestAffiliation({ userRepository, affiliationRequestRepository }),
@@ -199,10 +212,15 @@ export function buildIdentityContainer({
     }),
     decideGuardianship: createDecideGuardianship({ userRepository, guardianshipRepository, clock }),
     listGuardianships: createListGuardianships({ guardianshipRepository, userRepository }),
-    listMyGuardianships: createListMyGuardianships({ guardianshipRepository, userRepository }),
+    listMyGuardianships: createListMyGuardianships({
+      guardianshipRepository,
+      userRepository,
+      minorAuthorizationFor: minorAuthorization.minorAuthorizationFor,
+    }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),
-    checkIsMinor: createCheckIsMinor({ userRepository, guardianshipRepository }),
+    checkIsMinor,
+    ...minorAuthorization,
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
     searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),

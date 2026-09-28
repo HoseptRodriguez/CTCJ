@@ -41,7 +41,9 @@ export function Footer() {
           >
             Escribir por WhatsApp
           </Button>
-          <p className="mt-3 text-body text-white/85">{WHATSAPP_NUMBER}</p>
+          <p className="mt-3 text-body text-white/85">
+            {WHATSAPP_NUMBER} · Se abre WhatsApp, en otra aplicación.
+          </p>
         </div>
 
         <div>

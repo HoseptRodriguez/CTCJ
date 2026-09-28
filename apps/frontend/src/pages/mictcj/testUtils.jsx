@@ -59,7 +59,13 @@ export const CLIENT_METHODS = {
   communityClient: ['listPosts'],
   competitionClient: ['getMyCompetitionSummary', 'getRecentClubMatches', 'getStandings'],
   goalsClient: ['getMyGoals', 'createGoal', 'abandonGoal'],
-  guardianshipClient: ['listMine', 'requestGuardianship'],
+  guardianshipClient: [
+    'listMine',
+    'requestGuardianship',
+    'authorizeMinor',
+    'withdrawMinorAuthorization',
+    'getAccountRestrictions',
+  ],
   membershipClient: [
     'getMyStatus',
     'getMyProfile',
@@ -115,6 +121,10 @@ export function setEmptyAccount() {
   competitionClient.getStandings.mockResolvedValue({ standings: [] });
   goalsClient.getMyGoals.mockResolvedValue({ goals: [] });
   guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
+  guardianshipClient.getAccountRestrictions.mockResolvedValue({
+    isMinor: false,
+    pendingGuardianAuthorization: false,
+  });
   membershipClient.getMyProfile.mockResolvedValue(PROFILE);
   membershipClient.getMyStatus.mockResolvedValue({ status: 'ACTIVE' });
   membershipClient.getMyAchievements.mockResolvedValue({ badges: [] });

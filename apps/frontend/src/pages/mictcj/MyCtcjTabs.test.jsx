@@ -60,7 +60,13 @@ vi.mock('../../api/goalsClient.js', () => ({
   goalsClient: { getMyGoals: vi.fn(), createGoal: vi.fn(), abandonGoal: vi.fn() },
 }));
 vi.mock('../../api/guardianshipClient.js', () => ({
-  guardianshipClient: { listMine: vi.fn(), requestGuardianship: vi.fn() },
+  guardianshipClient: {
+    listMine: vi.fn(),
+    requestGuardianship: vi.fn(),
+    authorizeMinor: vi.fn(),
+    withdrawMinorAuthorization: vi.fn(),
+    getAccountRestrictions: vi.fn(),
+  },
 }));
 vi.mock('../../api/membershipClient.js', () => ({
   membershipClient: {
@@ -522,13 +528,69 @@ describe('Mi CTCJ — Mi perfil', () => {
     await user.clear(phone);
     await user.type(phone, '3009998888');
     await user.type(screen.getByLabelText('Fecha de nacimiento'), '1980-05-02');
+    await user.selectOptions(screen.getByLabelText(/Mano dominante/), 'LEFT');
+    await user.selectOptions(screen.getByLabelText(/Revés/), 'TWO_HANDED');
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     expect(membershipClient.updateMyProfile).toHaveBeenCalledWith({
       phone: '3009998888',
       birthDate: '1980-05-02',
       bio: null,
+      dominantHand: 'LEFT',
+      backhand: 'TWO_HANDED',
     });
+  });
+
+  it("the guardian reads and gives the authorization for the linked minor's data and image", async () => {
+    const approved = {
+      id: 'g1',
+      minorEmail: 'hijo@correo.com',
+      status: 'APPROVED',
+      minorAuthorization: { authorized: false, authorizedAt: null, version: null },
+    };
+    guardianshipClient.listMine.mockResolvedValue({ guardianships: [approved] });
+    guardianshipClient.authorizeMinor.mockImplementation(async () => {
+      guardianshipClient.listMine.mockResolvedValue({
+        guardianships: [
+          {
+            ...approved,
+            minorAuthorization: {
+              authorized: true,
+              authorizedAt: '2026-09-28T15:00:00.000Z',
+              version: '1',
+            },
+          },
+        ],
+      });
+      return { authorized: true };
+    });
+    const user = userEvent.setup();
+    renderMyCtcj('/mi-ctcj/perfil');
+
+    expect(await screen.findByText(/pendiente de tu autorización/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Leer y autorizar' }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: 'Autorización del acudiente para los datos y la imagen del menor',
+    });
+    expect(within(dialog).getByText(/Menor: hijo@correo.com/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, autorizo' }));
+
+    expect(guardianshipClient.authorizeMinor).toHaveBeenCalledWith('g1');
+    expect(
+      await screen.findByText(/Autorización de datos e imagen vigente desde/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retirar autorización' })).toBeInTheDocument();
+  });
+
+  it('a minor pending authorization sees why they cannot book or post yet', async () => {
+    guardianshipClient.getAccountRestrictions.mockResolvedValue({
+      isMinor: true,
+      pendingGuardianAuthorization: true,
+    });
+    renderMyCtcj('/mi-ctcj');
+    expect(
+      await screen.findByText('Tu cuenta está pendiente de la autorización de tu acudiente.'),
+    ).toBeInTheDocument();
   });
 
   it('uploads a new photo and shows it', async () => {
