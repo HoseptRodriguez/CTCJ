@@ -63,3 +63,7 @@ if (typeof window.matchMedia !== 'function') {
 
 // jsdom does not implement scrolling; layouts scroll to top on navigation.
 window.scrollTo = () => {};
+
+// The page language comes from index.html (<html lang="es-CO">), which
+// jsdom doesn't load; mirror it so axe checks the real situation.
+document.documentElement.lang = 'es-CO';

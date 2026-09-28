@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { clubTodayKey } from '../../lib/clubTime.js';
 import { describeCompetitionError } from '../../lib/competitionErrorMessages.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { CATEGORY_LABELS, DATE_MEDIUM, MODALITY_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { NumberChoice, ParticipantSlot } from './matchInputs.jsx';
@@ -321,6 +322,7 @@ function Matches({ seasonId, category, modality, version, canRecord, onChanged }
 }
 
 export function CompetitionPage() {
+  useDocumentTitle('Ranking y partidos');
   const toast = useToast();
   const { user } = useAuth();
   const roles = user?.roles ?? [];

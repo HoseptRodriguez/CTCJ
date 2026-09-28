@@ -76,3 +76,13 @@ jobs:
       - name: Integration tests
         working-directory: apps/backend
         run: npx vitest run --config vitest.integration.config.js
+
+      # Includes the accessibility checks (axe-core, WCAG 2.1 AA): a serious
+      # or critical violation fails the build.
+      - name: Frontend tests (incl. accessibility)
+        working-directory: apps/frontend
+        run: npx vitest run
+
+      # Fails if a photo of a minor without authorization would be published.
+      - name: Frontend production build
+        run: npm run build -w apps/frontend

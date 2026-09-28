@@ -32,6 +32,7 @@ import {
 import { formatCop, formatDayShort, formatReservationSpan, formatTime } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
 import { useMediaQuery } from '../../lib/useMediaQuery.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { SectionCard } from '../mictcj/shared.jsx';
 
 import { dayTitle, greetingForHour, isUnpaid, RESERVATION_TYPE_LABELS } from './staffShared.jsx';
@@ -551,6 +552,7 @@ function RecentActivitySection({ isAdmin }) {
 // ---------------------------------------------------------------------------
 
 export function AdminDashboard() {
+  useDocumentTitle('Panel del club');
   const { user } = useAuth();
   const isAdmin = (user?.roles ?? []).includes(ROLE_CODES.ADMINISTRADOR);
   const today = clubTodayKey();

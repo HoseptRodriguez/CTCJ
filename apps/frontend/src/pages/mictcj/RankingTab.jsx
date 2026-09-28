@@ -166,7 +166,13 @@ function StandingsTable({ summary }) {
       }}
     >
       {(rows) => (
-        <div className="overflow-x-auto">
+        // Focusable so the table can be scrolled sideways with the keyboard.
+        <div
+          className="focus-ring overflow-x-auto rounded-lg"
+          tabIndex={0}
+          role="region"
+          aria-label="Tabla de posiciones (se puede desplazar)"
+        >
           <table className="w-full min-w-[28rem] border-separate border-spacing-y-1 text-left">
             <caption className="sr-only">
               Posiciones de {CATEGORY_LABELS[category]}, {MODALITY_LABELS[modality]}

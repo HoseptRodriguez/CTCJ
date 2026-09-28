@@ -7,6 +7,7 @@ import { billingClient } from '../../api/billingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
 import { ToastProvider } from '../../components/ui/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { MembershipStatusPage } from './MembershipStatusPage.jsx';
 
@@ -204,5 +205,13 @@ describe('MembershipStatusPage (Membresías)', () => {
         }),
       ),
     );
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('membresías', async () => {
+    renderAs(['RECEPCION']);
+    await screen.findByText('Luis Paz');
+    expect(await a11yViolations()).toEqual([]);
   });
 });

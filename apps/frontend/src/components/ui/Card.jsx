@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 import { cn } from './cn.js';
 
 const PADDING = { none: '', md: 'p-5 md:p-6', lg: 'p-6 md:p-8' };
@@ -5,7 +7,8 @@ const PADDING = { none: '', md: 'p-5 md:p-6', lg: 'p-6 md:p-8' };
 /**
  * White surface on the grey page background. Give it a `title` to get a
  * proper heading (h2 by default; pass `headingLevel` to fit the page outline)
- * and optional `actions` aligned with the title.
+ * and optional `actions` aligned with the title. A titled section is named
+ * after its heading (aria-labelledby), so screen readers list it as a region.
  */
 export function Card({
   as: Tag = 'section',
@@ -20,9 +23,12 @@ export function Card({
   ...props
 }) {
   const Heading = `h${headingLevel}`;
+  const headingId = useId();
+  const labelled = title && Tag === 'section' && !props['aria-label'] && !props['aria-labelledby'];
   return (
     <Tag
       className={cn('rounded-xl border border-line bg-surface text-ink shadow-sm', className)}
+      aria-labelledby={labelled ? headingId : undefined}
       {...props}
     >
       <div className={PADDING[padding]}>
@@ -30,7 +36,9 @@ export function Card({
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               {title && (
-                <Heading className="font-display text-h3 font-bold text-ink">{title}</Heading>
+                <Heading id={headingId} className="font-display text-h3 font-bold text-ink">
+                  {title}
+                </Heading>
               )}
               {description && <p className="mt-1 text-body text-ink-soft">{description}</p>}
             </div>

@@ -33,7 +33,7 @@ export default {
         },
         line: {
           DEFAULT: '#D5DBE4', // decorative dividers/card borders only
-          strong: '#8A93A3', // form field borders -- 3.10:1, the non-text minimum
+          strong: '#848D9D', // form field borders -- 3.35:1 on surface, 3.09:1 on page (non-text minimum 3:1)
         },
         lime: {
           DEFAULT: '#9EE67C', // primary button on navy + active selection; navy text only (11.21:1)

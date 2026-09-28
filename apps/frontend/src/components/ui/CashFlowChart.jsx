@@ -53,9 +53,14 @@ export function CashFlowChart({ months }) {
     <div>
       <div aria-hidden="true">
         <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          {/* Hidden from assistive tech (the table below says the same), so it must not take focus either. */}
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+            accessibilityLayer={false}
+          >
             <CartesianGrid stroke="#D5DBE4" vertical={false} />
-            <XAxis dataKey="label" tick={TEXT} tickLine={false} axisLine={{ stroke: '#8A93A3' }} />
+            <XAxis dataKey="label" tick={TEXT} tickLine={false} axisLine={{ stroke: '#848D9D' }} />
             <YAxis
               tick={TEXT}
               tickFormatter={(v) => `$${COMPACT.format(v)}`}
@@ -87,7 +92,12 @@ export function CashFlowChart({ months }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-4 overflow-x-auto">
+      <div
+        className="focus-ring mt-4 overflow-x-auto rounded-lg"
+        tabIndex={0}
+        role="region"
+        aria-label="Ingresos por mes (se puede desplazar)"
+      >
         <table className="w-full min-w-[20rem] text-left text-body">
           <caption className="sr-only">Ingresos por mes</caption>
           <thead>

@@ -1,10 +1,12 @@
 import { NoteIcon } from '../../components/icons/NoteIcon.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 
 import { CoachWorkspace, TodayClasses } from './CoachWorkspace.jsx';
 
 export function CoachNotesPage() {
+  useDocumentTitle('Notas y rendimiento');
   return (
     <div>
       <PageHeader

@@ -10,7 +10,7 @@ export const ACCESSIBILITY_STATEMENT = Object.freeze({
   type: 'ACCESSIBILITY',
   path: '/accesibilidad',
   title: 'Declaración de accesibilidad',
-  version: '1',
+  version: '2',
   publishedOn: '2026-09-28',
   sections: [
     {
@@ -43,9 +43,10 @@ export const ACCESSIBILITY_STATEMENT = Object.freeze({
       blocks: [
         {
           list: [
-            'Los videos que suben los jugadores a la Comunidad no tienen subtítulos.',
+            'Los videos que suben los jugadores a la Comunidad no tienen subtítulos ni transcripción.',
             'Las gráficas de rendimiento de Mi CTCJ pueden no leerse completas con lector de pantalla.',
-            'La revisión completa con herramientas automáticas y manuales está en curso; esta lista se actualizará con sus resultados.',
+            'En el teléfono, la tabla de horas para reservar se recorre con la tecla Tab; en computador también con las flechas.',
+            'Revisamos las pantallas principales con herramientas automáticas, en computador y en teléfono, y corregimos lo que encontraron. Todavía falta una prueba con personas que usan lector de pantalla.',
           ],
         },
       ],

@@ -21,11 +21,13 @@ export function BrochureTitle({ as: Tag = 'h2', id, tone = 'white', children, cl
     <Tag
       id={id}
       className={cn(
-        'flex items-center gap-4 font-display text-[2rem] font-bold uppercase leading-none tracking-wide md:text-[2.75rem]',
+        // flex-wrap: on a narrow screen (or zoomed in) the rule drops below
+        // a long title instead of pushing the page sideways.
+        'flex flex-wrap items-center gap-x-4 gap-y-3 font-display text-[2rem] font-bold uppercase leading-none tracking-wide md:text-[2.75rem]',
         className,
       )}
     >
-      <span>{children}</span>
+      <span className="min-w-0 break-words">{children}</span>
       <span
         aria-hidden="true"
         className={cn('h-1.5 w-16 shrink-0 rounded-full md:w-24', TONES[tone].rule)}

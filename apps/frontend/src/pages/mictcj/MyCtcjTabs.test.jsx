@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { a11yViolations } from '../../../test/axe.js';
 import { bookingClient } from '../../api/bookingClient.js';
 import { challengesClient } from '../../api/challengesClient.js';
 import { clinicalClient } from '../../api/clinicalClient.js';
@@ -48,7 +49,17 @@ vi.mock('../../api/clinicalClient.js', () => ({
 vi.mock('../../api/coachingClient.js', () => ({
   coachingClient: { getMyNotes: vi.fn(), getMyPerformance: vi.fn() },
 }));
-vi.mock('../../api/communityClient.js', () => ({ communityClient: { listPosts: vi.fn() } }));
+vi.mock('../../api/communityClient.js', () => ({
+  communityClient: {
+    listPosts: vi.fn(),
+    getMediaCapabilities: vi.fn().mockResolvedValue({
+      canUploadMedia: true,
+      isMinor: false,
+      videoUpload: 'server',
+      remainingMediaPostsToday: 10,
+    }),
+  },
+}));
 vi.mock('../../api/competitionClient.js', () => ({
   competitionClient: {
     getMyCompetitionSummary: vi.fn(),
@@ -87,6 +98,47 @@ vi.mock('../../api/notificationsClient.js', () => ({
 }));
 vi.mock('../../api/tournamentClient.js', () => ({
   tournamentClient: { listTournaments: vi.fn() },
+}));
+vi.mock('../../api/consentClient.js', () => ({
+  consentClient: {
+    getAccountRequirements: vi.fn().mockResolvedValue({
+      birthDateMissing: false,
+      privacyPending: false,
+      termsPending: false,
+    }),
+    getMyAuthorizations: vi.fn().mockResolvedValue({
+      isMinor: false,
+      items: [
+        {
+          type: 'MARKETING',
+          title: 'Autorización para recibir novedades y promociones',
+          accepted: false,
+          channels: [],
+        },
+        {
+          type: 'HEALTH_DATA',
+          title: 'Autorización para el tratamiento de mis datos de salud',
+          accepted: false,
+        },
+        {
+          type: 'COMMUNITY_RULES',
+          title: 'Reglas de la Comunidad',
+          accepted: true,
+          acceptedAt: '2026-09-20T15:00:00Z',
+        },
+      ],
+      cookies: { decidedAt: null, preferences: false, analytics: false },
+    }),
+    setMyAuthorization: vi.fn(),
+    setMinorHealthAuthorization: vi.fn(),
+  },
+}));
+vi.mock('../../api/privacyClient.js', () => ({
+  privacyClient: {
+    listMyDataRequests: vi.fn().mockResolvedValue({ requests: [] }),
+    submitDataRequest: vi.fn(),
+    exportMyData: vi.fn(),
+  },
 }));
 
 const HOUR = 60 * 60 * 1000;
@@ -632,23 +684,23 @@ describe('Mi CTCJ — Mi perfil', () => {
     const user = userEvent.setup();
     renderMyCtcj('/mi-ctcj/perfil');
 
-    expect(
-      await screen.findByText(
-        'Autorizo a la administración del club a ver mis notas de fisioterapia',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText('No autorizado')).toBeInTheDocument();
+    await screen.findByText(
+      'Autorizo a la administración del club a ver mis notas de fisioterapia',
+    );
+    // The health-data authorization sits just above, in its own card.
+    const physio = screen.getByRole('region', { name: 'Mis notas de fisioterapia' });
+    expect(within(physio).getByText('No autorizado')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Autorizar' }));
+    await user.click(within(physio).getByRole('button', { name: 'Autorizar' }));
     expect(clinicalClient.grantMyPhysioConsent).not.toHaveBeenCalled();
     const grant = await screen.findByRole('alertdialog', {
       name: '¿Autorizar a la administración?',
     });
     await user.click(within(grant).getByRole('button', { name: 'Sí, autorizar' }));
     expect(clinicalClient.grantMyPhysioConsent).toHaveBeenCalled();
-    expect(await screen.findByText(/Autorizado desde el/)).toBeInTheDocument();
+    expect(await within(physio).findByText(/Autorizado desde el/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Retirar autorización' }));
+    await user.click(within(physio).getByRole('button', { name: 'Retirar autorización' }));
     const revoke = await screen.findByRole('alertdialog', { name: '¿Retirar la autorización?' });
     await user.click(within(revoke).getByRole('button', { name: 'Sí, retirar' }));
     expect(clinicalClient.revokeMyPhysioConsent).toHaveBeenCalled();
@@ -683,4 +735,31 @@ describe('Mi CTCJ — Mi perfil', () => {
     expect(within(links).getByText('hijo@correo.com')).toBeInTheDocument();
     expect(within(links).getByText('En revisión')).toBeInTheDocument();
   });
+});
+
+/**
+ * WCAG 2.1 AA, automated part (axe-core) on every Mi CTCJ screen, inside
+ * the real layout: one h1, the skip link, no serious or critical violation.
+ */
+describe('Mi CTCJ — accesibilidad (axe)', () => {
+  for (const [path, h1] of [
+    ['/mi-ctcj', null],
+    ['/mi-ctcj/reservas', null],
+    ['/mi-ctcj/perfil', 'Mi perfil'],
+    ['/mi-ctcj/privacidad', 'Mis datos y privacidad'],
+    ['/mi-ctcj/progreso', null],
+    ['/mi-ctcj/ranking', null],
+    ['/mi-ctcj/comunidad', 'Comunidad'],
+  ]) {
+    it(`${path}`, async () => {
+      renderMyCtcj(path);
+      const headings = await screen.findAllByRole('heading', { level: 1 });
+      expect(headings).toHaveLength(1);
+      if (h1) expect(headings[0]).toHaveTextContent(h1);
+      expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toBeInTheDocument();
+      // Let every section finish loading before checking.
+      await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).toBeNull());
+      expect(await a11yViolations()).toEqual([]);
+    });
+  }
 });

@@ -12,6 +12,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { formatDayShort, formatTime } from '../../lib/format.js';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, StaffRow } from './staffShared.jsx';
@@ -166,6 +167,7 @@ function RequestList({ title, description, kind, async, emptyTitle, onReview }) 
 }
 
 export function RequestsPage() {
+  useDocumentTitle('Solicitudes');
   const affiliations = useAsync(
     () => affiliationClient.listRequests('PENDING').then((d) => d.requests),
     [],

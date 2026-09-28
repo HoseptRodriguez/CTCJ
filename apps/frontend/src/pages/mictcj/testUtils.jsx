@@ -27,6 +27,7 @@ import { MyCtcjLayout } from '../../layout/MyCtcjLayout.jsx';
 import { CommunityPage } from '../CommunityPage.jsx';
 import { PlayerProfilePage } from '../PlayerProfilePage.jsx';
 
+import { PrivacyTab } from './PrivacyTab.jsx';
 import { HomeTab } from './HomeTab.jsx';
 import { ProgressTab } from './ProgressTab.jsx';
 import { RankingTab } from './RankingTab.jsx';
@@ -148,6 +149,7 @@ export function renderMyCtcj(path = '/mi-ctcj', { roles = ['USUARIO', 'JUGADOR']
             <Route path="/mi-ctcj" element={<HomeTab />} />
             <Route path="/mi-ctcj/reservas" element={<ReservationsTab />} />
             <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
+            <Route path="/mi-ctcj/privacidad" element={<PrivacyTab />} />
             <Route element={<RequireJugador />}>
               <Route path="/mi-ctcj/progreso" element={<ProgressTab />} />
               <Route path="/mi-ctcj/ranking" element={<RankingTab />} />

@@ -20,6 +20,7 @@ import { clubTodayKey } from '../../lib/clubTime.js';
 import { formatDayShort, formatTime } from '../../lib/format.js';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { APPOINTMENT_STATUS_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { clinicalRecordTabs, DISCIPLINE_LABELS, ReasonDialog } from './ClinicalPlayerRecord.jsx';
@@ -281,6 +282,7 @@ function NewAppointmentPanel({ open, onClose, onSaved, roles, initialPlayer }) {
           <TextField
             label="Correo del profesional"
             type="email"
+            autoComplete="off"
             value={practitionerEmail}
             onChange={(e) => setPractitionerEmail(e.target.value)}
             hint="El psicólogo o fisioterapeuta que atenderá."
@@ -495,6 +497,7 @@ function DisciplineView({ discipline, roles }) {
 }
 
 export function ClinicalPage() {
+  useDocumentTitle('Salud y bienestar');
   const roles = useClinicalRoles();
   const [tab, setTab] = useState(roles.disciplines[0]);
 

@@ -9,6 +9,7 @@ import { communityAdminClient } from '../api/communityAdminClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { a11yViolations } from '../../test/axe.js';
 
 import { StaffLayout } from './StaffLayout.jsx';
 
@@ -161,5 +162,17 @@ describe('StaffLayout', () => {
     );
     expect(screen.queryByRole('link', { name: 'Salud' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Membresía' })).not.toBeInTheDocument();
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('Administrador: skip link, named navigation, and no serious violations', async () => {
+    // Here the page is a placeholder; every real page sets its own title.
+    document.title = 'Consola del club';
+    asRoles('ADMINISTRADOR');
+    renderLayout();
+    expect(await screen.findByText('Contenido')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toBeInTheDocument();
+    expect(await a11yViolations()).toEqual([]);
   });
 });

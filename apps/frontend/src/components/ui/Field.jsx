@@ -6,7 +6,25 @@ import { cn } from './cn.js';
 
 const CONTROL =
   'focus-ring block w-full rounded-lg border-2 bg-surface px-4 text-body text-ink ' +
-  'placeholder:text-ink-soft/70 disabled:cursor-not-allowed disabled:bg-muted';
+  'placeholder:text-ink-soft disabled:cursor-not-allowed disabled:bg-muted';
+
+/**
+ * The error under a field. Its live region is always there (empty when
+ * there's no error) so screen readers announce an error when it appears,
+ * besides reading it with the field (aria-describedby).
+ */
+function FieldError({ id, children }) {
+  return (
+    <div aria-live="polite">
+      {children && (
+        <p id={id} className="mt-2 flex items-start gap-2 text-body-sm font-semibold text-danger">
+          <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
+          {children}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /**
  * Label ABOVE the control (never a placeholder-only label), optional hint
@@ -30,15 +48,7 @@ function FieldShell({ id, label, hint, error, required, children }) {
           {hint}
         </p>
       )}
-      {error && (
-        <p
-          id={errorId}
-          className="mt-2 flex items-start gap-2 text-body-sm font-semibold text-danger"
-        >
-          <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
+      <FieldError id={errorId}>{error}</FieldError>
     </div>
   );
 }
@@ -80,15 +90,7 @@ export function CheckboxField({ checked, onChange, error, hint, name, id: idProp
           {hint}
         </p>
       )}
-      {error && (
-        <p
-          id={errorId}
-          className="mt-2 flex items-start gap-2 text-body-sm font-semibold text-danger"
-        >
-          <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
+      <FieldError id={errorId}>{error}</FieldError>
     </div>
   );
 }

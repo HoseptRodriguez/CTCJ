@@ -442,6 +442,7 @@ function GuardianshipSection() {
         <TextField
           label="Correo del menor"
           type="email"
+          autoComplete="off"
           inputMode="email"
           value={minorEmail}
           onChange={(e) => setMinorEmail(e.target.value)}

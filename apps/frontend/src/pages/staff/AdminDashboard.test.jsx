@@ -9,6 +9,7 @@ import { communityAdminClient } from '../../api/communityAdminClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { AdminDashboard } from './AdminDashboard.jsx';
 
@@ -208,5 +209,13 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     expect(await screen.findByText('No pudimos cargar la agenda de hoy')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
     expect(await screen.findByText('Pago de cancha por $ 35.000')).toBeInTheDocument();
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('panel del administrador', async () => {
+    renderPage();
+    await screen.findByRole('heading', { level: 1, name: /, Marta$/ });
+    expect(await a11yViolations()).toEqual([]);
   });
 });

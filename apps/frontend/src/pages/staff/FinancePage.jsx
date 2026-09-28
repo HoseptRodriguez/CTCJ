@@ -13,6 +13,7 @@ import { addDaysToKey, clubTodayKey } from '../../lib/clubTime.js';
 import { exportToCsv } from '../../lib/csvExport.js';
 import { formatCop } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { DATE_MEDIUM, SectionCard } from '../mictcj/shared.jsx';
 
 import { METHOD_LABELS } from './staffShared.jsx';
@@ -169,6 +170,7 @@ function CashFlowSection() {
 }
 
 export function FinancePage() {
+  useDocumentTitle('Finanzas');
   const [preset, setPreset] = useState('este-mes');
   const [range, setRange] = useState(PRESETS['este-mes']);
 

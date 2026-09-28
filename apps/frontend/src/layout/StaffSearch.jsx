@@ -105,8 +105,7 @@ export function StaffSearch({ roles }) {
         }}
         onFocus={() => setOpen(true)}
         placeholder="Buscar jugador por nombre o correo"
-        aria-expanded={show}
-        aria-controls={listId}
+        aria-controls={show ? listId : undefined}
         autoComplete="off"
         className="focus-ring block min-h-btn w-full rounded-lg border-2 border-line-strong bg-surface pl-12 pr-4 text-body text-ink placeholder:text-ink-soft"
       />

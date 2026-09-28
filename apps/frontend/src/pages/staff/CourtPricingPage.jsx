@@ -12,6 +12,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 import { formatCop } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, StaffRow } from './staffShared.jsx';
@@ -310,6 +311,7 @@ function SecondHourCard() {
 }
 
 export function CourtPricingPage() {
+  useDocumentTitle('Precios de canchas');
   const courts = useAsync(() => bookingClient.listCourts().then((d) => d.courts), []);
   const [editingId, setEditingId] = useState(null);
   const editing = courts.data?.find((c) => c.id === editingId) ?? null;

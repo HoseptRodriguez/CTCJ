@@ -12,6 +12,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { describeCommunityError } from '../../lib/communityErrorMessages.js';
 import { formatDayShort, formatTime } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { PostMediaView } from '../community/PostMediaView.jsx';
 import { SectionCard } from '../mictcj/shared.jsx';
 
@@ -186,6 +187,7 @@ function ReviewPanel({ report, onClose, onResolved, onUpdated }) {
 }
 
 export function CommunityModerationPage() {
+  useDocumentTitle('Moderar comunidad');
   const reports = useAsync(() => communityAdminClient.listReports().then((d) => d.reports), []);
   const [reviewingId, setReviewingId] = useState(null);
   const reviewing = reports.data?.find((r) => r.id === reviewingId) ?? null;

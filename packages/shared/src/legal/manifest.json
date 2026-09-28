@@ -20,9 +20,9 @@
     "sha256": "9595478c952ff8715eb5337c963d64ded43b4ab304cb4cd19eb31a2a1902c3f6"
   },
   "ACCESSIBILITY": {
-    "version": "1",
+    "version": "2",
     "publishedOn": "2026-09-28",
-    "sha256": "05b74e2f66c6bae523a6136290a85c34c86beb631c92ca370e125d163b8a01fe"
+    "sha256": "b4a23718a2973e56cfb21958d1b78d33bac3f3516a756fda219393416b763218"
   },
   "MINOR_DATA_IMAGE": {
     "version": "1",

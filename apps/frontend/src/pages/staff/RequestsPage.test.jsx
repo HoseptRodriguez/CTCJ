@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { affiliationClient } from '../../api/affiliationClient.js';
 import { guardianshipClient } from '../../api/guardianshipClient.js';
 import { ToastProvider } from '../../components/ui/Toast.jsx';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { RequestsPage } from './RequestsPage.jsx';
 
@@ -116,5 +117,13 @@ describe('RequestsPage (Solicitudes)', () => {
       await screen.findByText('No hay solicitudes de afiliación pendientes'),
     ).toBeInTheDocument();
     expect(screen.getByText('No hay vinculaciones pendientes')).toBeInTheDocument();
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('solicitudes', async () => {
+    renderPage();
+    await screen.findByText('Ana Gomez');
+    expect(await a11yViolations()).toEqual([]);
   });
 });

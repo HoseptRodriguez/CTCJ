@@ -8,6 +8,7 @@ import { membershipClient } from '../../api/membershipClient.js';
 import { ToastProvider } from '../../components/ui/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { clubTodayKey } from '../../lib/clubTime.js';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { ClinicalPage } from './ClinicalPage.jsx';
 
@@ -303,5 +304,13 @@ describe('ClinicalPage (Salud y bienestar)', () => {
         unfitUntil: '2099-02-01',
       }),
     );
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('salud y bienestar', async () => {
+    renderAs(['ADMINISTRADOR']);
+    await screen.findByRole('heading', { level: 1 });
+    expect(await a11yViolations()).toEqual([]);
   });
 });

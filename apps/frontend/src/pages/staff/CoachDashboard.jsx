@@ -3,6 +3,7 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { formatDayShort, formatTime } from '../../lib/format.js';
 import { describeArea } from '../../lib/performanceRatingLabels.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { NOTE_TYPE_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { CoachWorkspace, TodayClasses } from './CoachWorkspace.jsx';
@@ -43,6 +44,7 @@ function RecentActivity() {
 }
 
 export function CoachDashboard() {
+  useDocumentTitle('Clases de hoy');
   return (
     <div>
       <PageHeader

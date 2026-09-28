@@ -19,6 +19,7 @@ import { CLUB_NAME } from '../../lib/clubInfo.js';
 import { clubTodayKey } from '../../lib/clubTime.js';
 import { formatCop, formatTime } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { SectionCard } from '../mictcj/shared.jsx';
 
 import {
@@ -330,6 +331,7 @@ function ChargePanel({
 // ---------------------------------------------------------------------------
 
 export function PaymentsQueuePage() {
+  useDocumentTitle('Cobros');
   const toast = useToast();
   const [date, setDate] = useState(clubTodayKey);
   const [tab, setTab] = useState('unpaid');

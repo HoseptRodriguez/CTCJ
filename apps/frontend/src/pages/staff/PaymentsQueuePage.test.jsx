@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { bookingClient } from '../../api/bookingClient.js';
 import { ToastProvider } from '../../components/ui/Toast.jsx';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { PaymentsQueuePage } from './PaymentsQueuePage.jsx';
 
@@ -184,5 +185,13 @@ describe('PaymentsQueuePage (Cobros)', () => {
     await user.click(within(panel).getByRole('radio', { name: 'Efectivo' }));
     await user.click(within(panel).getByRole('button', { name: 'Marcar como pagada' }));
     expect(await within(panel).findByRole('alert')).toBeInTheDocument();
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('cobros', async () => {
+    renderPage();
+    await screen.findByRole('radio', { name: 'Sin pagar (2)' });
+    expect(await a11yViolations()).toEqual([]);
   });
 });

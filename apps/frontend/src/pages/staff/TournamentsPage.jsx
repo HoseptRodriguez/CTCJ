@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { clubTodayKey } from '../../lib/clubTime.js';
 import { describeTournamentError } from '../../lib/tournamentErrorMessages.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { CATEGORY_LABELS, MODALITY_LABELS, SectionCard } from '../mictcj/shared.jsx';
 
 import { NumberChoice, ParticipantSlot } from './matchInputs.jsx';
@@ -298,7 +299,12 @@ function Bracket({ participants, matches, canRecord, onRecord }) {
     >
       {() => (
         // Phones: one round under the other. Wider screens: rounds side by side.
-        <div className="flex flex-col gap-6 md:flex-row md:overflow-x-auto md:pb-2">
+        <div
+          className="focus-ring flex flex-col gap-6 rounded-lg md:flex-row md:overflow-x-auto md:pb-2"
+          tabIndex={0}
+          role="region"
+          aria-label="Cuadro del torneo (se puede desplazar)"
+        >
           {rounds.map((r) => (
             <section key={r} aria-label={roundName(r)} className="md:min-w-[16rem] md:flex-1">
               <h3 className="mb-3 text-lead font-bold text-ink">{roundName(r)}</h3>
@@ -520,6 +526,7 @@ function TournamentDetail({ tournamentId, isAdmin, canManage, onBack, onListChan
 }
 
 export function TournamentsPage() {
+  useDocumentTitle('Torneos');
   const { user } = useAuth();
   const roles = user?.roles ?? [];
   const isAdmin = roles.includes(ROLE_CODES.ADMINISTRADOR);

@@ -14,6 +14,7 @@ import { describeBillingError } from '../../lib/billingErrorMessages.js';
 import { clubTodayKey } from '../../lib/clubTime.js';
 import { formatCop } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { DATE_MEDIUM, SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, StaffRow } from './staffShared.jsx';
@@ -512,6 +513,7 @@ function planSubtitle(p) {
 }
 
 export function PlansPage() {
+  useDocumentTitle('Planes');
   const plans = useAsync(() => billingClient.listPlans().then((d) => d.plans), []);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);

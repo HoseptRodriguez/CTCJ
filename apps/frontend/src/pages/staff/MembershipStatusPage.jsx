@@ -27,6 +27,7 @@ import { formatCop } from '../../lib/format.js';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { describePlayerMembershipStatus } from '../../lib/playerMembershipStatusLabels.js';
 import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { DATE_MEDIUM, invoiceBadge, MembershipBadge, SectionCard } from '../mictcj/shared.jsx';
 
 import { FormAlert, METHOD_LABELS, ReasonDialog, StaffRow } from './staffShared.jsx';
@@ -820,6 +821,7 @@ function PendingInvoices({ onOpen }) {
 }
 
 export function MembershipStatusPage() {
+  useDocumentTitle('Membresías');
   const { user } = useAuth();
   const isAdmin = (user?.roles ?? []).includes(ROLE_CODES.ADMINISTRADOR);
   const [params] = useSearchParams();

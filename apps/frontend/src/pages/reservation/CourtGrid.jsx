@@ -50,7 +50,7 @@ function cellState(schedule, court, dateKey, hour, selected, now) {
   return classifySlot(findReservation(schedule.reservations, court.id, start), start, now);
 }
 
-function Cell({ state, court, hour, dateKey, onSelect, compact }) {
+function Cell({ state, court, hour, dateKey, onSelect, compact, row, col }) {
   const { label, className } = CELL_STATES[state];
   const time = formatTime(slotStartIso(dateKey, hour));
   const base = cn(
@@ -71,9 +71,13 @@ function Cell({ state, court, hour, dateKey, onSelect, compact }) {
     </>
   );
 
+  // Grid position, for moving with the arrow keys (desktop table).
+  const position = row == null ? {} : { 'data-cell': '', 'data-row': row, 'data-col': col };
+
   if (state === 'free' || state === 'selected') {
     return (
       <button
+        {...position}
         type="button"
         onClick={() => onSelect({ court, hour })}
         aria-pressed={state === 'selected'}
@@ -92,6 +96,33 @@ function Cell({ state, court, hour, dateKey, onSelect, compact }) {
       {content}
     </div>
   );
+}
+
+const ARROWS = { ArrowRight: [0, 1], ArrowLeft: [0, -1], ArrowDown: [1, 0], ArrowUp: [-1, 0] };
+
+/**
+ * Arrow keys move to the next bookable hour in that direction (skipping
+ * occupied ones); Tab keeps going through them in reading order.
+ */
+function moveWithArrows(event, rows, cols) {
+  const step = ARROWS[event.key];
+  const from = event.target.closest?.('[data-cell]');
+  if (!step || !from) return;
+  let row = Number(from.dataset.row);
+  let col = Number(from.dataset.col);
+  for (;;) {
+    row += step[0];
+    col += step[1];
+    if (row < 0 || col < 0 || row >= rows || col >= cols) return;
+    const next = event.currentTarget.querySelector(
+      `button[data-cell][data-row="${row}"][data-col="${col}"]`,
+    );
+    if (next) {
+      event.preventDefault();
+      next.focus();
+      return;
+    }
+  }
 }
 
 /**
@@ -138,49 +169,60 @@ export function CourtGrid({ schedule, dateKey, hours, selected, onSelect, now = 
   }
 
   return (
-    <table className="w-full border-separate border-spacing-2">
-      <caption className="sr-only">Horas y canchas del día elegido</caption>
-      <thead>
-        <tr>
-          <th scope="col" className="w-28 text-left text-body font-semibold text-ink-soft">
-            Hora
-          </th>
-          {schedule.courts.map((court) => (
-            <th
-              key={court.id}
-              scope="col"
-              className="text-left font-display text-h3 font-bold text-ink"
-            >
-              {court.name}
-              {nightNote(court) && (
-                <span className="block text-body-sm font-normal text-ink-soft">
-                  {nightNote(court)}
-                </span>
-              )}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {hours.map((hour) => (
-          <tr key={hour}>
-            <th scope="row" className="whitespace-nowrap text-left text-body font-bold text-ink">
-              {formatTime(slotStartIso(dateKey, hour))}
+    <>
+      <p id="grid-keyboard-hint" className="mb-2 text-body-sm text-ink-soft">
+        Con el teclado: las flechas te llevan a la siguiente hora libre.
+      </p>
+      <table
+        className="w-full border-separate border-spacing-2"
+        aria-describedby="grid-keyboard-hint"
+        onKeyDown={(e) => moveWithArrows(e, hours.length, schedule.courts.length)}
+      >
+        <caption className="sr-only">Horas y canchas del día elegido</caption>
+        <thead>
+          <tr>
+            <th scope="col" className="w-28 text-left text-body font-semibold text-ink-soft">
+              Hora
             </th>
             {schedule.courts.map((court) => (
-              <td key={court.id}>
-                <Cell
-                  state={cellState(schedule, court, dateKey, hour, selected, now)}
-                  court={court}
-                  hour={hour}
-                  dateKey={dateKey}
-                  onSelect={onSelect}
-                />
-              </td>
+              <th
+                key={court.id}
+                scope="col"
+                className="text-left font-display text-h3 font-bold text-ink"
+              >
+                {court.name}
+                {nightNote(court) && (
+                  <span className="block text-body-sm font-normal text-ink-soft">
+                    {nightNote(court)}
+                  </span>
+                )}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {hours.map((hour, row) => (
+            <tr key={hour}>
+              <th scope="row" className="whitespace-nowrap text-left text-body font-bold text-ink">
+                {formatTime(slotStartIso(dateKey, hour))}
+              </th>
+              {schedule.courts.map((court, col) => (
+                <td key={court.id}>
+                  <Cell
+                    state={cellState(schedule, court, dateKey, hour, selected, now)}
+                    court={court}
+                    hour={hour}
+                    dateKey={dateKey}
+                    onSelect={onSelect}
+                    row={row}
+                    col={col}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }

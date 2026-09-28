@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { privacyClient } from '../../api/privacyClient.js';
 import { ToastProvider } from '../../components/ui/Toast.jsx';
+import { a11yViolations } from '../../../test/axe.js';
 
 import { DataRequestsPage, deadlineBadge } from './DataRequestsPage.jsx';
 
@@ -103,5 +104,13 @@ describe('Datos personales (bandeja)', () => {
       eraseAccount: true,
     });
     expect(await screen.findByText('Respondida')).toBeInTheDocument();
+  });
+});
+
+describe('accesibilidad (axe)', () => {
+  it('datos personales', async () => {
+    renderPage();
+    await screen.findByText(/1 solicitud está vencida o por vencer/);
+    expect(await a11yViolations()).toEqual([]);
   });
 });

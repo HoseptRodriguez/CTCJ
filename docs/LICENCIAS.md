@@ -69,3 +69,7 @@ MIT y Apache-2.0 permiten el uso comercial; piden conservar sus avisos, que van 
 ## Logo y marca
 
 El escudo y el nombre del club son del club. El logo de la Academia Orlando Rodríguez: [VERIFICAR] quién es su titular y que el club puede usarlo en el sitio.
+
+## Herramientas de desarrollo
+
+No se envían al navegador ni al servidor en producción. Entre ellas, **axe-core** 4.13.0 (MPL-2.0) para las pruebas de accesibilidad; la MPL solo exige compartir los cambios que se hagan a sus propios archivos, y aquí no se modifican.
