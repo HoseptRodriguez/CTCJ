@@ -1,11 +1,30 @@
+import { LEGAL_DOCUMENTS } from '@ctcj/shared';
+
 import { createApp } from './app.js';
 import { config } from './config/env.js';
 import { logger } from './shared/logger.js';
 import { prisma } from './shared/prismaClient.js';
 import { systemClock } from './modules/booking/application/ports/Clock.js';
 import { createExpireHoldsJob } from './modules/booking/infrastructure/jobs/expireHoldsJob.js';
+import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
 
 const app = createApp();
+
+// Store the legal text versions in force (proof of what people accept). In
+// production a failure stops the start-up: the site must not run with
+// legal texts whose accepted versions can't be proven.
+try {
+  const { inserted } = await buildIdentityContainer().syncLegalDocuments({
+    documents: LEGAL_DOCUMENTS,
+  });
+  if (inserted.length) logger.info({ inserted }, 'Legal document versions stored');
+} catch (err) {
+  if (config.isProduction) {
+    logger.fatal({ err }, 'Could not store the legal document versions');
+    process.exit(1);
+  }
+  logger.warn({ err: err.message }, 'Legal document versions not stored (development)');
+}
 
 const server = app.listen(config.port, () => {
   logger.info(`CTCJ backend listening on port ${config.port} (${config.nodeEnv})`);

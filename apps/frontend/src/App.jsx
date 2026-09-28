@@ -12,6 +12,7 @@ import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
+import { LEGAL_PAGES, LegalPage } from './pages/legal/LegalPage.jsx';
 import { MyCtcjLayout } from './layout/MyCtcjLayout.jsx';
 import { RequireJugador } from './pages/mictcj/RequireJugador.jsx';
 import { RequireAuth } from './routes/RequireAuth.jsx';
@@ -105,6 +106,9 @@ export function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              {LEGAL_PAGES.map(({ doc }) => (
+                <Route key={doc.path} path={doc.path} element={<LegalPage doc={doc} />} />
+              ))}
             </Route>
 
             {/* Mi CTCJ: its own shell (header with tabs), any signed-in user. */}

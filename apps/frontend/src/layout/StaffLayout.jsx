@@ -30,6 +30,7 @@ import { isUnpaid } from '../lib/booking.js';
 import { clubTodayKey } from '../lib/clubTime.js';
 import { splitForBottomBar, staffNavFor } from '../lib/staffNav.js';
 
+import { LegalLinks } from './LegalLinks.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
 import { RouteLoading } from './RouteLoading.jsx';
 import { StaffSearch } from './StaffSearch.jsx';
@@ -257,6 +258,9 @@ export function StaffLayout() {
           <Suspense fallback={<RouteLoading />}>
             <Outlet />
           </Suspense>
+          <footer className="mt-12 border-t border-line pt-4">
+            <LegalLinks />
+          </footer>
         </main>
       </div>
 

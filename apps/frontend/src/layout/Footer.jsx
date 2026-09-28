@@ -10,6 +10,8 @@ import {
   WHATSAPP_NUMBER,
 } from '../lib/clubInfo.js';
 
+import { BusinessDetails, LegalLinks } from './LegalLinks.jsx';
+
 const LINKS = [
   { to: '/canchas', label: 'Reservar una cancha' },
   { to: '/mi-ctcj', label: 'Mi CTCJ' },
@@ -67,9 +69,13 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/15">
-        <p className="mx-auto max-w-container px-4 py-5 text-body-sm text-white/85 md:px-8">
-          © {new Date().getFullYear()} {CLUB_NAME} · Fusagasugá, Colombia
-        </p>
+        <div className="mx-auto max-w-container space-y-4 px-4 py-6 md:px-8">
+          <LegalLinks tone="dark" />
+          <BusinessDetails className="space-y-1 text-body-sm text-white/85" />
+          <p className="text-body-sm text-white/85">
+            © {new Date().getFullYear()} {CLUB_NAME} · Fusagasugá, Colombia
+          </p>
+        </div>
       </div>
     </footer>
   );

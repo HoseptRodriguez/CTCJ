@@ -7,6 +7,6 @@ import { DomainError } from './DomainError.js';
  */
 export class InvalidCredentials extends DomainError {
   constructor() {
-    super('invalid_credentials', 'Correo o contrasena incorrectos.');
+    super('invalid_credentials', 'Correo o contraseña incorrectos.');
   }
 }

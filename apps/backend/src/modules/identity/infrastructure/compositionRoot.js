@@ -36,6 +36,7 @@ import { createCanBookForMinor } from '../application/useCases/canBookForMinor.j
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
 import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
 import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
+import { createSyncLegalDocuments } from '../application/useCases/syncLegalDocuments.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
@@ -47,6 +48,7 @@ import { createPrismaRefreshTokenRepository } from './persistence/prismaRefreshT
 import { createPrismaEmailVerificationRepository } from './persistence/prismaEmailVerificationRepository.js';
 import { createPrismaPasswordResetRepository } from './persistence/prismaPasswordResetRepository.js';
 import { createPrismaConsentRepository } from './persistence/prismaConsentRepository.js';
+import { createPrismaLegalDocumentRepository } from './persistence/prismaLegalDocumentRepository.js';
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
@@ -221,6 +223,9 @@ export function buildIdentityContainer({
     checkIsJugador: createCheckIsJugador({ userRepository }),
     checkIsMinor,
     ...minorAuthorization,
+    syncLegalDocuments: createSyncLegalDocuments({
+      legalDocumentRepository: createPrismaLegalDocumentRepository(prismaClient),
+    }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
     searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),

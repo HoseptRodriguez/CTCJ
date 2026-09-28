@@ -14,6 +14,7 @@ import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MyCtcjProvider, useMyCtcj } from '../pages/mictcj/MyCtcjContext.jsx';
 
+import { LegalLinks } from './LegalLinks.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
 import { RouteLoading } from './RouteLoading.jsx';
 
@@ -164,6 +165,9 @@ function MyCtcjShell() {
           >
             Ir al sitio del club
           </Link>
+        </div>
+        <div className="mx-auto max-w-container border-t border-line px-4 py-3 md:px-8">
+          <LegalLinks />
         </div>
       </footer>
     </div>

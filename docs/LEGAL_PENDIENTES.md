@@ -11,7 +11,7 @@ Convenciones:
 
 El script `npm run legal:check` (Parte 9) impedirá publicar mientras quede alguno de estos marcadores en las páginas legales o en el pie de página.
 
-Estado: parcial (Partes 1 y 2, 2026-09-28).
+Estado: parcial (Partes 1 a 3, 2026-09-28).
 
 ---
 
@@ -91,3 +91,25 @@ Google Fonts **ya no se usa** (las fuentes se sirven desde el propio sitio).
 - **GSAP** (`gsap`, `@gsap/react`): tiene licencia propia, "Standard no charge", que no es de código abierto. [VERIFICAR] que las condiciones vigentes permiten este uso.
 - **Íconos SVG del proyecto:** están dibujados al estilo de Lucide. [VERIFICAR] si alguno se copió de Lucide (licencia ISC, que exige conservar el aviso de licencia).
 - **sharp / libvips** (solo en el servidor): libvips tiene licencia LGPL-3.0, con enlace dinámico. [VERIFICAR] (en principio no afecta al código del club).
+
+## 9. Textos legales (Parte 3)
+
+Páginas publicadas: `/privacidad`, `/terminos`, `/cookies`, `/reembolsos` y `/accesibilidad`, todas en su **versión 1** (borrador). El texto está en `packages/shared/src/legal/`.
+
+- **Control de versiones:** cada versión se guarda en `legal_documents` con el hash SHA-256 de su contenido. Si se cambia un texto sin subir la versión, una prueba falla y el servidor se niega a arrancar en producción.
+- **Ojo:** completar los datos del negocio cambia el contenido de las páginas, así que la primera versión que se publique será la **2** (hay que actualizar `version`, `publishedOn` y `manifest.json`).
+
+Datos y decisiones pendientes, por documento:
+
+| Documento                  | Pendiente                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Todos                      | **Revisión por un abogado colombiano** antes de publicar                                                                                                                                                                                                                                                                                                                                  |
+| Privacidad                 | Proveedores y países de servidor [VERIFICAR]; contratos de transmisión o transferencia internacional (DPA) [VERIFICAR]; plazos de conservación [COMPLETAR]; copias de seguridad cifradas [VERIFICAR]                                                                                                                                                                                      |
+| Términos                   | Días de aviso antes de cambiar los términos [COMPLETAR]; plazo de respuesta de PQRS [COMPLETAR] [VERIFICAR norma aplicable]                                                                                                                                                                                                                                                               |
+| Reembolsos                 | Plazo de cancelación sin costo [COMPLETAR] (hoy el sistema avisa con 12 horas; el club debe confirmarlo); cancelación tardía y no presentarse [COMPLETAR]; retiro de un plan y mensualidad pagada [COMPLETAR]; plazos y medio de devolución [COMPLETAR]; **en qué casos aplica el retracto** a reservas hechas en línea y pagadas en recepción, y a los planes [VERIFICAR con el abogado] |
+| Accesibilidad              | Plazo de respuesta [COMPLETAR]; actualizar las limitaciones con los resultados de la Parte 7                                                                                                                                                                                                                                                                                              |
+| Autorización del acudiente | Texto v1 en `constants/consents.js` [VERIFICAR con el abogado]                                                                                                                                                                                                                                                                                                                            |
+
+## 10. Decisiones ya tomadas por el club
+
+- **Fecha de nacimiento obligatoria en el registro** (decidido el 2026-09-28; se implementa en la Parte 5). Sirve para saber si la persona es menor de edad y aplicar la autorización del acudiente, y así lo explica la política (sección 2). A quien ya tiene cuenta sin fecha de nacimiento se le pedirá en su próximo inicio de sesión, con una pantalla simple, antes de continuar.

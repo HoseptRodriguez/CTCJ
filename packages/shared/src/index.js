@@ -8,6 +8,7 @@ export * from './constants/billing.js';
 export * from './constants/playStyle.js';
 export * from './constants/identityDocument.js';
 export * from './constants/consents.js';
+export * from './legal/index.js';
 export * from './constants/competition.js';
 export * from './constants/clinical.js';
 export * from './constants/goals.js';

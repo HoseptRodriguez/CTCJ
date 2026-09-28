@@ -1,0 +1,32 @@
+{
+  "PRIVACY_POLICY": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "faf7acfb9d859da35c7193a6c4d66110b6082a1b57845dcbeab8dc57267c0344"
+  },
+  "TERMS": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "32a4bbd5c4f71e5e700163708c5b95b853412e7877aa6d0632ff47bee3772522"
+  },
+  "COOKIES": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "247fb94e90aaf41a8deaf63f12caf3379d260a4aa9a1c7c1e2d34aa9977d7624"
+  },
+  "REFUNDS": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "9595478c952ff8715eb5337c963d64ded43b4ab304cb4cd19eb31a2a1902c3f6"
+  },
+  "ACCESSIBILITY": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "05b74e2f66c6bae523a6136290a85c34c86beb631c92ca370e125d163b8a01fe"
+  },
+  "MINOR_DATA_IMAGE": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "7251d3b4053d3f78aba6dbb7c8a71eff55774783f92eabe24a42dc70dbde6cca"
+  }
+}

@@ -1223,3 +1223,19 @@ model Consent {
   @@index([userId, consentType, createdAt(sort: Desc)], map: "consents_user_type_idx")
   @@map("consents")
 }
+
+// Every version of every legal text, with the SHA-256 of its exact content
+// (see @ctcj/shared legal/). Append-only: a trigger refuses UPDATE.
+model LegalDocument {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  docType       String   @map("doc_type") @db.VarChar(30)
+  version       String   @db.VarChar(20)
+  publishedOn   DateTime @map("published_on") @db.Date
+  title         String   @db.VarChar(200)
+  content       Json
+  contentSha256 String   @map("content_sha256") @db.Char(64)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([docType, version], map: "legal_documents_type_version_unique")
+  @@map("legal_documents")
+}
