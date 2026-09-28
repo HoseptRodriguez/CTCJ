@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 
 import { config } from './config/env.js';
-import { logger } from './shared/logger.js';
+import { httpLogOptions, logger } from './shared/logger.js';
 import { toProblemDetail } from './shared/errors/httpError.js';
 import { assertUtf8Body, toBodyParserHttpError } from './shared/utf8Body.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
@@ -148,7 +148,7 @@ export function createApp() {
   );
   app.use(express.json({ verify: assertUtf8Body }));
   app.use(cookieParser());
-  app.use(pinoHttp({ logger, autoLogging: !config.isTest }));
+  app.use(pinoHttp({ logger, autoLogging: !config.isTest, ...httpLogOptions }));
 
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok', env: config.nodeEnv });
