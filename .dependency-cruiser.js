@@ -53,6 +53,20 @@ module.exports = {
       to: { path: '^apps/backend/src/modules/clinical/domain' },
     },
     {
+      name: 'clinical-no-outbound-messages',
+      comment:
+        'Health data never leaves through notifications, push or email (Parte 8): the clinical module may not reach the notifications module or any email sender.',
+      severity: 'error',
+      from: { path: '^apps/backend/src/modules/clinical' },
+      to: {
+        path: [
+          '^apps/backend/src/modules/notifications',
+          '^apps/backend/src/modules/identity/infrastructure/email',
+          'node_modules/(nodemailer|resend)',
+        ],
+      },
+    },
+    {
       name: 'no-circular',
       severity: 'warn',
       from: {},

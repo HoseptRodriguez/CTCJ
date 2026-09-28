@@ -56,7 +56,10 @@ export function Login() {
       login(session);
       // Back to where the person was sent from (including the chosen hour
       // on /canchas?fecha=…&hora=…); otherwise their own area by role.
-      const redirectTo = from
+      // Only a path inside this site: never "//host" or "/\host", which a
+      // browser could read as another site (open redirect).
+      const internal = typeof from?.pathname === 'string' && /^\/(?![/\\])/.test(from.pathname);
+      const redirectTo = internal
         ? `${from.pathname}${from.search ?? ''}`
         : resolvePostLoginRoute(session.roles);
       navigate(redirectTo, { replace: true });

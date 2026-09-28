@@ -2,7 +2,7 @@ import { LEGAL_DOCUMENTS } from '@ctcj/shared';
 
 import { createApp } from './app.js';
 import { config } from './config/env.js';
-import { logger } from './shared/logger.js';
+import { errorForLog, logger } from './shared/logger.js';
 import { prisma } from './shared/prismaClient.js';
 import { systemClock } from './modules/booking/application/ports/Clock.js';
 import { createExpireHoldsJob } from './modules/booking/infrastructure/jobs/expireHoldsJob.js';
@@ -21,7 +21,7 @@ try {
   if (inserted.length) logger.info({ inserted }, 'Legal document versions stored');
 } catch (err) {
   if (config.isProduction) {
-    logger.fatal({ err }, 'Could not store the legal document versions');
+    logger.fatal({ err: errorForLog(err) }, 'Could not store the legal document versions');
     process.exit(1);
   }
   logger.warn({ err: err.message }, 'Legal document versions not stored (development)');

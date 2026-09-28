@@ -62,6 +62,17 @@ describe('Login', () => {
     expect(await screen.findByText('Estás en /staff/panel')).toBeInTheDocument();
   });
 
+  it.each(['//otro-sitio.com', '/\\otro-sitio.com'])(
+    'never returns to an address that could be another site (%s)',
+    async (pathname) => {
+      authClient.login.mockResolvedValue({ accessToken: 't', roles: ['RECEPCION'] });
+      const user = userEvent.setup();
+      renderLogin({ from: { pathname, search: '' } });
+      await fillAndSubmit(user);
+      expect(await screen.findByText('Estás en /staff/panel')).toBeInTheDocument();
+    },
+  );
+
   it('the photo carries only a short sentence: no crest and no big title', () => {
     renderLogin();
     expect(screen.getByText('Qué bueno verte de nuevo en la cancha.')).toBeInTheDocument();

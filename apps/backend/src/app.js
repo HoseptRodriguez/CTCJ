@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 
 import { config } from './config/env.js';
-import { httpLogOptions, logger } from './shared/logger.js';
+import { errorForLog, httpLogOptions, logger } from './shared/logger.js';
 import { toProblemDetail } from './shared/errors/httpError.js';
 import { assertUtf8Body, toBodyParserHttpError } from './shared/utf8Body.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
@@ -131,8 +131,15 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(
     helmet({
+      // Content-Security-Policy: everything from this site (fonts are
+      // self-hosted, no third-party scripts), plus Vercel Blob for photos,
+      // videos and direct uploads. Nobody may frame the site (clickjacking).
       contentSecurityPolicy: {
         directives: {
+          'font-src': ["'self'", 'data:'],
+          // Inline style attributes come from the animation library.
+          'style-src': ["'self'", "'unsafe-inline'"],
+          'frame-ancestors': ["'none'"],
           // Avatars live in Vercel Blob (an absolute URL on its own CDN host)
           // whenever BLOB_READ_WRITE_TOKEN is set -- helmet's default img-src
           // ('self' data:) would block them on the production-served frontend.
@@ -147,8 +154,21 @@ export function createApp() {
           ],
         },
       },
+      // One year; the browser only talks HTTPS to the site from then on.
+      strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+      frameguard: { action: 'deny' },
+      // No referrer to other sites (the URL can carry an id).
+      referrerPolicy: { policy: 'no-referrer' },
     }),
   );
+  // Browser features the site never uses stay off (helmet doesn't set it).
+  app.use((_req, res, next) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+    );
+    next();
+  });
   app.use(
     cors({
       // Comma-separated in .env so a LAN IP (e.g. for testing on a phone)
@@ -489,7 +509,7 @@ export function createApp() {
   app.use((err, req, res, next) => {
     const { status, body } = toProblemDetail(toBodyParserHttpError(err));
     if (status >= 500) {
-      req.log?.error({ err }, 'Unhandled error');
+      req.log?.error({ err: errorForLog(err) }, 'Unhandled error');
     }
     res.status(status).json(body);
   });

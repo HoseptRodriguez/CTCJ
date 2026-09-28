@@ -2,7 +2,7 @@ import os from 'node:os';
 
 import { RESERVATION_STATUS } from '@ctcj/shared';
 
-import { logger } from '../../../../shared/logger.js';
+import { errorForLog, logger } from '../../../../shared/logger.js';
 
 const LOCK_NAME = 'booking-expire-holds';
 const LOCK_AT_MOST_MS = 50_000; // < TICK_MS, so a crashed process's lock self-releases before the next tick
@@ -63,7 +63,9 @@ export function createExpireHoldsJob({
 
   function start() {
     const timer = setInterval(() => {
-      runOnce().catch((err) => logger.error({ err }, 'expireHoldsJob tick failed'));
+      runOnce().catch((err) =>
+        logger.error({ err: errorForLog(err) }, 'expireHoldsJob tick failed'),
+      );
     }, TICK_MS);
     timer.unref();
     return { stop: () => clearInterval(timer) };

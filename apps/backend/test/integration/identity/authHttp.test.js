@@ -151,6 +151,7 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     expect(refreshCookie).toBeTruthy();
     expect(refreshCookie).toMatch(/HttpOnly/);
     expect(refreshCookie).toMatch(/SameSite=Strict/i);
+    expect(refreshCookie).toMatch(/Path=\/api\/auth/);
 
     const refreshRes = await request(app)
       .post('/api/auth/refresh')

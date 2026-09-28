@@ -41,3 +41,22 @@ export const httpLogOptions = {
     censor: '[oculto]',
   },
 };
+
+/**
+ * What an unexpected error leaves in the logs. A database (Prisma) error's
+ * message can repeat the query's values -- for a clinical note, health data
+ * -- so only its class, code and the columns involved are kept. Other
+ * errors keep their message and stack (the code's own text, no user data).
+ */
+export function errorForLog(err) {
+  if (!err || typeof err !== 'object') return { message: String(err) };
+  const isPrisma = typeof err.name === 'string' && err.name.startsWith('Prisma');
+  if (isPrisma) {
+    return {
+      type: err.name,
+      code: err.code,
+      target: err.meta?.target ?? err.meta?.field_name ?? undefined,
+    };
+  }
+  return { type: err.name, message: err.message, stack: err.stack };
+}
