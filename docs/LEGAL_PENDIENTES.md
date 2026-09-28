@@ -11,7 +11,7 @@ Convenciones:
 
 El script `npm run legal:check` (Parte 9) impedirá publicar mientras quede alguno de estos marcadores en las páginas legales o en el pie de página.
 
-Estado: parcial (Partes 1 a 3, 2026-09-28).
+Estado: parcial (Partes 1 a 4, 2026-09-28).
 
 ---
 
@@ -113,3 +113,11 @@ Datos y decisiones pendientes, por documento:
 ## 10. Decisiones ya tomadas por el club
 
 - **Fecha de nacimiento obligatoria en el registro** (decidido el 2026-09-28; se implementa en la Parte 5). Sirve para saber si la persona es menor de edad y aplicar la autorización del acudiente, y así lo explica la política (sección 2). A quien ya tiene cuenta sin fecha de nacimiento se le pedirá en su próximo inicio de sesión, con una pantalla simple, antes de continuar.
+
+## 11. Consentimiento de cookies (Parte 4)
+
+- Hay un banner en la primera visita, con tres opciones del mismo tamaño y peso ("Aceptar todas", "Solo necesarias", "Configurar"), y un panel "Configurar cookies" en el pie de página de todas las pantallas.
+- La decisión se guarda con su fecha y la versión de la política; si la política cambia de versión, se vuelve a preguntar. Para quien tiene sesión iniciada, queda además como prueba en `consents` (tipo COOKIES, versión, categorías, IP y navegador).
+- Lo único opcional hoy es "Letra grande" (Preferencias): no se guarda ni se lee sin consentimiento, y se borra al retirarlo.
+- No hay analítica. Si algún día se agrega, debe cargarse **solo** con `hasCookieConsent('ANALYTICS')` y registrarse en la Política de cookies y en `COOKIE_INVENTORY` (nueva versión de la política).
+- [VERIFICAR con el abogado] si la decisión de un visitante sin sesión necesita otra prueba además de la que guarda su navegador (hoy no se envía nada al servidor sin sesión, para no crear un dato personal nuevo).

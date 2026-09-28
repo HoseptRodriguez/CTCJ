@@ -159,6 +159,34 @@ describe("Minors wait for the guardian's authorization (real Postgres)", () => {
     ).rejects.toThrow();
   });
 
+  it('cookie decision of a signed-in person: stored as proof, only with a session', async () => {
+    await request(app)
+      .post('/api/identity/me/consents/cookies')
+      .send({ preferences: true, analytics: false, policyVersion: '1' })
+      .expect(401);
+    await request(app)
+      .post('/api/identity/me/consents/cookies')
+      .set(as('mama'))
+      .set('User-Agent', 'NavegadorCookies')
+      .send({ preferences: true, analytics: false, policyVersion: '1' })
+      .expect(201);
+    const [row] = await prisma.consent.findMany({
+      where: { userId: people.mama.id, consentType: 'COOKIES' },
+    });
+    expect(row).toMatchObject({
+      action: 'ACCEPTED',
+      documentVersion: '1',
+      details: { necessary: true, preferences: true, analytics: false },
+      userAgent: 'NavegadorCookies',
+    });
+    const old = await request(app)
+      .post('/api/identity/me/consents/cookies')
+      .set(as('mama'))
+      .send({ preferences: true, analytics: false, policyVersion: '0' })
+      .expect(409);
+    expect(old.body.code).toBe('outdated_policy_version');
+  });
+
   it('an adult is never restricted', async () => {
     await request(app)
       .get('/api/identity/me/account-restrictions')

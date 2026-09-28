@@ -37,6 +37,7 @@ import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js'
 import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
 import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
 import { createSyncLegalDocuments } from '../application/useCases/syncLegalDocuments.js';
+import { createRecordCookieConsent } from '../application/useCases/recordCookieConsent.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
@@ -223,6 +224,7 @@ export function buildIdentityContainer({
     checkIsJugador: createCheckIsJugador({ userRepository }),
     checkIsMinor,
     ...minorAuthorization,
+    recordCookieConsent: createRecordCookieConsent({ consentRepository }),
     syncLegalDocuments: createSyncLegalDocuments({
       legalDocumentRepository: createPrismaLegalDocumentRepository(prismaClient),
     }),

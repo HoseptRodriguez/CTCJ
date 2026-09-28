@@ -96,6 +96,17 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
+  const recordCookieConsent = asyncHandler(async (req, res) => {
+    const result = await container.recordCookieConsent({
+      userId: req.user.id,
+      preferences: req.body.preferences,
+      analytics: req.body.analytics,
+      policyVersion: req.body.policyVersion,
+      ...origin(req),
+    });
+    res.status(201).json(result);
+  });
+
   const getAccountRestrictions = asyncHandler(async (req, res) => {
     res.status(200).json(await container.getAccountRestrictions({ userId: req.user.id }));
   });
@@ -104,6 +115,7 @@ export function createMeController(container) {
     authorizeMinor,
     withdrawMinorAuthorization,
     getAccountRestrictions,
+    recordCookieConsent,
     getMyProfile,
     updateMyProfile,
     uploadMyAvatar,

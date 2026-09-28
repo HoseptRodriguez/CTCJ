@@ -1,12 +1,19 @@
+import { COOKIE_CONSENT_EVENT, hasCookieConsent } from './cookieConsent.js';
+
 /**
  * "A+ Letra grande" preference. The root <html> gets data-font-scale="large"
- * (styles/tokens.css scales it to 115%), and the choice survives reloads via
- * localStorage. Storage can be unavailable (private mode, blocked site data),
- * so every access is guarded -- the toggle must still work for the session.
+ * (styles/tokens.css scales it to 115%).
+ *
+ * Remembering it across visits uses localStorage, which is an optional
+ * "Preferencias" item (Política de cookies): it's only saved -- and only
+ * read -- once that category is accepted. Without it the toggle still works
+ * for the visit. Storage can be unavailable (private mode, blocked site
+ * data), so every access is guarded.
  */
 export const FONT_SCALE_STORAGE_KEY = 'ctcj:font-scale';
 
 export function readStoredFontScale() {
+  if (!hasCookieConsent('PREFERENCES')) return 'normal';
   try {
     return window.localStorage.getItem(FONT_SCALE_STORAGE_KEY) === 'large' ? 'large' : 'normal';
   } catch {
@@ -28,19 +35,39 @@ export function applyFontScale(scale) {
   window.dispatchEvent(new CustomEvent(FONT_SCALE_EVENT, { detail: scale }));
 }
 
-export function storeFontScale(scale) {
+function forgetStoredFontScale() {
   try {
-    if (scale === 'large') {
-      window.localStorage.setItem(FONT_SCALE_STORAGE_KEY, 'large');
-    } else {
-      window.localStorage.removeItem(FONT_SCALE_STORAGE_KEY);
-    }
+    window.localStorage.removeItem(FONT_SCALE_STORAGE_KEY);
+  } catch {
+    // Nothing stored, or storage blocked.
+  }
+}
+
+export function storeFontScale(scale) {
+  if (scale !== 'large' || !hasCookieConsent('PREFERENCES')) {
+    forgetStoredFontScale();
+    return;
+  }
+  try {
+    window.localStorage.setItem(FONT_SCALE_STORAGE_KEY, 'large');
   } catch {
     // Not persisted this time; the on-screen change still applies.
   }
 }
 
-/** Called once from main.jsx, before the first render, to avoid a size jump. */
+/**
+ * Called once from main.jsx, before the first render, to avoid a size jump.
+ * Also follows the cookie decision: accepting "Preferencias" saves the size
+ * in use; refusing or withdrawing it deletes what was saved.
+ */
 export function initFontScale() {
+  if (!hasCookieConsent('PREFERENCES')) forgetStoredFontScale();
   applyFontScale(readStoredFontScale());
+  window.addEventListener(COOKIE_CONSENT_EVENT, () => {
+    if (hasCookieConsent('PREFERENCES')) {
+      storeFontScale(document.documentElement.dataset.fontScale === 'large' ? 'large' : 'normal');
+    } else {
+      forgetStoredFontScale();
+    }
+  });
 }

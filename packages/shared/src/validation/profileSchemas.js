@@ -32,3 +32,10 @@ export const setUserDocumentSchema = z
   .refine((d) => (d.documentType == null) === (d.documentNumber == null), {
     message: 'Escribe el tipo y el número del documento, o deja ambos vacíos.',
   });
+
+/** The visitor's cookie decision, recorded as proof for signed-in users. */
+export const recordCookieConsentSchema = z.object({
+  preferences: z.boolean(),
+  analytics: z.boolean(),
+  policyVersion: z.string().trim().min(1).max(20),
+});

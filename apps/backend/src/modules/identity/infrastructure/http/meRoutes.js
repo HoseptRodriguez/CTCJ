@@ -3,6 +3,7 @@ import {
   requestAffiliationSchema,
   requestGuardianshipSchema,
   updateMyProfileSchema,
+  recordCookieConsentSchema,
 } from '@ctcj/shared';
 
 import { HttpError } from '../../../../shared/errors/httpError.js';
@@ -60,6 +61,13 @@ export function createMeRoutes(controller) {
   );
   // What the signed-in person can't do yet (a minor pending authorization).
   router.get('/account-restrictions', requireAuth, controller.getAccountRestrictions);
+  // Proof of the cookie decision of a signed-in person.
+  router.post(
+    '/consents/cookies',
+    requireAuth,
+    validateBody(recordCookieConsentSchema),
+    controller.recordCookieConsent,
+  );
 
   return router;
 }

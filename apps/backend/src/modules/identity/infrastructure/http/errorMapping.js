@@ -27,6 +27,7 @@ const STATUS_BY_CODE = {
   guardianship_self_link_forbidden: 403,
   guardianship_not_found: 404,
   guardianship_not_approved: 409,
+  outdated_policy_version: 409,
   guardianship_not_pending: 409,
 };
 

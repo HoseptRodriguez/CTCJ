@@ -2,6 +2,7 @@ import { ROLE_CODES } from '@ctcj/shared';
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { CookieConsent } from './components/legal/CookieConsent.jsx';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { PublicLayout } from './layout/PublicLayout.jsx';
@@ -202,6 +203,7 @@ export function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <CookieConsent />
         </BrowserRouter>
       </ToastProvider>
     </AuthProvider>

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { saveCookieConsent } from '../../lib/cookieConsent.js';
 import { FONT_SCALE_STORAGE_KEY, initFontScale } from '../../lib/fontScale.js';
 
 import { FontSizeToggle } from './FontSizeToggle.jsx';
@@ -27,6 +28,7 @@ describe('FontSizeToggle', () => {
   });
 
   it('enlarges the text (html data-font-scale) and saves the choice when pressed', async () => {
+    saveCookieConsent({ preferences: true, analytics: false });
     const user = userEvent.setup();
     render(<FontSizeToggle />);
 
@@ -54,6 +56,7 @@ describe('FontSizeToggle', () => {
   });
 
   it('starts pressed when the choice was saved on a previous visit', () => {
+    saveCookieConsent({ preferences: true, analytics: false });
     window.localStorage.setItem(FONT_SCALE_STORAGE_KEY, 'large');
     initFontScale();
 
@@ -64,6 +67,30 @@ describe('FontSizeToggle', () => {
       'aria-pressed',
       'true',
     );
+  });
+
+  it('without "Preferencias" cookies: it works for the visit but nothing is saved', async () => {
+    const user = userEvent.setup();
+    render(<FontSizeToggle />);
+    await user.click(screen.getByRole('button', { name: 'Letra grande' }));
+    expect(html.dataset.fontScale).toBe('large');
+    expect(window.localStorage.getItem(FONT_SCALE_STORAGE_KEY)).toBeNull();
+  });
+
+  it('a value saved without consent is ignored and deleted on load', () => {
+    window.localStorage.setItem(FONT_SCALE_STORAGE_KEY, 'large');
+    initFontScale();
+    expect(html.dataset.fontScale).toBeUndefined();
+    expect(window.localStorage.getItem(FONT_SCALE_STORAGE_KEY)).toBeNull();
+  });
+
+  it('accepting "Preferencias" saves the size in use; withdrawing it deletes it', () => {
+    initFontScale();
+    html.dataset.fontScale = 'large';
+    saveCookieConsent({ preferences: true, analytics: false });
+    expect(window.localStorage.getItem(FONT_SCALE_STORAGE_KEY)).toBe('large');
+    saveCookieConsent({ preferences: false, analytics: false });
+    expect(window.localStorage.getItem(FONT_SCALE_STORAGE_KEY)).toBeNull();
   });
 
   it('keeps two toggles on the same page in sync', async () => {

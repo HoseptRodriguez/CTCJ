@@ -11,8 +11,9 @@ import {
 import { cn } from './cn.js';
 
 /**
- * "A+ Letra grande": enlarges every text in the app to 115% and remembers
- * the choice on this device. A toggle button (aria-pressed) whose label
+ * "A+ Letra grande": enlarges every text in the app to 115%, and remembers
+ * the choice on this device only if "Preferencias" cookies were accepted
+ * (lib/fontScale.js). A toggle button (aria-pressed) whose label
  * never changes -- the pressed state is shown by the lime fill and a check.
  *
  * @param {{ tone?: 'light'|'dark', className?: string }} props
