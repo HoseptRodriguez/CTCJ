@@ -18,6 +18,7 @@ export function createNullMembershipStatusProvider() {
 export function createStaticBookingPolicySettings(
   enabled = false,
   holdMinutes = DEFAULT_HOLD_DURATION_MINUTES,
+  secondHourEnabled = true,
 ) {
   return {
     async isOverdueBookingBlockEnabled() {
@@ -30,6 +31,12 @@ export function createStaticBookingPolicySettings(
       return holdMinutes;
     },
     async setHoldDurationMinutes() {
+      throw new Error('Static policy adapter is read-only.');
+    },
+    async isSecondHourEnabled() {
+      return secondHourEnabled;
+    },
+    async setSecondHourEnabled() {
       throw new Error('Static policy adapter is read-only.');
     },
   };

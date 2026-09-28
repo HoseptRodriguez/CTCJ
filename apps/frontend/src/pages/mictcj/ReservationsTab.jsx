@@ -3,7 +3,7 @@ import { AnimatedList } from '../../components/motion/AnimatedList.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
-import { capitalize, formatDayLong, formatTime } from '../../lib/format.js';
+import { capitalize, formatDayLong, formatReservationSpan, formatTime } from '../../lib/format.js';
 
 import {
   BookForSelector,
@@ -75,8 +75,8 @@ export function ReservationsTab() {
                 <div>
                   <p className="font-display text-h3 font-bold text-ink">{r.courtName}</p>
                   <p className="text-body text-ink-soft">
-                    {capitalize(formatDayLong(r.periodStart))}, {formatTime(r.periodStart)} a{' '}
-                    {formatTime(r.periodEnd)}
+                    {capitalize(formatDayLong(r.periodStart))},{' '}
+                    {formatReservationSpan(r.periodStart, r.periodEnd)}
                     {r.reservationType === 'CLASS' ? ' · Clase' : ''}
                   </p>
                   {forWhom(r) && (

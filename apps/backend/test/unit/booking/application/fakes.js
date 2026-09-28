@@ -127,6 +127,26 @@ export function createFakeReservationRepository(byId = new Map()) {
         .sort((a, b) => a.periodStart - b.periodStart)
         .map(cloneReservation);
     },
+    // Same guard as the database: the new period can't overlap another
+    // HOLD/CONFIRMED reservation of the same court.
+    async resizeHold({ id, periodEnd, priceCop }) {
+      const reservation = byId.get(id);
+      if (!reservation || reservation.status !== 'HOLD') return null;
+      const clash = Array.from(byId.values()).some(
+        (other) =>
+          other.id !== id &&
+          other.courtId === reservation.courtId &&
+          OCCUPYING_STATUSES.includes(other.status) &&
+          periodsOverlap(other.periodStart, other.periodEnd, reservation.periodStart, periodEnd),
+      );
+      if (clash) {
+        throw new SlotNotAvailable();
+      }
+      reservation.periodEnd = periodEnd;
+      reservation.priceCop = priceCop;
+      return reservation;
+    },
+
     async transitionStatus({ id, fromStatuses, toStatus, extra = {} }) {
       const reservation = byId.get(id);
       if (!reservation || !fromStatuses.includes(reservation.status)) {
@@ -198,10 +218,21 @@ export function createFakeMembershipStatusProvider(statusByUserId = {}) {
   };
 }
 
-export function createFakeBookingPolicySettings(enabled = false, holdMinutes = 15) {
+export function createFakeBookingPolicySettings(
+  enabled = false,
+  holdMinutes = 15,
+  secondHourEnabled = true,
+) {
   let current = enabled;
   let minutes = holdMinutes;
+  let secondHour = secondHourEnabled;
   return {
+    async isSecondHourEnabled() {
+      return secondHour;
+    },
+    async setSecondHourEnabled(next) {
+      secondHour = next;
+    },
     async isOverdueBookingBlockEnabled() {
       return current;
     },

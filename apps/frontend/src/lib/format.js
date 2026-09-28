@@ -42,6 +42,38 @@ export function formatTime(value) {
   return TIME.format(new Date(value)).replace(/\s/g, ' ');
 }
 
+const MERIDIEM = /\s(a|p)\.\s?m\.$/;
+
+/**
+ * Start and end of one block of time, the meridiem said once when both
+ * share it: "4:00 – 6:00 p. m.", "11:00 a. m. – 1:00 p. m.".
+ */
+export function formatTimeRange(start, end) {
+  const from = formatTime(start);
+  const to = formatTime(end);
+  const fromMeridiem = from.match(MERIDIEM)?.[0];
+  if (fromMeridiem && fromMeridiem === to.match(MERIDIEM)?.[0]) {
+    return `${from.replace(MERIDIEM, '')} – ${to}`;
+  }
+  return `${from} – ${to}`;
+}
+
+/** ISO/Date -> "5:00" (no a. m./p. m.), where the context already says it. */
+export function formatClock(value) {
+  return formatTime(value).replace(MERIDIEM, '');
+}
+
+/** Whole hours between two instants (a reservation is 1 or 2). */
+export function hoursBetween(start, end) {
+  return Math.round((new Date(end) - new Date(start)) / 3_600_000);
+}
+
+/** A reservation as one block: "4:00 – 5:00 p. m." or "4:00 – 6:00 p. m. · 2 horas". */
+export function formatReservationSpan(start, end) {
+  const hours = hoursBetween(start, end);
+  return `${formatTimeRange(start, end)}${hours >= 2 ? ` · ${hours} horas` : ''}`;
+}
+
 /** ISO/Date -> "sábado, 27 de septiembre" in club time. */
 export function formatDayLong(value) {
   return DAY_LONG.format(new Date(value));

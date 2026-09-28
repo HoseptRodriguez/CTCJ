@@ -28,4 +28,14 @@ export class BookingPolicySettings {
   async setHoldDurationMinutes(_minutes, _updatedByUserId) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<boolean>} whether a held hour can take the next one too (2 hours) */
+  async isSecondHourEnabled() {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<void>} */
+  async setSecondHourEnabled(_enabled, _updatedByUserId) {
+    throw new Error('Not implemented');
+  }
 }

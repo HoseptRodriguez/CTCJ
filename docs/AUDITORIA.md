@@ -396,3 +396,18 @@ Se ejecutan contra `ctcj_test` con `npm run -w apps/backend test:integration`.
 - **Precios de canchas** (`/staff/precios`): cada cambio queda en `court_price_history` (precio anterior, nuevo, quién y cuándo). La reserva conserva el precio con el que se hizo (`reservations.price_cop`). El panel muestra el historial y cuántas reservas próximas mantienen su precio.
 - **`audit_logs`** registra: `PLAN_CREATED`, `PLAN_UPDATED`, `PLAN_ACTIVATED`, `PLAN_DEACTIVATED`, `PLAN_PRICE_SET`, `PLAN_PRICE_CANCELLED`, `PRICE_NOTICE_DAYS_CHANGED` y `COURT_PRICE_CHANGED`.
 - **Pagos:** siguen siendo presenciales en recepción. No hay pasarela de pago.
+
+---
+
+## 9. Reservas de 2 horas seguidas
+
+- **Flujo:** el jugador reserva 1 hora, como siempre. En el panel de confirmación aparece "+ Agregar otra hora (5:00 – 6:00)" solo si la hora siguiente de la **misma** cancha está libre y la opción está activada.
+- **Una sola reserva:** se amplía la misma fila (`reservations.period`) mientras está retenida.
+  - La retención no se reinicia; hay una confirmación, una cancelación y un cobro en recepción.
+  - Cuenta como 1 reserva en el límite de 2 activas por jugador.
+  - Máximo 2 horas. "Quitar la segunda hora" la devuelve a 1 hora.
+- **Choques:** los impide la restricción EXCLUDE `reservation_no_overlap`. Si la hora siguiente se ocupó, el API responde 409 `second_hour_unavailable` y la primera hora sigue apartada.
+- **Precio:** mientras está retenida se muestra el precio vigente de la cancha por hora multiplicado por las horas. Se **congela al confirmar** con el precio vigente en ese momento.
+- **Endpoints:** `POST` y `DELETE /api/booking/:id/second-hour`. Ajuste `booking.secondHourEnabled` (activado por defecto): `GET /api/booking/settings/second-hour` es público y `PUT` solo para ADMINISTRADOR. En el frontend el interruptor está en Precios de canchas → "Configuración de reservas".
+- **Sin migración:** la base ya admitía cualquier duración.
+- **Visualización:** Cobros, la línea de tiempo del panel y Mi CTCJ la muestran como un solo bloque: "4:00 – 6:00 p. m. · 2 horas".

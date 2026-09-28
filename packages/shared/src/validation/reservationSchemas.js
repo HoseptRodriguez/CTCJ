@@ -53,3 +53,8 @@ export const paymentsMonthlyQuerySchema = z.object({
 export const holdDurationSchema = z.object({
   minutes: z.number().int().min(MIN_HOLD_DURATION_MINUTES).max(MAX_HOLD_DURATION_MINUTES),
 });
+
+/** Admin setting: whether a held hour can grow into two consecutive hours. */
+export const setSecondHourPolicySchema = z.object({
+  enabled: z.boolean(),
+});

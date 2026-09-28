@@ -47,6 +47,36 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const addSecondHour = asyncHandler(async (req, res) => {
+    const result = await container.addSecondHour({
+      reservationId: req.params.id,
+      userId: req.user.id,
+      isStaff: isStaff(req.user.roles),
+    });
+    res.status(200).json(result);
+  });
+
+  const removeSecondHour = asyncHandler(async (req, res) => {
+    const result = await container.removeSecondHour({
+      reservationId: req.params.id,
+      userId: req.user.id,
+      isStaff: isStaff(req.user.roles),
+    });
+    res.status(200).json(result);
+  });
+
+  const getSecondHourPolicy = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getSecondHourPolicy());
+  });
+
+  const setSecondHourPolicy = asyncHandler(async (req, res) => {
+    const result = await container.setSecondHourPolicy({
+      enabled: req.body.enabled,
+      updatedByUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
   const cancel = asyncHandler(async (req, res) => {
     const result = await container.cancelReservation({
       reservationId: req.params.id,
@@ -135,6 +165,10 @@ export function createBookingController(container) {
     hold,
     confirm,
     cancel,
+    addSecondHour,
+    removeSecondHour,
+    getSecondHourPolicy,
+    setSecondHourPolicy,
     setCourtPrice,
     getCourtPriceHistory,
     recordPayment,

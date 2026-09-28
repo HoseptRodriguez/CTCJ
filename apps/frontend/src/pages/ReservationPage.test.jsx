@@ -19,6 +19,9 @@ vi.mock('../api/bookingClient.js', () => ({
     confirm: vi.fn(),
     cancel: vi.fn(),
     getHoldDuration: vi.fn(),
+    getSecondHourPolicy: vi.fn(),
+    addSecondHour: vi.fn(),
+    removeSecondHour: vi.fn(),
   },
 }));
 vi.mock('../api/guardianshipClient.js', () => ({
@@ -91,6 +94,7 @@ describe('ReservationPage — booking flow', () => {
     bookingClient.getSchedule.mockImplementation((date) => Promise.resolve(scheduleFor(date)));
     bookingClient.cancel.mockResolvedValue({});
     bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
+    bookingClient.getSecondHourPolicy.mockResolvedValue({ enabled: true });
     guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
   });
 
@@ -246,5 +250,112 @@ describe('ReservationPage — booking flow', () => {
     expect(
       await screen.findByText('Alguien acaba de reservar esa hora. Elige otra hora libre.'),
     ).toBeInTheDocument();
+  });
+});
+
+describe('ReservationPage — optional second hour', () => {
+  const HOLD = {
+    reservationId: 'r1',
+    holdExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    priceCop: 35000,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAuth.mockReturnValue({ status: 'authenticated', user: { id: 'u1', roles: ['JUGADOR'] } });
+    bookingClient.getSchedule.mockImplementation((date) => Promise.resolve(scheduleFor(date)));
+    bookingClient.cancel.mockResolvedValue({});
+    bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
+    bookingClient.getSecondHourPolicy.mockResolvedValue({ enabled: true });
+    bookingClient.hold.mockResolvedValue(HOLD);
+    guardianshipClient.listMine.mockResolvedValue({ guardianships: [] });
+  });
+
+  async function holdAt(user, court, time) {
+    renderPage();
+    await goToTomorrow(user);
+    await user.click(await cell(court, time));
+    return screen.findByRole('dialog', { name: 'Tu reserva' });
+  }
+
+  it('offers the next free hour; adding it shows 2 hours and both prices, and it can be removed', async () => {
+    bookingClient.addSecondHour.mockResolvedValue({
+      periodEnd: slotStartIso(TOMORROW, 10),
+      hours: 2,
+      priceCop: 70000,
+    });
+    bookingClient.removeSecondHour.mockResolvedValue({
+      periodEnd: slotStartIso(TOMORROW, 9),
+      hours: 1,
+      priceCop: 35000,
+    });
+    const user = userEvent.setup();
+    const panel = await holdAt(user, 'Cancha 1', '8:00 a. m.');
+
+    await user.click(
+      await within(panel).findByRole('button', { name: '+ Agregar otra hora (9:00 – 10:00)' }),
+    );
+    expect(bookingClient.addSecondHour).toHaveBeenCalledWith('r1');
+    expect(await within(panel).findByText(/8:00 – 10:00 a\. m\. · 2 horas/)).toBeInTheDocument();
+    expect(within(panel).getByText(/\$\s70\.000/)).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole('button', { name: 'Quitar la segunda hora' }));
+    expect(bookingClient.removeSecondHour).toHaveBeenCalledWith('r1');
+    expect(await within(panel).findByText(/8:00 – 9:00 a\. m\./)).toBeInTheDocument();
+    expect(within(panel).getByText(/\$\s35\.000/)).toBeInTheDocument();
+  });
+
+  it('no button when the next hour of the same court is taken (a class at 9:00 on Cancha 2)', async () => {
+    const user = userEvent.setup();
+    const panel = await holdAt(user, 'Cancha 2', '8:00 a. m.');
+    expect(
+      await within(panel).findByRole('button', { name: 'Confirmar reserva' }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).queryByRole('button', { name: /Agregar otra hora/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('no button when the club turned the option off', async () => {
+    bookingClient.getSecondHourPolicy.mockResolvedValue({ enabled: false });
+    const user = userEvent.setup();
+    const panel = await holdAt(user, 'Cancha 1', '8:00 a. m.');
+    expect(
+      await within(panel).findByRole('button', { name: 'Confirmar reserva' }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).queryByRole('button', { name: /Agregar otra hora/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('if someone took the next hour meanwhile: clear message, the first hour stays held', async () => {
+    bookingClient.addSecondHour.mockRejectedValue(
+      Object.assign(new Error('taken'), { code: 'second_hour_unavailable' }),
+    );
+    const user = userEvent.setup();
+    const panel = await holdAt(user, 'Cancha 1', '8:00 a. m.');
+    await user.click(await within(panel).findByRole('button', { name: /Agregar otra hora/ }));
+
+    expect(await within(panel).findByRole('alert')).toHaveTextContent(
+      'La hora de 9:00 ya no está disponible. Tu reserva de 8:00 sigue apartada.',
+    );
+    expect(within(panel).getByRole('button', { name: 'Confirmar reserva' })).toBeEnabled();
+    expect(bookingClient.cancel).not.toHaveBeenCalled();
+  });
+
+  it('confirming a 2-hour reservation shows the price frozen by the server', async () => {
+    bookingClient.addSecondHour.mockResolvedValue({
+      periodEnd: slotStartIso(TOMORROW, 10),
+      hours: 2,
+      priceCop: 70000,
+    });
+    bookingClient.confirm.mockResolvedValue({ status: 'CONFIRMED', priceCop: 80000, hours: 2 });
+    const user = userEvent.setup();
+    const panel = await holdAt(user, 'Cancha 1', '8:00 a. m.');
+    await user.click(await within(panel).findByRole('button', { name: /Agregar otra hora/ }));
+    await within(panel).findByText(/· 2 horas/);
+    await user.click(within(panel).getByRole('button', { name: 'Confirmar reserva' }));
+    expect(await within(panel).findByText(/\$\s80\.000/)).toBeInTheDocument();
+    expect(bookingClient.confirm).toHaveBeenCalledTimes(1);
   });
 });

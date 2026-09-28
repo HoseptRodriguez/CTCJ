@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { ClubPhoto } from '../../components/ui/ClubPhoto.jsx';
 import { Skeleton, SkeletonGroup } from '../../components/ui/Skeleton.jsx';
 import { formatCountdown, secondsUntil } from '../../lib/booking.js';
-import { capitalize, formatCop, formatDayLong, formatTime } from '../../lib/format.js';
+import { capitalize, formatCop, formatDayLong, formatReservationSpan } from '../../lib/format.js';
 
 /** Seconds left until `expiresAt`, ticking once per second; calls onExpire at 0. */
 export function useCountdown(expiresAt, onExpire) {
@@ -45,7 +45,7 @@ function Summary({ slot }) {
         <dd className="text-lead font-semibold text-ink">
           {capitalize(formatDayLong(slot.start))}
           <br />
-          {formatTime(slot.start)} a {formatTime(slot.end)}
+          {formatReservationSpan(slot.start, slot.end)}
         </dd>
       </div>
       {slot.forLabel && (
@@ -113,8 +113,11 @@ export function BookingPanel({
   showPhoto = true,
   inPanel = false,
   holdMinutes,
+  nextHourLabel = null,
+  onAddSecondHour,
+  onRemoveSecondHour,
 }) {
-  const { status, slot, hold, error } = flow;
+  const { status, slot, hold, error, hours = 1, notice, resizing } = flow;
 
   if (status === 'idle') {
     return (
@@ -133,7 +136,8 @@ export function BookingPanel({
           {holdMinutes ? `${holdMinutes} minutos` : 'unos minutos'} mientras confirmas.
         </p>
         <p className="mt-4 text-body text-ink-soft">
-          Las reservas son de 1 hora. Pagas en recepción al llegar.
+          Las reservas son de 1 hora; si la hora siguiente está libre, puedes agregarla. Pagas en
+          recepción al llegar.
         </p>
       </div>
     );
@@ -193,11 +197,45 @@ export function BookingPanel({
         <>
           <Countdown expiresAt={hold.holdExpiresAt} onExpire={onExpire} />
           <Price amount={hold.priceCop} />
+          {/* Optional second hour: same court, the next hour, one reservation. */}
+          {hours === 1 && nextHourLabel && (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={onAddSecondHour}
+              loading={resizing}
+              loadingText="Agregando la hora…"
+              disabled={status === 'confirming'}
+            >
+              + Agregar otra hora ({nextHourLabel})
+            </Button>
+          )}
+          {hours === 2 && (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={onRemoveSecondHour}
+              loading={resizing}
+              loadingText="Quitando la hora…"
+              disabled={status === 'confirming'}
+            >
+              Quitar la segunda hora
+            </Button>
+          )}
+          {notice && (
+            <p
+              role="alert"
+              className="rounded-lg border-2 border-amber bg-amber-soft p-4 text-body text-ink"
+            >
+              {notice}
+            </p>
+          )}
           <Button
             size="lg"
             fullWidth
             icon={<CheckIcon />}
             onClick={onConfirm}
+            disabled={resizing}
             loading={status === 'confirming'}
             loadingText="Confirmando…"
           >

@@ -12,8 +12,9 @@ import { Skeleton, SkeletonGroup } from '../components/ui/Skeleton.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { DAYS_SHOWN } from '../lib/booking.js';
+import { DAYS_SHOWN, classifySlot, findReservation } from '../lib/booking.js';
 import { describeBookingError } from '../lib/bookingErrorMessages.js';
+import { formatClock } from '../lib/format.js';
 import {
   DAY_PARTS,
   HOURS,
@@ -36,7 +37,15 @@ const stepsFor = (holdMinutes) => [
   'Toca una hora libre',
   `Confirma en ${holdMinutes} minutos`,
 ];
-const IDLE = { status: 'idle', slot: null, hold: null, error: null };
+const IDLE = {
+  status: 'idle',
+  slot: null,
+  hold: null,
+  error: null,
+  hours: 1,
+  notice: null,
+  resizing: false,
+};
 
 function initialPart(dateKey) {
   if (dateKey !== clubTodayKey()) return 'manana';
@@ -69,6 +78,8 @@ export function ReservationPage() {
   const preselectedFromUrl = useRef(false);
   // The club's real hold time (admin setting); the default until it loads.
   const [holdMinutes, setHoldMinutes] = useState(DEFAULT_HOLD_DURATION_MINUTES);
+  // Whether a held hour can take the next one too (admin setting, on by default).
+  const [secondHourEnabled, setSecondHourEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +87,10 @@ export function ReservationPage() {
       .then(() => bookingClient.getHoldDuration())
       .then((d) => !cancelled && Number.isInteger(d?.minutes) && setHoldMinutes(d.minutes))
       .catch(() => {});
+    Promise.resolve()
+      .then(() => bookingClient.getSecondHourPolicy())
+      .then((d) => !cancelled && setSecondHourEnabled(d?.enabled === true))
+      .catch(() => {}); // unknown => simply not offered
     return () => {
       cancelled = true;
     };
@@ -216,12 +231,74 @@ export function ReservationPage() {
     holdSlot(slot);
   }
 
-  async function handleConfirm() {
-    setFlow((f) => ({ ...f, status: 'confirming' }));
+  // "+ Agregar otra hora": only when the same court's next hour, still inside
+  // the day's grid, is free right now (the server has the last word).
+  const nextHour = flow.slot ? flow.slot.hour + (flow.hours ?? 1) : null;
+  const canAddSecondHour =
+    secondHourEnabled &&
+    flow.status === 'held' &&
+    (flow.hours ?? 1) === 1 &&
+    schedule?.date === flow.slot?.dateKey &&
+    HOURS.includes(nextHour) &&
+    classifySlot(
+      findReservation(
+        schedule.reservations,
+        flow.slot.courtId,
+        slotStartIso(flow.slot.dateKey, nextHour),
+      ),
+      slotStartIso(flow.slot.dateKey, nextHour),
+    ) === 'free';
+
+  async function addSecondHour() {
+    const { slot, hold } = flow;
+    setFlow((f) => ({ ...f, resizing: true, notice: null }));
     try {
-      await bookingClient.confirm({ reservationId: flow.hold.reservationId });
+      const result = await bookingClient.addSecondHour(hold.reservationId);
+      setFlow((f) => ({
+        ...f,
+        resizing: false,
+        hours: result.hours,
+        slot: { ...f.slot, end: result.periodEnd },
+        hold: { ...f.hold, priceCop: result.priceCop },
+      }));
+      setReloadKey((k) => k + 1); // the grid shows both hours as yours
+    } catch (err) {
+      const notice =
+        err?.code === 'second_hour_unavailable'
+          ? `La hora de ${formatClock(slot.end)} ya no está disponible. Tu reserva de ${formatClock(slot.start)} sigue apartada.`
+          : describeBookingError(err);
+      setFlow((f) => ({ ...f, resizing: false, notice }));
+      setReloadKey((k) => k + 1); // the grid shows that hour taken, and the button goes away
+    }
+  }
+
+  async function removeSecondHour() {
+    setFlow((f) => ({ ...f, resizing: true, notice: null }));
+    try {
+      const result = await bookingClient.removeSecondHour(flow.hold.reservationId);
+      setFlow((f) => ({
+        ...f,
+        resizing: false,
+        hours: result.hours,
+        slot: { ...f.slot, end: result.periodEnd },
+        hold: { ...f.hold, priceCop: result.priceCop },
+      }));
+    } catch (err) {
+      setFlow((f) => ({ ...f, resizing: false, notice: describeBookingError(err) }));
+    }
+  }
+
+  async function handleConfirm() {
+    setFlow((f) => ({ ...f, status: 'confirming', notice: null }));
+    try {
+      const result = await bookingClient.confirm({ reservationId: flow.hold.reservationId });
       activeHold.current = null;
-      setFlow((f) => ({ ...f, status: 'confirmed' }));
+      // The price frozen at confirmation (the court's price now, times the hours).
+      setFlow((f) => ({
+        ...f,
+        status: 'confirmed',
+        hold: { ...f.hold, priceCop: result?.priceCop ?? f.hold.priceCop },
+      }));
       toast({
         title: 'Reserva confirmada',
         description: `${flow.slot.courtName}. Pagas en recepción al llegar.`,
@@ -271,6 +348,13 @@ export function ReservationPage() {
       onLogin={() => goToLogin(flow.slot)}
       onExpire={handleExpire}
       holdMinutes={holdMinutes}
+      nextHourLabel={
+        canAddSecondHour
+          ? `${formatClock(flow.slot.end)} – ${formatClock(slotEndIso(flow.slot.dateKey, nextHour))}`
+          : null
+      }
+      onAddSecondHour={addSecondHour}
+      onRemoveSecondHour={removeSecondHour}
     />
   );
 

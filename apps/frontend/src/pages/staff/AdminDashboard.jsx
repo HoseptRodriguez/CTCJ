@@ -29,7 +29,7 @@ import {
   HOURS,
   OPEN_HOUR,
 } from '../../lib/clubTime.js';
-import { formatCop, formatDayShort, formatTime } from '../../lib/format.js';
+import { formatCop, formatDayShort, formatReservationSpan, formatTime } from '../../lib/format.js';
 import { useAsync } from '../../lib/useAsync.js';
 import { useMediaQuery } from '../../lib/useMediaQuery.js';
 import { SectionCard } from '../mictcj/shared.jsx';
@@ -328,10 +328,10 @@ function CourtTimeline({ schedule, isToday }) {
                           left: pct(start),
                           width: `calc(${pct(end + OPEN_HOUR - start)} - 2px)`,
                         }}
-                        title={`${formatTime(r.periodStart)} · ${blockLabel(r)}`}
+                        title={`${formatReservationSpan(r.periodStart, r.periodEnd)} · ${blockLabel(r)}`}
                       >
                         <span className="sr-only">
-                          {`${formatTime(r.periodStart)} a ${formatTime(r.periodEnd)}: ${blockLabel(r)}`}
+                          {`${formatReservationSpan(r.periodStart, r.periodEnd)}: ${blockLabel(r)}`}
                         </span>
                         {/* A 1-hour block is ~45px wide: only the hour fits.
                             Longer blocks also show who (or "Clase"). */}

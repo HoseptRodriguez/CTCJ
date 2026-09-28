@@ -9,6 +9,7 @@ import {
   paymentsMonthlyQuerySchema,
   overduePolicySchema,
   holdDurationSchema,
+  setSecondHourPolicySchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -27,6 +28,9 @@ export function createBookingRoutes(controller) {
   router.post('/hold', requireAuth, validateBody(holdSchema), controller.hold);
   router.post('/confirm', requireAuth, validateBody(confirmSchema), controller.confirm);
   router.post('/:id/cancel', requireAuth, controller.cancel);
+  // The optional second hour of a held reservation (same court, next hour).
+  router.post('/:id/second-hour', requireAuth, controller.addSecondHour);
+  router.delete('/:id/second-hour', requireAuth, controller.removeSecondHour);
 
   router.put(
     '/courts/:id/price',
@@ -90,6 +94,15 @@ export function createBookingRoutes(controller) {
     requireRole(ROLE_CODES.ADMINISTRADOR),
     validateBody(holdDurationSchema),
     controller.setHoldDuration,
+  );
+  // Public: the booking page only offers "+ Agregar otra hora" when it's on.
+  router.get('/settings/second-hour', controller.getSecondHourPolicy);
+  router.put(
+    '/settings/second-hour',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(setSecondHourPolicySchema),
+    controller.setSecondHourPolicy,
   );
 
   return router;

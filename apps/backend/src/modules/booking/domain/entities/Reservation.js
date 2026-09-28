@@ -5,7 +5,11 @@ import { HoldExpired } from '../errors/HoldExpired.js';
 import { ReservationNotOwned } from '../errors/ReservationNotOwned.js';
 import { ReservationAlreadyPaid } from '../errors/ReservationAlreadyPaid.js';
 import { ReservationHasNoPrice } from '../errors/ReservationHasNoPrice.js';
-import { DEFAULT_HOLD_DURATION_MINUTES } from '../policies/bookingPolicy.js';
+import {
+  DEFAULT_HOLD_DURATION_MINUTES,
+  MAX_HOURS_PER_RESERVATION,
+  SLOT_DURATION_MINUTES,
+} from '../policies/bookingPolicy.js';
 import { isWithoutPenalty, PENALTY_FREE_WINDOW_HOURS } from '../policies/cancellationPolicy.js';
 
 const MINUTE_MS = 60_000;
@@ -72,6 +76,45 @@ export class Reservation {
       holdExpiresAt: new Date(now.getTime() + holdMinutes * MINUTE_MS),
       priceCop: priceCop ?? null,
     });
+  }
+
+  /** Whole hours it covers (1, or 2 with the second hour). */
+  hours() {
+    return Math.round(
+      (this.periodEnd.getTime() - this.periodStart.getTime()) / (SLOT_DURATION_MINUTES * MINUTE_MS),
+    );
+  }
+
+  /**
+   * The same court's next hour joins this one while it's still held: one
+   * reservation, one hold (its expiry doesn't move), one confirmation.
+   * Returns the new end; the repository applies it, and the database's
+   * exclusion constraint decides whether that hour is still free.
+   */
+  withSecondHour(now) {
+    this.#assertResizable(now, 'addSecondHour');
+    if (this.hours() >= MAX_HOURS_PER_RESERVATION) {
+      throw new InvalidReservationState(`${this.hours()}h`, 'addSecondHour');
+    }
+    return new Date(this.periodEnd.getTime() + SLOT_DURATION_MINUTES * MINUTE_MS);
+  }
+
+  /** Back to the first hour only. Returns the new end. */
+  withoutSecondHour(now) {
+    this.#assertResizable(now, 'removeSecondHour');
+    if (this.hours() < 2) {
+      throw new InvalidReservationState(`${this.hours()}h`, 'removeSecondHour');
+    }
+    return new Date(this.periodStart.getTime() + SLOT_DURATION_MINUTES * MINUTE_MS);
+  }
+
+  #assertResizable(now, action) {
+    if (this.status !== RESERVATION_STATUS.HOLD) {
+      throw new InvalidReservationState(this.status, action);
+    }
+    if (this.isExpired(now)) {
+      throw new HoldExpired();
+    }
   }
 
   isOccupying() {

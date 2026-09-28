@@ -76,13 +76,13 @@ export function SegmentedControl({
               onClick={() => onChange(option.value)}
               className={cn(
                 'focus-ring inline-flex min-h-btn items-center justify-center gap-2 rounded-lg px-5 text-body transition-colors duration-fast',
-                fullWidth && 'flex-1 px-2',
+                fullWidth && 'min-w-0 flex-1 gap-1 px-1.5',
                 checked
                   ? 'bg-lime font-bold text-navy-500 shadow-sm'
                   : 'font-semibold text-ink-soft hover:bg-surface hover:text-ink',
               )}
             >
-              {checked && <CheckIcon className="h-5 w-5" />}
+              {checked && <CheckIcon className="h-5 w-5 shrink-0" />}
               {option.label}
             </button>
           );

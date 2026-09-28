@@ -6,6 +6,9 @@ const BOOKING_ERROR_MESSAGES = {
   invalid_time_slot:
     'Esa hora ya no se puede reservar: las reservas se hacen con al menos 30 minutos y máximo 7 días de anticipación. Elige otra hora.',
   slot_not_available: 'Alguien acaba de reservar esa hora. Elige otra hora libre.',
+  second_hour_unavailable:
+    'Esa hora siguiente ya no está disponible. Tu primera hora sigue apartada.',
+  second_hour_disabled: 'El club no está ofreciendo reservas de 2 horas en este momento.',
   hold_expired:
     'Se acabó el tiempo para confirmar y la hora quedó libre. Tócala de nuevo para reservarla.',
   reservation_not_owned: 'Esta reserva es de otra persona, no la puedes cambiar.',

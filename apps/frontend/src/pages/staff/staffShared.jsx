@@ -8,7 +8,7 @@ import { cn } from '../../components/ui/cn.js';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
 import { TextAreaField } from '../../components/ui/Field.jsx';
 import { addDaysToKey, clubTodayKey, dateFromKey } from '../../lib/clubTime.js';
-import { capitalize, formatDayLong, formatTime } from '../../lib/format.js';
+import { capitalize, formatDayLong, formatReservationSpan } from '../../lib/format.js';
 
 export const METHOD_LABELS = {
   [PAYMENT_METHOD.CASH]: 'Efectivo',
@@ -30,9 +30,9 @@ export const isCourtBooking = (r) =>
 
 export { isChargeable, isUnpaid } from '../../lib/booking.js';
 
-/** "7:00 a. m. – 8:00 a. m." */
+/** One block: "7:00 – 8:00 a. m." or "4:00 – 6:00 p. m. · 2 horas". */
 export function timeRange(r) {
-  return `${formatTime(r.periodStart)} – ${formatTime(r.periodEnd)}`;
+  return formatReservationSpan(r.periodStart, r.periodEnd);
 }
 
 /** "Buenos días" / "Buenas tardes" / "Buenas noches" by the club's hour. */

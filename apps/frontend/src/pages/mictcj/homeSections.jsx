@@ -21,7 +21,13 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { cn } from '../../components/ui/cn.js';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
 import { describeChallengesError } from '../../lib/challengesErrorMessages.js';
-import { capitalize, CLUB_TIME_ZONE, formatCop, formatTime } from '../../lib/format.js';
+import {
+  capitalize,
+  CLUB_TIME_ZONE,
+  formatCop,
+  formatTime,
+  hoursBetween,
+} from '../../lib/format.js';
 import { describeIdentityError } from '../../lib/identityErrorMessages.js';
 import { describePlayerMembershipStatus } from '../../lib/playerMembershipStatusLabels.js';
 import { compareWithPast, highlights } from '../../lib/performance.js';
@@ -170,6 +176,8 @@ export function NextMatchCard({ reservations }) {
                 {formatTime(next.periodStart)}{' '}
                 <span className="text-lead font-semibold text-ink-soft">
                   a {formatTime(next.periodEnd)}
+                  {hoursBetween(next.periodStart, next.periodEnd) >= 2 &&
+                    ` · ${hoursBetween(next.periodStart, next.periodEnd)} horas`}
                 </span>
               </p>
               <p className="mt-2 text-lead font-semibold text-ink">{next.courtName}</p>

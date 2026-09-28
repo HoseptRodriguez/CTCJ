@@ -74,4 +74,15 @@ export class ReservationRepository {
   async countUpcomingByCourt(_courtId, _from) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Moves the end of a HOLD (adding or removing its second hour) and sets
+   * its price, in one conditional update. Throws SlotNotAvailable when the
+   * database's exclusion constraint rejects the new period.
+   * @param {{ id: string, periodEnd: Date, priceCop: bigint|null }} _input
+   * @returns {Promise<import('../../domain/entities/Reservation.js').Reservation|null>} null if it's no longer a HOLD
+   */
+  async resizeHold(_input) {
+    throw new Error('Not implemented');
+  }
 }

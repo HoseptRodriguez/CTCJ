@@ -65,6 +65,31 @@ export function createPrismaReservationRepository(prisma) {
       }
     },
 
+    async resizeHold({ id, periodEnd, priceCop }) {
+      try {
+        const rows = await prisma.$queryRaw`
+          UPDATE reservations
+             SET period = tstzrange(period_start, ${periodEnd}::timestamptz, '[)'),
+                 price_cop = ${priceCop},
+                 updated_at = now()
+           WHERE id = ${id}::uuid AND status = 'HOLD'
+          RETURNING
+            id, club_id AS "clubId", court_id AS "courtId",
+            period_start AS "periodStart", period_end AS "periodEnd",
+            status, reservation_type AS "reservationType",
+            holder_user_id AS "holderUserId", created_by AS "createdBy",
+            hold_expires_at AS "holdExpiresAt", price_cop AS "priceCop",
+            payment_id AS "paymentId", notes
+        `;
+        return rows[0] ? toDomainReservation(rows[0]) : null;
+      } catch (err) {
+        if (err.code === 'P2010' && err.meta?.code === '23P01') {
+          throw new SlotNotAvailable();
+        }
+        throw err;
+      }
+    },
+
     async findById(id) {
       const row = await prisma.reservation.findUnique({ where: { id } });
       return row ? toDomainReservation(row) : null;

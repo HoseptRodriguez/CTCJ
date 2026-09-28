@@ -14,6 +14,8 @@ vi.mock('../../api/bookingClient.js', () => ({
     getCourtPriceHistory: vi.fn(),
     getHoldDuration: vi.fn(),
     setHoldDuration: vi.fn(),
+    getSecondHourPolicy: vi.fn(),
+    setSecondHourPolicy: vi.fn(),
   },
 }));
 
@@ -28,6 +30,7 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   bookingClient.getHoldDuration.mockResolvedValue({ minutes: 15 });
+  bookingClient.getSecondHourPolicy.mockResolvedValue({ enabled: true });
   bookingClient.getCourtPriceHistory.mockResolvedValue({
     priceCop: 60000,
     upcomingReservations: 3,
@@ -117,5 +120,22 @@ describe('CourtPricingPage (Precios de canchas)', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Sí, cambiar tiempo' }));
     await waitFor(() => expect(bookingClient.setHoldDuration).toHaveBeenCalledWith(20));
     expect(await screen.findByText('20 minutos')).toBeInTheDocument();
+  });
+
+  it('the admin turns off two-hour reservations in "Configuración de reservas", after confirming', async () => {
+    bookingClient.setSecondHourPolicy.mockResolvedValue({ enabled: false });
+    const user = userEvent.setup();
+    renderPage();
+    expect(
+      await screen.findByRole('heading', { name: 'Configuración de reservas' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Activadas')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Desactivar reservas de 2 horas' }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: '¿Desactivar las reservas de 2 horas?',
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, desactivar' }));
+    await waitFor(() => expect(bookingClient.setSecondHourPolicy).toHaveBeenCalledWith(false));
+    expect(await screen.findByText('Desactivadas')).toBeInTheDocument();
   });
 });

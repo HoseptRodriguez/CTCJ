@@ -53,7 +53,7 @@ describe('confirmReservation', () => {
       isStaff: false,
     });
 
-    expect(result).toEqual({ reservationId: 'res-1', status: 'CONFIRMED' });
+    expect(result).toMatchObject({ reservationId: 'res-1', status: 'CONFIRMED', hours: 1 });
     const stored = await deps.reservationRepository.findById('res-1');
     expect(stored.status).toBe('CONFIRMED');
   });

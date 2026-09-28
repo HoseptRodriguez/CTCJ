@@ -3,6 +3,7 @@
 // future policy (in any module) needs its own key and its own adapter like
 // this one; never widen this adapter's meaning to cover something else.
 import {
+  DEFAULT_SECOND_HOUR_ENABLED,
   DEFAULT_HOLD_DURATION_MINUTES,
   MAX_HOLD_DURATION_MINUTES,
   MIN_HOLD_DURATION_MINUTES,
@@ -10,6 +11,7 @@ import {
 
 const OVERDUE_BOOKING_BLOCK_KEY = 'booking.blockOnOverdueMembership';
 const HOLD_DURATION_KEY = 'booking.holdDurationMinutes';
+const SECOND_HOUR_KEY = 'booking.secondHourEnabled';
 
 /**
  * @param {{
@@ -44,6 +46,14 @@ export function createIdentitySystemSettingBookingPolicy({ getSystemSetting, set
     },
     async setHoldDurationMinutes(minutes, updatedByUserId) {
       await setSystemSetting({ key: HOLD_DURATION_KEY, value: minutes, updatedByUserId });
+    },
+    async isSecondHourEnabled() {
+      const setting = await getSystemSetting({ key: SECOND_HOUR_KEY });
+      // Absent (never changed) => on, the club's default.
+      return typeof setting?.value === 'boolean' ? setting.value : DEFAULT_SECOND_HOUR_ENABLED;
+    },
+    async setSecondHourEnabled(enabled, updatedByUserId) {
+      await setSystemSetting({ key: SECOND_HOUR_KEY, value: Boolean(enabled), updatedByUserId });
     },
   };
 }

@@ -34,9 +34,9 @@ const SCHEDULE = {
     },
     {
       ...base,
-      id: 'res-unpaid-2',
+      id: 'res-unpaid-2', // two consecutive hours: one reservation, one charge
       periodStart: '2026-08-05T18:00:00.000Z',
-      periodEnd: '2026-08-05T19:00:00.000Z',
+      periodEnd: '2026-08-05T20:00:00.000Z',
       paymentId: null,
       holderName: 'Ana Ruiz',
       bookedByOther: false,
@@ -118,6 +118,8 @@ describe('PaymentsQueuePage (Cobros)', () => {
     expect(within(list).getByText('La reservó su acudiente, Clara Rey')).toBeInTheDocument();
     expect(within(list).getAllByText('$ 60.000')).toHaveLength(2);
     expect(within(list).getAllByRole('button', { name: 'Cobrar' })).toHaveLength(2);
+    // A 2-hour reservation is one block.
+    expect(within(list).getByText(/1:00 – 3:00 p\. m\. · 2 horas/)).toBeInTheDocument();
   });
 
   it('charges with a frozen value and a chosen method, then offers print and "Siguiente cobro"', async () => {

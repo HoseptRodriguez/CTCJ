@@ -240,6 +240,75 @@ function HoldDurationCard() {
   );
 }
 
+/** Admin setting: a held hour can take the same court's next hour (2 hours). */
+function SecondHourCard() {
+  const toast = useToast();
+  const policy = useAsync(() => bookingClient.getSecondHourPolicy(), []);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const enabled = policy.data?.enabled;
+
+  async function toggle() {
+    setSaving(true);
+    try {
+      const result = await bookingClient.setSecondHourPolicy(!enabled);
+      policy.setData(() => result);
+      toast({
+        title: result.enabled
+          ? 'Reservas de 2 horas activadas'
+          : 'Reservas de 2 horas desactivadas',
+        tone: 'success',
+      });
+    } catch (err) {
+      toast({
+        title: 'No pudimos cambiar la opción',
+        description: describeBookingError(err),
+        tone: 'error',
+      });
+    } finally {
+      setSaving(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Reservas de 2 horas seguidas"
+      description="Al reservar una hora, si la siguiente de la misma cancha está libre, el jugador puede agregarla. Es una sola reserva: una confirmación, una cancelación y un cobro."
+      async={policy}
+      className="mt-8"
+    >
+      {() => (
+        <div className="flex flex-wrap items-center gap-4">
+          <StatusBadge
+            status={enabled ? 'al-dia' : 'suspendida'}
+            label={enabled ? 'Activadas' : 'Desactivadas'}
+          />
+          <Button variant={enabled ? 'secondary' : 'primary'} onClick={() => setConfirming(true)}>
+            {enabled ? 'Desactivar reservas de 2 horas' : 'Activar reservas de 2 horas'}
+          </Button>
+          <ConfirmDialog
+            open={confirming}
+            tone="primary"
+            title={
+              enabled ? '¿Desactivar las reservas de 2 horas?' : '¿Activar las reservas de 2 horas?'
+            }
+            description={
+              enabled
+                ? 'Ya no se ofrecerá "+ Agregar otra hora". Las reservas de 2 horas ya hechas se mantienen.'
+                : 'Al reservar, se ofrecerá agregar la hora siguiente cuando esté libre.'
+            }
+            confirmLabel={enabled ? 'Sí, desactivar' : 'Sí, activar'}
+            loading={saving}
+            onConfirm={toggle}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 export function CourtPricingPage() {
   const courts = useAsync(() => bookingClient.listCourts().then((d) => d.courts), []);
   const [editingId, setEditingId] = useState(null);
@@ -287,7 +356,9 @@ export function CourtPricingPage() {
           </ul>
         )}
       </SectionCard>
+      <h2 className="mt-10 font-display text-h2 font-bold text-ink">Configuración de reservas</h2>
       <HoldDurationCard />
+      <SecondHourCard />
       <PricePanel
         key={editingId ?? 'none'}
         court={editing}

@@ -8,6 +8,8 @@ import { createConfirmReservation } from '../application/useCases/confirmReserva
 import { createCancelReservation } from '../application/useCases/cancelReservation.js';
 import { createSetCourtPrice } from '../application/useCases/setCourtPrice.js';
 import { createGetCourtPriceHistory } from '../application/useCases/getCourtPriceHistory.js';
+import { createSecondHourUseCases } from '../application/useCases/secondHour.js';
+import { createSecondHourPolicyUseCases } from '../application/useCases/secondHourPolicy.js';
 import { createRecordPayment } from '../application/useCases/recordPayment.js';
 import { createListPaymentsByDateRange } from '../application/useCases/listPaymentsByDateRange.js';
 import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
@@ -71,7 +73,20 @@ export function buildBookingContainer({
       bookingPolicySettings,
       guardianshipProvider,
     }),
-    confirmReservation: createConfirmReservation({ reservationRepository, clock }),
+    confirmReservation: createConfirmReservation({
+      reservationRepository,
+      courtRepository,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    ...createSecondHourUseCases({
+      reservationRepository,
+      courtRepository,
+      bookingPolicySettings,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    ...createSecondHourPolicyUseCases({ bookingPolicySettings }),
     cancelReservation: createCancelReservation({ reservationRepository, clock }),
     setCourtPrice: createSetCourtPrice({
       courtRepository,

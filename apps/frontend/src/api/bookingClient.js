@@ -3,6 +3,7 @@ import {
   confirmSchema,
   scheduleQuerySchema,
   setCourtPriceSchema,
+  setSecondHourPolicySchema,
   recordPaymentSchema,
   listPaymentsQuerySchema,
   paymentsMonthlyQuerySchema,
@@ -53,6 +54,26 @@ export const bookingClient = {
   },
 
   cancel: (reservationId) => request(`/api/booking/${reservationId}/cancel`, { method: 'POST' }),
+
+  /**
+   * Adds the same court's next hour to a held reservation (one reservation,
+   * same hold). @returns {Promise<{periodStart, periodEnd, hours, holdExpiresAt, priceCop}>}
+   */
+  addSecondHour: (reservationId) =>
+    request(`/api/booking/${reservationId}/second-hour`, { method: 'POST' }),
+
+  /** Back to one hour. */
+  removeSecondHour: (reservationId) =>
+    request(`/api/booking/${reservationId}/second-hour`, { method: 'DELETE' }),
+
+  /** @returns {Promise<{enabled: boolean}>} public: whether the second hour is offered */
+  getSecondHourPolicy: () => request('/api/booking/settings/second-hour'),
+
+  /** @param {boolean} enabled */
+  setSecondHourPolicy: (enabled) => {
+    setSecondHourPolicySchema.parse({ enabled });
+    return request('/api/booking/settings/second-hour', { method: 'PUT', body: { enabled } });
+  },
 
   /**
    * Applies to new reservations; the ones already made keep their price.
