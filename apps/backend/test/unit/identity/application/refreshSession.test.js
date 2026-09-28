@@ -102,6 +102,27 @@ describe('refreshSession', () => {
     );
   });
 
+  it('an account deactivated while signed in loses its session for good', async () => {
+    const rawToken = await seedUserWithRefreshToken(
+      deps.userRepository,
+      deps.refreshTokenRepository,
+      deps.tokenService,
+    );
+    const user = await deps.userRepository.findById('user-1');
+    user.status = 'DEACTIVATED';
+    await deps.userRepository.update(user);
+
+    await expect(refreshSession({ rawRefreshToken: rawToken })).rejects.toThrow(
+      InvalidRefreshToken,
+    );
+    // Reactivating it doesn't bring that session back: the family was revoked.
+    user.status = 'ACTIVE';
+    await deps.userRepository.update(user);
+    await expect(refreshSession({ rawRefreshToken: rawToken })).rejects.toThrow(
+      InvalidRefreshToken,
+    );
+  });
+
   it('reuse of an already-rotated token revokes the entire family', async () => {
     const rawToken = await seedUserWithRefreshToken(
       deps.userRepository,

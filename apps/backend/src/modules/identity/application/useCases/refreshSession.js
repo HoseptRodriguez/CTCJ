@@ -39,6 +39,11 @@ export function createRefreshSession({
     if (!user) {
       throw new InvalidRefreshToken();
     }
+    // Deactivated while signed in: the session ends here, for good.
+    if (!user.canSignIn()) {
+      await refreshTokenRepository.revokeFamily(record.familyId);
+      throw new InvalidRefreshToken();
+    }
 
     const newRawToken = tokenService.generateRefreshToken();
     const newTokenHash = tokenService.hashRefreshToken(newRawToken);

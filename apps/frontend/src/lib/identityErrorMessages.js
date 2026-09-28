@@ -2,6 +2,8 @@
 const IDENTITY_ERROR_MESSAGES = {
   invalid_credentials:
     'El correo o la contraseña no coinciden. Revísalos e intenta de nuevo, o usa “Olvidé mi contraseña”.',
+  account_not_active:
+    'Esta cuenta está desactivada. Si crees que es un error, comunícate con el club.',
   email_not_verified:
     'Todavía no has confirmado tu correo. Abre el enlace que te enviamos al registrarte.',
   email_already_registered:

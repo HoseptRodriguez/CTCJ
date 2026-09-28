@@ -4,6 +4,7 @@ import { SelfAssignmentForbidden } from '../errors/SelfAssignmentForbidden.js';
 import { EmailNotVerified } from '../errors/EmailNotVerified.js';
 import { MembershipNotApplicable } from '../errors/MembershipNotApplicable.js';
 import { shouldLock, computeLockedUntil } from '../policies/lockoutPolicy.js';
+import { AccountNotActive } from '../errors/AccountNotActive.js';
 
 import { Role } from './Role.js';
 
@@ -120,6 +121,17 @@ export class User {
   ensureEmailVerified() {
     if (!this.emailVerifiedAt) {
       throw new EmailNotVerified();
+    }
+  }
+
+  /** Suspended or deactivated accounts (by the club) can't sign in or keep a session. */
+  canSignIn() {
+    return this.status !== UserStatus.SUSPENDED && this.status !== UserStatus.DEACTIVATED;
+  }
+
+  ensureCanSignIn() {
+    if (!this.canSignIn()) {
+      throw new AccountNotActive();
     }
   }
 

@@ -46,6 +46,7 @@ export function createLoginUser({
     // Only reachable once the password is confirmed correct, so this never
     // leaks "email not verified" to someone who doesn't already know it.
     user.ensureEmailVerified();
+    user.ensureCanSignIn(); // suspended or deactivated by the club
 
     user.recordSuccessfulLogin(now);
     await userRepository.update(user);

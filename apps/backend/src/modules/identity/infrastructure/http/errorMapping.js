@@ -12,6 +12,7 @@ const STATUS_BY_CODE = {
   invalid_credentials: 401,
   self_assignment_forbidden: 403,
   email_not_verified: 403,
+  account_not_active: 403,
   email_already_registered: 409,
   invalid_verification_token: 400,
   invalid_password_reset_token: 400,
