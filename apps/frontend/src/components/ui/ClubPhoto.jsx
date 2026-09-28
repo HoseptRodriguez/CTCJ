@@ -7,6 +7,9 @@ import { cn } from './cn.js';
  * public/img/club as <name>-<width>.webp and .jpg (metadata removed) and
  * writes the available widths to clubPhotoWidths.json. All are portrait 2:3.
  * `position` is where the subject is, so a wide crop keeps faces in view.
+ *
+ * Only photos that may be published are here: one where a minor appears
+ * without the guardian's authorization is left out (src/lib/photo-rights.js).
  */
 export const CLUB_PHOTOS = {
   'canchas-panoramica-nubes': {
@@ -20,14 +23,6 @@ export const CLUB_PHOTOS = {
   'jugador-espera-recepcion': {
     position: 'center 62%',
     alt: 'Jugador en posición de espera con la raqueta lista, con árboles y montañas detrás',
-  },
-  'jugador-saque-azul': {
-    position: 'center 62%',
-    alt: 'Jugador sacando en una cancha de arcilla, con palmeras y público al fondo',
-  },
-  'nino-saque': {
-    position: 'center 46%',
-    alt: 'Niño de la escuela lanzando la bola para sacar en una cancha de arcilla del club',
   },
   'academia-chaqueta-orlando-rodriguez': {
     position: 'center 60%',

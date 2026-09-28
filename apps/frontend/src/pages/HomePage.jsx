@@ -46,8 +46,10 @@ const QUICK_ACTIONS = [
 
 const PROGRAMS = [
   { photo: 'jugador-desplazamiento', label: 'Clases para adultos', className: 'md:row-span-2' },
-  { photo: 'nino-saque', label: 'Escuela infantil', className: '' },
-  { photo: 'jugador-saque-azul', label: 'Competencia y ranking', className: '' },
+  // No photos of minors until the club holds their guardians' written
+  // authorization (src/lib/photo-rights.js).
+  { photo: 'canchas-panoramica-nubes', label: 'Escuela infantil', className: '' },
+  { photo: 'jugador-espera-recepcion', label: 'Competencia y ranking', className: '' },
 ];
 
 export function HomePage() {
@@ -88,7 +90,7 @@ function Hero() {
             className="mt-3 font-display text-title font-bold text-white md:text-title-lg lg:text-[4.5rem] lg:leading-[1.02]"
           />
           <p className="mt-5 max-w-prose text-lead text-white/90">
-            Reserva tu cancha en un minuto, sigue tu progreso y entrena con la Academia Orlando
+            Reserva tu cancha en línea, sigue tu progreso y entrena con la Academia Orlando
             Rodríguez.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -219,9 +221,11 @@ function ClayBlock() {
             id="club-title"
             className="font-display text-title font-bold leading-tight md:text-title-lg"
           >
-            3 canchas de arcilla, abiertas todos los días
+            3 canchas de arcilla para reservar en línea
           </h2>
-          <p className="mt-4 text-lead">De 5:00 a. m. a 10:00 p. m. Dos canchas con iluminación.</p>
+          <p className="mt-4 text-lead">
+            Reservas de 5:00 a. m. a 10:00 p. m. Dos canchas con iluminación.
+          </p>
           <Button tone="dark" size="lg" to="/canchas" icon={<CalendarIcon />} className="mt-8">
             Reservar una cancha
           </Button>

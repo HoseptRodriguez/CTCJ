@@ -43,6 +43,7 @@ import { createAccountRequirementsUseCases } from '../application/useCases/accou
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createAnonymizeAccount } from '../application/useCases/anonymizeAccount.js';
+import { createCountDemoAccounts } from '../application/useCases/checkDemoAccounts.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
@@ -242,6 +243,7 @@ export function buildIdentityContainer({
     }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
+    countDemoAccounts: createCountDemoAccounts({ userRepository }),
     anonymizeAccount: createAnonymizeAccount({
       userRepository,
       refreshTokenRepository,

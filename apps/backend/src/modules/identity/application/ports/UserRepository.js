@@ -81,4 +81,9 @@ export class UserRepository {
   async anonymize(_userId, _now) {
     throw new Error('Not implemented');
   }
+
+  /** @returns {Promise<number>} accounts marked as demonstration data (isDemo) */
+  async countDemo() {
+    throw new Error('Not implemented');
+  }
 }

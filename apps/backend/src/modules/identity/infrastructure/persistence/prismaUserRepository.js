@@ -126,6 +126,10 @@ export function createPrismaUserRepository(prisma) {
       return toDomainUser(updated, await getActiveRoleCodes(user.id));
     },
 
+    async countDemo() {
+      return prisma.user.count({ where: { isDemo: true } });
+    },
+
     async anonymize(userId, now) {
       await prisma.user.update({
         where: { id: userId },

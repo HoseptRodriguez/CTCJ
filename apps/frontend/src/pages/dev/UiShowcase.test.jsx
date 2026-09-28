@@ -40,10 +40,10 @@ describe('UiShowcase (/dev/ui)', () => {
     const photos = region('Fotos del club')
       .getAllByRole('img')
       .filter((img) => img.getAttribute('src')?.startsWith('/img/'));
-    expect(photos).toHaveLength(6);
+    expect(photos).toHaveLength(4);
     expect(photos[0]).toHaveAttribute('loading', 'eager');
     for (const img of photos.slice(1)) expect(img).toHaveAttribute('loading', 'lazy');
-    for (const img of photos) expect(img.getAttribute('alt')).toMatch(/cancha|jugador/i);
+    for (const img of photos) expect(img.getAttribute('alt')).toMatch(/cancha|jugador|Orlando/i);
   });
 
   it('confirm dialog: focuses the safe button, closes on Escape and returns focus', async () => {

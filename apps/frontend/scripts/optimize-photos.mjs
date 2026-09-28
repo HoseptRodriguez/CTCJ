@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 import sharp from 'sharp';
 
+import { isPhotoPublishable } from '../src/lib/photo-rights.js';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC_DIR = path.join(ROOT, 'photos-src', 'fotos-club');
 const OUT_DIR = path.join(ROOT, 'public', 'img', 'club');
@@ -32,7 +34,13 @@ function widthsFor(originalWidth) {
   return [...new Set(widths)];
 }
 
-const files = (await readdir(SRC_DIR)).filter((f) => /\.(jpe?g|png)$/i.test(f) && !SKIP.test(f));
+const all = (await readdir(SRC_DIR)).filter((f) => /\.(jpe?g|png)$/i.test(f) && !SKIP.test(f));
+// A photo where a minor appears without authorization is never generated
+// into public/ (src/lib/photo-rights.js); an unregistered one neither.
+const files = all.filter((f) => isPhotoPublishable(path.parse(f).name));
+for (const f of all.filter((x) => !files.includes(x))) {
+  console.warn(`Omitida (sin autorización o sin registrar en photo-rights.js): ${f}`);
+}
 if (files.length === 0) {
   console.error(`No hay fotos en ${SRC_DIR}`);
   process.exit(1);

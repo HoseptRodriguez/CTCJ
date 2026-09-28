@@ -193,7 +193,7 @@ export function NextMatchCard({ reservations }) {
               </div>
             </div>
             <ClubPhoto
-              name="jugador-saque-azul"
+              name="jugador-desplazamiento"
               alt=""
               sizes="16rem"
               className="hidden aspect-[3/4] rounded-xl md:block"

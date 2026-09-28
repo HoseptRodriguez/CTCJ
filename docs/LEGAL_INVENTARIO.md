@@ -147,10 +147,10 @@ Logotipos (escudo, bola de fuego y favicons): propiedad del club.
 
 ### e.2 Tipografías e íconos
 
-| Recurso                            | Origen                                                                                            | Licencia                                                                          |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Archivo, Archivo Narrow            | Paquetes `@fontsource/archivo` y `@fontsource/archivo-narrow` 5.x, servidos desde el propio sitio | SIL Open Font License 1.1                                                         |
-| 44 íconos SVG (`components/icons`) | Dibujados en el proyecto, al estilo de trazo de Lucide                                            | [VERIFICAR: si se copió alguno de Lucide (licencia ISC, pide conservar el aviso)] |
+| Recurso                            | Origen                                                                                            | Licencia                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Archivo, Archivo Narrow            | Paquetes `@fontsource/archivo` y `@fontsource/archivo-narrow` 5.x, servidos desde el propio sitio | SIL Open Font License 1.1                                                    |
+| 44 íconos SVG (`components/icons`) | **Derivados de Lucide** (Parte 6)                                                                 | Licencia ISC: aviso publicado en /licencias-terceros.txt (docs/LICENCIAS.md) |
 
 ### e.3 Librerías que se envían al navegador (frontend)
 

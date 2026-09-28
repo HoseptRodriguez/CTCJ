@@ -30,6 +30,12 @@ export function LegalLinks({ tone = 'light', className }) {
             Configurar cookies
           </button>
         </li>
+        <li>
+          {/* Notices required by the licenses of the icons and fonts (docs/LICENCIAS.md). */}
+          <a href="/licencias-terceros.txt" className={linkClass}>
+            Avisos de terceros
+          </a>
+        </li>
       </ul>
     </nav>
   );

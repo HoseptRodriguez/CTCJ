@@ -64,14 +64,22 @@ Google Fonts **ya no se usa** (las fuentes se sirven desde el propio sitio).
 
 ## 5. Imágenes y derechos
 
-| Foto                                  | Riesgo                                                        | Pendiente                                                                                     |
-| ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `nino-saque`                          | **Menor identificable**                                       | Autorización escrita del acudiente. Mientras falte, no se muestra en producción (Parte 6)     |
-| `jugador-saque-azul`                  | **Tratada como posible menor** (edad no confirmada)           | Confirmar la edad y, si es menor, la autorización del acudiente. Misma regla que `nino-saque` |
-| `jugador-desplazamiento`              | Adulto identificable                                          | Autorización de imagen [COMPLETAR]                                                            |
-| `jugador-espera-recepcion`            | Adulto identificable                                          | Autorización de imagen [COMPLETAR]                                                            |
-| `academia-chaqueta-orlando-rodriguez` | Orlando Rodríguez, identificable por el nombre en la chaqueta | Su autorización [COMPLETAR]                                                                   |
-| Todas las fotos                       | Autor desconocido                                             | Autor y cesión de derechos al club [COMPLETAR] (Ley 23 de 1982)                               |
+El registro de cada foto (origen, autor, personas reconocibles, menores, autorización) está en `apps/frontend/src/lib/photo-rights.js`, y el resumen en `docs/LICENCIAS.md`.
+
+| Foto                                  | Riesgo                                                        | Estado (Parte 6)                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `nino-saque`                          | **Menor identificable**                                       | **Retirada del sitio.** Se publicará solo con la autorización escrita del acudiente [COMPLETAR]     |
+| `jugador-saque-azul`                  | **Tratada como posible menor** (edad no confirmada)           | **Retirada del sitio.** Confirmar la edad y, si es menor, la autorización del acudiente [COMPLETAR] |
+| `jugador-desplazamiento`              | Adulto identificable                                          | En el sitio, **pendiente de autorización** de imagen [COMPLETAR]                                    |
+| `jugador-espera-recepcion`            | Adulto identificable                                          | En el sitio, **pendiente de autorización** de imagen [COMPLETAR]                                    |
+| `academia-chaqueta-orlando-rodriguez` | Orlando Rodríguez, identificable por el nombre en la chaqueta | En el sitio, **pendiente de su autorización** [COMPLETAR]                                           |
+| Todas las fotos                       | Autor desconocido                                             | Autor y cesión de derechos al club [COMPLETAR] (Ley 23 de 1982)                                     |
+
+- En Inicio, "Escuela infantil" y "Competencia y ranking" ahora usan fotos sin menores, y Mi CTCJ cambió la foto de su sección de ranking.
+- **Bloqueo en el build:** `npm run build` falla si una foto con menores sin autorización está en `public/img/club` o la usa el código, o si hay una foto sin registrar en `photo-rights.js`. `npm run photos` no genera esas fotos.
+- En `canchas-panoramica-nubes` se ven logos de patrocinadores en las vallas y personas lejanas (no reconocibles). [VERIFICAR] que el club puede mostrar esas marcas.
+- [VERIFICAR con el abogado] si las fotos de adultos pueden seguir publicadas mientras llega su autorización, o si hay que retirarlas también.
+- Arreglado: la imagen para compartir en redes (`og:image`) apuntaba a un archivo que no existe; ahora es la foto panorámica de las canchas (sin personas).
 
 ## 6. Menores de edad
 
@@ -89,9 +97,12 @@ Google Fonts **ya no se usa** (las fuentes se sirven desde el propio sitio).
 
 ## 8. Licencias por confirmar
 
-- **GSAP** (`gsap`, `@gsap/react`): tiene licencia propia, "Standard no charge", que no es de código abierto. [VERIFICAR] que las condiciones vigentes permiten este uso.
-- **Íconos SVG del proyecto:** están dibujados al estilo de Lucide. [VERIFICAR] si alguno se copió de Lucide (licencia ISC, que exige conservar el aviso de licencia).
+El detalle está en `docs/LICENCIAS.md`, y los avisos que piden las licencias se publican en `/licencias-terceros.txt` (enlazado en el pie de página como "Avisos de terceros").
+
+- **GSAP** (`gsap`, `@gsap/react`): licencia propia "Standard no charge", que no es de código abierto. [VERIFICAR] que las condiciones vigentes permiten este uso. Se puede quitar sin afectar el funcionamiento.
+- **Íconos:** **derivan de Lucide** (el trazo del corazón es el mismo). Licencia ISC: ya se publica su aviso. [VERIFICAR] el texto exacto contra el `LICENSE` oficial de Lucide.
 - **sharp / libvips** (solo en el servidor): libvips tiene licencia LGPL-3.0, con enlace dinámico. [VERIFICAR] (en principio no afecta al código del club).
+- **Logo de la Academia Orlando Rodríguez:** [VERIFICAR] quién es su titular.
 
 ## 9. Textos legales (Parte 3)
 
@@ -147,3 +158,27 @@ Datos y decisiones pendientes, por documento:
 - La copia de los datos de salud se entrega hoy por consulta; [VERIFICAR] el procedimiento (historia clínica: Resolución 1995 de 1999).
 - Textos de las autorizaciones cortas (salud, reglas de la Comunidad, promociones), versión 1 en `packages/shared/src/legal/authorizations.js`: [VERIFICAR con el abogado].
 - Festivos: calculados por regla, no por lista oficial. [VERIFICAR] cada año con el calendario oficial.
+
+## 13. Afirmaciones publicitarias (Ley 1480 de 2011, publicidad engañosa)
+
+Mientras el club no entregue pruebas, el sitio usa la **versión segura**. Para volver a la frase del folleto hace falta la prueba indicada (con nombre, fecha y documento).
+
+| Dónde                          | Frase del folleto o del diseño                                                                                       | Versión segura que usa el sitio                                                                                                    | Prueba que haría falta                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| El club, "¿Por qué elegirnos?" | "un equipo de entrenadores **altamente calificados**"                                                                | "un equipo de entrenadores dedicados a la enseñanza del tenis"                                                                     | Títulos, certificaciones o formación de cada entrenador                                   |
+| El club, "¿Por qué elegirnos?" | "instalaciones **de primer nivel**"                                                                                  | "instalaciones cuidadas"                                                                                                           | Norma técnica o certificación de las canchas                                              |
+| El club, "¿Por qué elegirnos?" | "ya sea que busquen competir **a nivel profesional**"                                                                | "ya sea que busquen competir"                                                                                                      | Jugadores formados que hoy compitan como profesionales                                    |
+| El club, "Espacios"            | "canchas **de última generación**" y "superficies **de primer nivel que garantizan** un rendimiento óptimo y seguro" | "tres canchas de arcilla, dos de ellas con iluminación [...] Cuidamos su mantenimiento para que juegues con comodidad y seguridad" | Ficha técnica de las canchas; no se puede "garantizar" un resultado                       |
+| El club, "Historia"            | "un proyecto que **hoy es un referente en la región**"                                                               | "un proyecto que hoy sigue creciendo"                                                                                              | Reconocimientos o rankings regionales con fecha                                           |
+| El club, "Historia"            | "seguimos siendo **la academia líder en la región**"                                                                 | "seguimos contribuyendo al desarrollo del tenis"                                                                                   | Un dato comparativo verificable (por ejemplo, número de alumnos frente a otras academias) |
+| El club, "Historia"            | "hemos formado jugadores que han obtenido **excelentes resultados** en competiciones"                                | "Acompañamos a nuestros jugadores en sus entrenamientos y en sus competencias"                                                     | Resultados concretos: jugador (con su autorización), torneo, fecha y puesto               |
+| El club, "Historia"            | "no solo formamos **campeones**"                                                                                     | (se quitó)                                                                                                                         | Campeonatos ganados por alumnos, con nombre y fecha                                       |
+| Inicio                         | "3 canchas de arcilla, **abiertas todos los días**"                                                                  | "3 canchas de arcilla para reservar en línea" y "Reservas de 5:00 a. m. a 10:00 p. m."                                             | Horario real, incluidos domingos y festivos [COMPLETAR]                                   |
+| Inicio                         | "Reserva tu cancha **en un minuto**"                                                                                 | "Reserva tu cancha en línea"                                                                                                       | No aplica (es una promesa de tiempo que no se puede asegurar)                             |
+| El club y metadatos            | "**Más de 10 años** formando tenistas" / "más de una década"                                                         | Se mantiene (dato del club)                                                                                                        | Fecha de inicio de la academia [VERIFICAR]                                                |
+| El club, "Visión"              | "Ser **el referente principal** en la formación de tenistas en la región"                                            | Se mantiene: es una meta, no una afirmación sobre hoy                                                                              | —                                                                                         |
+| Metadatos (buscadores)         | "Iniciación, competencia y **alto rendimiento**"                                                                     | Se mantiene                                                                                                                        | [VERIFICAR] que el club ofrece un programa de alto rendimiento                            |
+
+- **"En vivo":** no aparece en el código actual.
+- **Reseñas, testimonios, estrellas, cifras de clientes:** no hay ninguno en el sitio, ni en las semillas (`prisma/seed.js` solo crea el club, los roles, los permisos y las canchas).
+- **Datos de demostración:** hoy ninguna cuenta está marcada `is_demo`. En producción, el servidor **no arranca** si encuentra alguna (hay que eliminarla o anonimizarla antes).
