@@ -196,3 +196,10 @@ Mientras el club no entregue pruebas, el sitio usa la **versión segura**. Para 
 - **"En vivo":** no aparece en el código actual.
 - **Reseñas, testimonios, estrellas, cifras de clientes:** no hay ninguno en el sitio, ni en las semillas (`prisma/seed.js` solo crea el club, los roles, los permisos y las canchas).
 - **Datos de demostración:** hoy ninguna cuenta está marcada `is_demo`. En producción, el servidor **no arranca** si encuentra alguna (hay que eliminarla o anonimizarla antes).
+
+## 14. Bloqueo de publicación (Parte 9)
+
+- `npm run legal:check` falla mientras quede algún `[COMPLETAR]` o `[VERIFICAR]` en las páginas legales (y en las autorizaciones que se aceptan dentro del sitio), en los datos del negocio que muestra el pie de página o en el propio pie, o si hay una foto de un menor sin la autorización de su acudiente. Dice qué falta y dónde.
+- Se ejecuta primero en `npm run build`, que es el build de producción que usa Render: **el sitio no se puede publicar hasta que el club complete los datos** y el abogado revise los textos.
+- Hoy (2026-09-28) faltan 41 datos o revisiones. Para desbloquear: completar lo de las secciones 1, 2 y 9, cambiar cada `[VERIFICAR]` por el texto confirmado por el abogado y, como cambia el contenido, subir la `version` de cada documento y actualizar `manifest.json` (sección 9).
+- El CI compila el frontend (`npm run build -w apps/frontend`, que ya bloquea las fotos de menores) pero no ejecuta este bloqueo, para no quedar en rojo mientras el club completa los datos.
