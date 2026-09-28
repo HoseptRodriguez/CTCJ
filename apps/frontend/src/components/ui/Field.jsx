@@ -43,6 +43,56 @@ function FieldShell({ id, label, hint, error, required, children }) {
   );
 }
 
+/**
+ * A checkbox whose whole row is the label (a big target). Never pre-ticked
+ * by the caller for an authorization. `children` is the label and may hold
+ * links; the error is tied with aria-describedby.
+ */
+export function CheckboxField({ checked, onChange, error, hint, name, id: idProp, children }) {
+  const autoId = useId();
+  const id = idProp ?? autoId;
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  return (
+    <div>
+      <div
+        className={cn(
+          'flex items-start gap-3 rounded-lg border-2 p-4',
+          error ? 'border-danger' : 'border-line',
+        )}
+      >
+        <input
+          id={id}
+          name={name}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined}
+          className="focus-ring mt-1 h-6 w-6 shrink-0 accent-navy-500"
+        />
+        <label htmlFor={id} className="text-body text-ink">
+          {children}
+        </label>
+      </div>
+      {hint && (
+        <p id={hintId} className="mt-2 text-body-sm text-ink-soft">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p
+          id={errorId}
+          className="mt-2 flex items-start gap-2 text-body-sm font-semibold text-danger"
+        >
+          <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Text input, 64px tall. */
 export const TextField = forwardRef(function TextField(
   { label, hint, error, required, className, id: idProp, ...props },

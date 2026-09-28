@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { COMMUNITY_MEDIA_LIMITS, POST_MEDIA_TYPE } from '@ctcj/shared';
 
 import { detectFileType, probeVideoDuration } from '../../domain/services/fileSniffing.js';
+import { CommunityRulesNotAccepted } from '../errors/CommunityRulesNotAccepted.js';
 import { DailyMediaLimitReached } from '../errors/DailyMediaLimitReached.js';
 import { InvalidMedia } from '../errors/InvalidMedia.js';
 import { MediaNotAllowedForMinor } from '../errors/MediaNotAllowedForMinor.js';
@@ -37,9 +38,11 @@ const EXTENSION = { 'video/mp4': 'mp4', 'video/webm': 'webm' };
  *   minorStatusProvider?: import('../ports/MinorStatusProvider.js').MinorStatusProvider,
  *   mediaStorage?: import('../ports/MediaStorage.js').MediaStorage,
  *   imageProcessor?: import('../ports/ImageProcessor.js').ImageProcessor,
+ *   communityRulesProvider?: import('../ports/CommunityRulesProvider.js').CommunityRulesProvider,
  * }} deps
  */
 export function createCreatePost({
+  communityRulesProvider,
   postRepository,
   playerEligibilityProvider,
   clock,
@@ -69,6 +72,9 @@ export function createCreatePost({
     // links it and authorizes the minor's data and image.
     if (await minorStatusProvider?.isPendingGuardianAuthorization(authorUserId)) {
       throw new MinorPendingGuardianAuthorization();
+    }
+    if (communityRulesProvider && !(await communityRulesProvider.hasAcceptedRules(authorUserId))) {
+      throw new CommunityRulesNotAccepted();
     }
     assertPostShape({ content, imageCount: images.length, hasVideo: Boolean(video) });
 

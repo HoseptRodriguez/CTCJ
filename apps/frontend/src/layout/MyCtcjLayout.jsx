@@ -13,6 +13,7 @@ import { cn } from '../components/ui/cn.js';
 import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MyCtcjProvider, useMyCtcj } from '../pages/mictcj/MyCtcjContext.jsx';
+import { AccountRequirementsGate } from '../components/legal/AccountRequirementsGate.jsx';
 
 import { LegalLinks } from './LegalLinks.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
@@ -145,9 +146,11 @@ function MyCtcjShell() {
       </header>
       <main id="contenido" className="mx-auto w-full max-w-container flex-1 px-4 py-8 md:px-8">
         <PendingGuardianNotice />
-        <Suspense fallback={<RouteLoading />}>
-          <Outlet />
-        </Suspense>
+        <AccountRequirementsGate>
+          <Suspense fallback={<RouteLoading />}>
+            <Outlet />
+          </Suspense>
+        </AccountRequirementsGate>
       </main>
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto flex max-w-container flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-8">

@@ -4,6 +4,8 @@ import { DisciplineMismatch } from '../errors/DisciplineMismatch.js';
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 
+import { assertHealthAuthorization } from './assertHealthAuthorization.js';
+
 /**
  * A Fisioterapeuta marks a player "Apto" or "No apto para jugar hasta
  * [fecha]". Physiotherapy-only, checked here independently of the route.
@@ -11,12 +13,14 @@ import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
  * @param {{
  *   fitnessStatusRepository: import('../ports/FitnessStatusRepository.js').FitnessStatusRepository,
  *   playerEligibilityProvider: import('../ports/PlayerEligibilityProvider.js').PlayerEligibilityProvider,
+ *   healthAuthorizationProvider: import('../ports/HealthAuthorizationProvider.js').HealthAuthorizationProvider,
  *   practitionerEligibilityProvider: import('../ports/PractitionerEligibilityProvider.js').PractitionerEligibilityProvider,
  * }} deps
  */
 export function createSetFitnessStatus({
   fitnessStatusRepository,
   playerEligibilityProvider,
+  healthAuthorizationProvider,
   practitionerEligibilityProvider,
 }) {
   /**
@@ -27,6 +31,7 @@ export function createSetFitnessStatus({
     if (!(await playerEligibilityProvider.isEligiblePlayer(playerId))) {
       throw new PlayerNotEligible();
     }
+    await assertHealthAuthorization(healthAuthorizationProvider, playerId);
     const { eligible, discipline } =
       await practitionerEligibilityProvider.getPractitionerEligibility(practitionerUserId);
     if (!eligible) {

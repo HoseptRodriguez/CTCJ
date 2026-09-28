@@ -12,7 +12,7 @@ import { prisma, resetClinical, TEST_CLUB_ID } from './testDb.js';
 
 const PASSWORD = 'ClaveSegura123';
 
-async function seedVerifiedUser({ roleCode } = {}) {
+async function seedVerifiedUser({ roleCode, withHealthAuthorization = true } = {}) {
   const passwordHasher = createArgon2PasswordHasher();
   const email = `${(roleCode ?? 'usuario').toLowerCase()}-${randomUUID()}@example.com`;
   const user = await prisma.user.create({
@@ -25,6 +25,7 @@ async function seedVerifiedUser({ roleCode } = {}) {
       lastName: 'User',
       status: 'ACTIVE',
       emailVerifiedAt: new Date(),
+      birthDate: new Date('1990-01-01'),
     },
   });
   const usuarioRole = await prisma.role.findUniqueOrThrow({ where: { code: ROLE_CODES.USUARIO } });
@@ -32,6 +33,17 @@ async function seedVerifiedUser({ roleCode } = {}) {
   if (roleCode && roleCode !== ROLE_CODES.USUARIO) {
     const extraRole = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
     await prisma.userRole.create({ data: { userId: user.id, roleId: extraRole.id } });
+  }
+  if (roleCode === ROLE_CODES.JUGADOR && withHealthAuthorization) {
+    // The player's explicit authorization for their health data (Ley 1581, art. 6).
+    await prisma.consent.create({
+      data: {
+        userId: user.id,
+        consentType: 'HEALTH_DATA',
+        documentVersion: '1',
+        action: 'ACCEPTED',
+      },
+    });
   }
   return { id: user.id, email, password: PASSWORD };
 }

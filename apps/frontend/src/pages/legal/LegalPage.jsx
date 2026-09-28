@@ -27,7 +27,7 @@ export const LEGAL_PAGES = [
   { doc: ACCESSIBILITY_STATEMENT, label: 'Accesibilidad' },
 ];
 
-function Block({ block }) {
+export function LegalBlock({ block }) {
   if (block.p) return <p className="text-body text-ink">{block.p}</p>;
   if (block.list)
     return (
@@ -117,7 +117,7 @@ export function LegalPage({ doc }) {
             </h2>
             {s.blocks.map((block, i) => (
               // eslint-disable-next-line react/no-array-index-key -- static content, never reordered
-              <Block key={i} block={block} />
+              <LegalBlock key={i} block={block} />
             ))}
           </section>
         ))}

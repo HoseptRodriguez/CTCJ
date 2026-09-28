@@ -6,6 +6,7 @@ import { affiliationClient } from '../api/affiliationClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { communityAdminClient } from '../api/communityAdminClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
+import { privacyClient } from '../api/privacyClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { BarChartIcon } from '../components/icons/BarChartIcon.jsx';
 import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
@@ -29,6 +30,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { isUnpaid } from '../lib/booking.js';
 import { clubTodayKey } from '../lib/clubTime.js';
 import { splitForBottomBar, staffNavFor } from '../lib/staffNav.js';
+import { AccountRequirementsGate } from '../components/legal/AccountRequirementsGate.jsx';
 
 import { LegalLinks } from './LegalLinks.jsx';
 import { NotificationBell } from './NotificationBell.jsx';
@@ -78,6 +80,9 @@ function useStaffCounters(roles, pathname) {
         ]).then(([a, g]) => ({
           requests: a.requests.length + g.guardianships.length,
         })),
+        privacyClient
+          .listDataRequests({ openOnly: true })
+          .then((d) => ({ dataRequests: d.requests.length })),
       );
     }
     Promise.allSettled(jobs).then((results) => {
@@ -255,9 +260,11 @@ export function StaffLayout() {
         </header>
 
         <main id="contenido" className="mx-auto max-w-editorial px-4 pb-32 pt-8 md:px-8 lg:pb-12">
-          <Suspense fallback={<RouteLoading />}>
-            <Outlet />
-          </Suspense>
+          <AccountRequirementsGate>
+            <Suspense fallback={<RouteLoading />}>
+              <Outlet />
+            </Suspense>
+          </AccountRequirementsGate>
           <footer className="mt-12 border-t border-line pt-4">
             <LegalLinks />
           </footer>

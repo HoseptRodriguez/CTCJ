@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { put } from '@vercel/blob';
+import { del, put } from '@vercel/blob';
 
 import { EXTENSION_BY_MIME_TYPE } from './localDiskAvatarStorage.js';
 
@@ -10,11 +10,11 @@ import { EXTENSION_BY_MIME_TYPE } from './localDiskAvatarStorage.js';
  * Same naming rule as the local-disk adapter: a fresh randomUUID(), never
  * the client's filename.
  *
- * @param {{ token: string, putBlob?: typeof put }} options
- *   `putBlob` is injectable for unit tests; defaults to @vercel/blob's put.
+ * @param {{ token: string, putBlob?: typeof put, deleteBlob?: typeof del }} options
+ *   `putBlob`/`deleteBlob` are injectable for unit tests; default to @vercel/blob's.
  * @returns {import('../../application/ports/AvatarStorage.js').AvatarStorage}
  */
-export function createVercelBlobAvatarStorage({ token, putBlob = put }) {
+export function createVercelBlobAvatarStorage({ token, putBlob = put, deleteBlob = del }) {
   return {
     async save(buffer, mimeType) {
       const extension = EXTENSION_BY_MIME_TYPE[mimeType];
@@ -24,6 +24,12 @@ export function createVercelBlobAvatarStorage({ token, putBlob = put }) {
         token,
       });
       return blob.url;
+    },
+
+    /** Deletes an avatar blob (only our own `avatars/` files). */
+    async remove(url) {
+      if (typeof url !== 'string' || !url.includes('/avatars/')) return;
+      await deleteBlob(url, { token });
     },
   };
 }

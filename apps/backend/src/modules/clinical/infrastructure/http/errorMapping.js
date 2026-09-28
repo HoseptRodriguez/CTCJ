@@ -13,6 +13,7 @@ const STATUS_BY_CODE = {
   invalid_medical_history_entry_state: 409,
   discipline_mismatch: 409,
   clinical_consent_required: 403,
+  health_authorization_required: 403,
 };
 
 export function mapClinicalError(err) {

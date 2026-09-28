@@ -35,6 +35,7 @@ import {
   createNullPlayerEligibilityProvider,
   createNullPractitionerEligibilityProvider,
   createNullPlayerDirectoryProvider,
+  createNullHealthAuthorizationProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -54,6 +55,7 @@ export function buildClinicalContainer({
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
   practitionerEligibilityProvider = createNullPractitionerEligibilityProvider(),
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
+  healthAuthorizationProvider = createNullHealthAuthorizationProvider(),
   auditLog = createPrismaClinicalAuditLog(prismaClient, clubId),
 } = {}) {
   const appointmentRepository = createPrismaAppointmentRepository(prismaClient);
@@ -67,6 +69,7 @@ export function buildClinicalContainer({
     scheduleAppointment: createScheduleAppointment({
       appointmentRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
       clubId,
@@ -79,6 +82,7 @@ export function buildClinicalContainer({
     createNote: createCreateNote({
       noteRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
     }),
     listPlayerNotes: createListPlayerNotes({
@@ -90,6 +94,7 @@ export function buildClinicalContainer({
     createRecoveryPlan: createCreateRecoveryPlan({
       recoveryPlanRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
     }),
@@ -103,6 +108,7 @@ export function buildClinicalContainer({
     createMedicalHistoryEntry: createCreateMedicalHistoryEntry({
       medicalHistoryRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
     }),
@@ -126,6 +132,7 @@ export function buildClinicalContainer({
     setFitnessStatus: createSetFitnessStatus({
       fitnessStatusRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
     }),
     listPhysioNotesForAdmin: createListPhysioNotesForAdmin({

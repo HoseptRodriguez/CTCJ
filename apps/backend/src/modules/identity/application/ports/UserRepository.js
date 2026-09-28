@@ -70,4 +70,15 @@ export class UserRepository {
   async searchPlayersByName(_clubId, _query, _limit) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Account deletion (Ley 1581 de 2012, supresión): replaces every personal
+   * field with neutral values, deactivates the account and sets deletedAt.
+   * The row stays so what the law requires to keep (invoices, clinical
+   * records, consents) still points to it.
+   * @returns {Promise<void>}
+   */
+  async anonymize(_userId, _now) {
+    throw new Error('Not implemented');
+  }
 }

@@ -16,6 +16,7 @@ import {
   createFakeNoteRepository,
   createFakePlayerDirectoryProvider,
   createFakePlayerEligibilityProvider,
+  createFakeHealthAuthorizationProvider,
   createFakePractitionerEligibilityProvider,
   createFakeRecoveryPlanRepository,
 } from './fakes.js';
@@ -155,6 +156,7 @@ describe('"Apto / No apto" and the operational summary', () => {
         new Map([['physio-1', { firstName: 'Pedro', lastName: 'Fisio' }]]),
       ),
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      healthAuthorizationProvider: createFakeHealthAuthorizationProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([
           ['physio-1', 'PHYSIOTHERAPY'],

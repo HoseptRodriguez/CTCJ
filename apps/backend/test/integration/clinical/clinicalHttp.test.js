@@ -12,7 +12,7 @@ import { prisma, resetClinical, TEST_CLUB_ID } from './testDb.js';
 
 const PASSWORD = 'ClaveSegura123';
 
-async function seedVerifiedUser({ roleCode } = {}) {
+async function seedVerifiedUser({ roleCode, withHealthAuthorization = true } = {}) {
   const passwordHasher = createArgon2PasswordHasher();
   const email = `${(roleCode ?? 'usuario').toLowerCase()}-${randomUUID()}@example.com`;
   const passwordHash = await passwordHasher.hash(PASSWORD);
@@ -27,6 +27,7 @@ async function seedVerifiedUser({ roleCode } = {}) {
       lastName: 'User',
       status: 'ACTIVE',
       emailVerifiedAt: new Date(),
+      birthDate: new Date('1990-01-01'),
     },
   });
   const usuarioRole = await prisma.role.findUniqueOrThrow({ where: { code: ROLE_CODES.USUARIO } });
@@ -34,6 +35,17 @@ async function seedVerifiedUser({ roleCode } = {}) {
   if (roleCode && roleCode !== ROLE_CODES.USUARIO) {
     const extraRole = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
     await prisma.userRole.create({ data: { userId: user.id, roleId: extraRole.id } });
+  }
+  if (roleCode === ROLE_CODES.JUGADOR && withHealthAuthorization) {
+    // The player's explicit authorization for their health data (Ley 1581, art. 6).
+    await prisma.consent.create({
+      data: {
+        userId: user.id,
+        consentType: 'HEALTH_DATA',
+        documentVersion: '1',
+        action: 'ACCEPTED',
+      },
+    });
   }
 
   return { id: user.id, email, password: PASSWORD };
@@ -488,5 +500,49 @@ describe('Clinical HTTP API (real Postgres)', () => {
     expect(myHistoryRes.body.entries).toHaveLength(1);
     expect(myHistoryRes.body.entries[0].condition).toBe('Esguince de tobillo');
     expect(myHistoryRes.body.entries[0].status).toBe('RESOLVED');
+  });
+
+  it('health data needs the player explicit authorization: 403 until they give it, and again after withdrawing', async () => {
+    const recepcion = await seedVerifiedUser({ roleCode: ROLE_CODES.RECEPCION });
+    const psicologo = await seedVerifiedUser({ roleCode: ROLE_CODES.PSICOLOGO });
+    const jugador = await seedVerifiedUser({
+      roleCode: ROLE_CODES.JUGADOR,
+      withHealthAuthorization: false,
+    });
+    const recepcionToken = await login(app, recepcion.email, recepcion.password);
+    const jugadorToken = await login(app, jugador.email, jugador.password);
+    const schedule = (start, end) =>
+      request(app)
+        .post('/api/admin/clinical/appointments')
+        .set('Authorization', `Bearer ${recepcionToken}`)
+        .send({ playerId: jugador.id, practitionerId: psicologo.id, start, end });
+
+    const refused = await schedule('2026-03-02T10:00:00-05:00', '2026-03-02T11:00:00-05:00').expect(
+      403,
+    );
+    expect(refused.body.error?.code ?? refused.body.code).toBe('health_authorization_required');
+
+    const given = await request(app)
+      .put('/api/identity/me/authorizations/HEALTH_DATA')
+      .set('Authorization', `Bearer ${jugadorToken}`)
+      .set('User-Agent', 'Prueba integracion')
+      .send({ accept: true })
+      .expect(200);
+    expect(given.body).toMatchObject({ type: 'HEALTH_DATA', accepted: true });
+    await schedule('2026-03-02T10:00:00-05:00', '2026-03-02T11:00:00-05:00').expect(201);
+
+    await request(app)
+      .put('/api/identity/me/authorizations/HEALTH_DATA')
+      .set('Authorization', `Bearer ${jugadorToken}`)
+      .send({ accept: false })
+      .expect(200);
+    await schedule('2026-03-03T10:00:00-05:00', '2026-03-03T11:00:00-05:00').expect(403);
+
+    const rows = await prisma.consent.findMany({
+      where: { userId: jugador.id, consentType: 'HEALTH_DATA' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(rows.map((r) => r.action)).toEqual(['ACCEPTED', 'WITHDRAWN']);
+    expect(rows[0].userAgent).toBe('Prueba integracion');
   });
 });

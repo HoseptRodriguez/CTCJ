@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { NOTIFICATION_TYPE } from '@ctcj/shared';
 
+import { CommunityRulesNotAccepted } from '../errors/CommunityRulesNotAccepted.js';
 import { MinorPendingGuardianAuthorization } from '../errors/MinorPendingGuardianAuthorization.js';
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PostNotFound } from '../errors/PostNotFound.js';
@@ -15,9 +16,11 @@ import { PostNotFound } from '../errors/PostNotFound.js';
  *   notificationSender: import('../ports/NotificationSender.js').NotificationSender,
  *   clock: import('../ports/Clock.js').Clock,
  *   minorStatusProvider?: import('../ports/MinorStatusProvider.js').MinorStatusProvider,
+ *   communityRulesProvider?: import('../ports/CommunityRulesProvider.js').CommunityRulesProvider,
  * }} deps
  */
 export function createCreateComment({
+  communityRulesProvider,
   minorStatusProvider,
   postRepository,
   commentRepository,
@@ -34,6 +37,9 @@ export function createCreateComment({
     }
     if (await minorStatusProvider?.isPendingGuardianAuthorization(authorUserId)) {
       throw new MinorPendingGuardianAuthorization();
+    }
+    if (communityRulesProvider && !(await communityRulesProvider.hasAcceptedRules(authorUserId))) {
+      throw new CommunityRulesNotAccepted();
     }
 
     const post = await postRepository.findById(postId);

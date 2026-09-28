@@ -8,6 +8,7 @@ import { PractitionerTimeConflict } from '../../../../src/modules/clinical/domai
 import {
   createFakeAppointmentRepository,
   createFakePlayerEligibilityProvider,
+  createFakeHealthAuthorizationProvider,
   createFakePractitionerEligibilityProvider,
   createFakeClock,
 } from './fakes.js';
@@ -21,6 +22,7 @@ describe('scheduleAppointment', () => {
     scheduleAppointment = createScheduleAppointment({
       appointmentRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      healthAuthorizationProvider: createFakeHealthAuthorizationProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([['psych-1', 'PSYCHOLOGY']]),
       ),

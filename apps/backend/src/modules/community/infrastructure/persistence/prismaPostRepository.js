@@ -99,6 +99,41 @@ export function createPrismaPostRepository(prisma) {
       return { mediaUrls: media.flatMap((m) => [m.url, m.posterUrl]).filter(Boolean) };
     },
 
+    async eraseAuthor(authorId) {
+      const posts = await prisma.communityPost.findMany({
+        where: { authorId },
+        select: { id: true, media: { select: { url: true, posterUrl: true } } },
+      });
+      const postIds = posts.map((p) => p.id);
+      const commentIds = (
+        await prisma.communityComment.findMany({ where: { authorId }, select: { id: true } })
+      ).map((c) => c.id);
+      // Everything of the person, in one transaction: reports about their
+      // content (no FK), their comments, their posts (others' comments and
+      // likes on them cascade), their likes and their own reports.
+      await prisma.$transaction([
+        prisma.communityReport.deleteMany({
+          where: {
+            OR: [
+              { targetType: 'POST', targetId: { in: postIds } },
+              { targetType: 'COMMENT', targetId: { in: commentIds } },
+              { reporterId: authorId },
+            ],
+          },
+        }),
+        prisma.communityComment.deleteMany({ where: { authorId } }),
+        prisma.communityPost.deleteMany({ where: { authorId } }),
+        prisma.communityPostLike.deleteMany({ where: { userId: authorId } }),
+      ]);
+      return {
+        posts: postIds.length,
+        comments: commentIds.length,
+        mediaUrls: posts
+          .flatMap((p) => p.media.flatMap((m) => [m.url, m.posterUrl]))
+          .filter(Boolean),
+      };
+    },
+
     async countMediaPostsSince(authorId, since) {
       return prisma.communityPost.count({
         where: { authorId, createdAt: { gte: since }, media: { some: {} } },

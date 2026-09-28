@@ -41,6 +41,7 @@ function toPrismaCreateData(user) {
     lockedUntil: user.lockedUntil,
     lastLoginAt: user.lastLoginAt,
     emailVerifiedAt: user.emailVerifiedAt,
+    birthDate: user.birthDate,
   };
 }
 
@@ -123,6 +124,31 @@ export function createPrismaUserRepository(prisma) {
         },
       });
       return toDomainUser(updated, await getActiveRoleCodes(user.id));
+    },
+
+    async anonymize(userId, now) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          // citext + unique per club: a unique, undeliverable address.
+          email: `eliminada-${userId}@cuenta-eliminada.invalid`,
+          passwordHash: null,
+          firstName: 'Cuenta',
+          lastName: 'eliminada',
+          documentType: null,
+          documentNumber: null,
+          phone: null,
+          birthDate: null,
+          bio: null,
+          avatarUrl: null,
+          dominantHand: null,
+          backhand: null,
+          mfaEnabled: false,
+          mfaSecret: null,
+          status: 'DEACTIVATED',
+          deletedAt: now,
+        },
+      });
     },
 
     async addRoleGrant(userId, roleCode, grantedByUserId) {

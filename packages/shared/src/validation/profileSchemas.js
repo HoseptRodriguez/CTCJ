@@ -39,3 +39,15 @@ export const recordCookieConsentSchema = z.object({
   analytics: z.boolean(),
   policyVersion: z.string().trim().min(1).max(20),
 });
+
+/** Channels a person can choose for promotions (Ley 2300 de 2023). */
+export const MARKETING_CHANNELS = Object.freeze(['email', 'whatsapp']);
+
+/** Accept or withdraw an optional authorization from "Mis datos y privacidad". */
+export const setAuthorizationSchema = z.object({
+  accept: z.boolean(),
+  channels: z.array(z.enum(MARKETING_CHANNELS)).max(2).optional(),
+});
+
+/** The guardian accepts or withdraws an authorization for a linked minor. */
+export const setGuardianAuthorizationSchema = z.object({ accept: z.boolean() });

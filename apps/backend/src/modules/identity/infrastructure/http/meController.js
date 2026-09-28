@@ -107,6 +107,46 @@ export function createMeController(container) {
     res.status(201).json(result);
   });
 
+  const getAccountRequirements = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getAccountRequirements({ userId: req.user.id }));
+  });
+
+  const completeAccount = asyncHandler(async (req, res) => {
+    const result = await container.completeAccount({
+      userId: req.user.id,
+      birthDate: req.body.birthDate,
+      acceptPrivacy: req.body.acceptPrivacy,
+      acceptTerms: req.body.acceptTerms,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const getMyAuthorizations = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyAuthorizations({ userId: req.user.id }));
+  });
+
+  const setMyAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.setMyAuthorization({
+      userId: req.user.id,
+      type: req.params.type,
+      accept: req.body.accept,
+      channels: req.body.channels,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const setMinorHealthAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.setMinorHealthAuthorization({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      accept: req.body.accept,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
   const getAccountRestrictions = asyncHandler(async (req, res) => {
     res.status(200).json(await container.getAccountRestrictions({ userId: req.user.id }));
   });
@@ -115,7 +155,12 @@ export function createMeController(container) {
     authorizeMinor,
     withdrawMinorAuthorization,
     getAccountRestrictions,
+    getMyAuthorizations,
+    setMyAuthorization,
+    setMinorHealthAuthorization,
     recordCookieConsent,
+    getAccountRequirements,
+    completeAccount,
     getMyProfile,
     updateMyProfile,
     uploadMyAvatar,

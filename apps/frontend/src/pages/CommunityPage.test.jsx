@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { communityClient } from '../api/communityClient.js';
+import { consentClient } from '../api/consentClient.js';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { readVideoMeta } from '../lib/media.js';
@@ -26,6 +27,9 @@ vi.mock('../api/communityClient.js', () => ({
     reportPost: vi.fn(),
     reportComment: vi.fn(),
   },
+}));
+vi.mock('../api/consentClient.js', () => ({
+  consentClient: { getMyAuthorizations: vi.fn(), setMyAuthorization: vi.fn() },
 }));
 vi.mock('../context/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
 // jsdom can't decode media: the browser measurements are faked here.
@@ -68,6 +72,20 @@ const POST_BY_OTHER = {
   authorId: 'other',
   author: { id: 'other', firstName: 'Luis', lastName: 'Perez' },
 };
+const rulesItem = (accepted) => ({
+  type: 'COMMUNITY_RULES',
+  title: 'Reglas de la Comunidad',
+  currentVersion: '1',
+  accepted,
+  acceptedAt: accepted ? '2026-09-28T15:00:00Z' : null,
+  acceptedVersion: accepted ? '1' : null,
+  givenByGuardian: false,
+});
+const authorizations = (accepted) => ({
+  isMinor: false,
+  items: [rulesItem(accepted)],
+  cookies: { decidedAt: null, preferences: false, analytics: false },
+});
 const photoFile = (name = 'foto.jpg', size = 1000) =>
   new File([new Uint8Array(size)], name, { type: 'image/jpeg' });
 
@@ -75,6 +93,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   useAuth.mockReturnValue({ user: { id: 'me', roles: ['USUARIO', 'JUGADOR'] } });
   communityClient.getMediaCapabilities.mockResolvedValue(CAPS);
+  consentClient.getMyAuthorizations.mockResolvedValue(authorizations(true));
   URL.createObjectURL = vi.fn(() => 'blob:preview');
   URL.revokeObjectURL = vi.fn();
 });
@@ -372,5 +391,31 @@ describe('Community: photos and videos', () => {
         'Tu publicación está oculta mientras la administración del club la revisa.',
       ),
     ).toBeInTheDocument();
+  });
+
+  it('first use: the rules must be accepted (with the declaration) before the composer shows', async () => {
+    consentClient.getMyAuthorizations.mockResolvedValue(authorizations(false));
+    consentClient.setMyAuthorization.mockResolvedValue(rulesItem(true));
+    communityClient.listPosts.mockResolvedValue({ posts: [] });
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Reglas de la Comunidad' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Publicar' })).not.toBeInTheDocument();
+    const declaration = screen.getByRole('checkbox', { name: /Acepto las reglas/ });
+    expect(declaration).not.toBeChecked();
+
+    await user.click(screen.getByRole('button', { name: 'Aceptar y continuar' }));
+    expect(consentClient.setMyAuthorization).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Marca la casilla');
+
+    await user.click(declaration);
+    await user.click(screen.getByRole('button', { name: 'Aceptar y continuar' }));
+    expect(consentClient.setMyAuthorization).toHaveBeenCalledWith('COMMUNITY_RULES', {
+      accept: true,
+    });
+    expect(await screen.findByRole('button', { name: 'Publicar' })).toBeInTheDocument();
   });
 });

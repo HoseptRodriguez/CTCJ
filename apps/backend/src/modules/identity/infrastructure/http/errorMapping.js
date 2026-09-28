@@ -29,6 +29,9 @@ const STATUS_BY_CODE = {
   guardianship_not_approved: 409,
   outdated_policy_version: 409,
   guardianship_not_pending: 409,
+  minor_needs_guardian: 403,
+  unknown_authorization: 404,
+  marketing_channel_required: 400,
 };
 
 export function mapIdentityError(err) {

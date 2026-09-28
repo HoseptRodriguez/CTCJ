@@ -28,7 +28,11 @@ const PASSWORD = 'ClaveSegura123';
 // Users created by these tests: their uploads/community/<id> folders are removed after each test.
 const seededIds = [];
 
-async function seedUser({ roleCode = ROLE_CODES.JUGADOR, birthDate = null } = {}) {
+async function seedUser({
+  roleCode = ROLE_CODES.JUGADOR,
+  birthDate = null,
+  acceptRules = true,
+} = {}) {
   const passwordHasher = createArgon2PasswordHasher();
   const email = `media-${randomUUID()}@example.com`;
   const user = await prisma.user.create({
@@ -47,6 +51,17 @@ async function seedUser({ roleCode = ROLE_CODES.JUGADOR, birthDate = null } = {}
   for (const code of [ROLE_CODES.USUARIO, roleCode]) {
     const role = await prisma.role.findUniqueOrThrow({ where: { code } });
     await prisma.userRole.create({ data: { userId: user.id, roleId: role.id } });
+  }
+  if (acceptRules) {
+    // The Community rules, accepted at first use (proof in consents).
+    await prisma.consent.create({
+      data: {
+        userId: user.id,
+        consentType: 'COMMUNITY_RULES',
+        documentVersion: '1',
+        action: 'ACCEPTED',
+      },
+    });
   }
   seededIds.push(user.id);
   return { id: user.id, email, password: PASSWORD };

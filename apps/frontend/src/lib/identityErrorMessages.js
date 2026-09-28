@@ -27,6 +27,10 @@ const IDENTITY_ERROR_MESSAGES = {
   guardianship_not_pending: 'Esa vinculación familiar ya fue resuelta.',
   invalid_avatar_file: 'El archivo debe ser una imagen JPEG, PNG o WEBP de máximo 2MB.',
   validation_error: 'Revisa los datos ingresados.',
+  minor_needs_guardian:
+    'Esta autorización la da tu acudiente desde su perfil («Cuentas vinculadas»).',
+  marketing_channel_required: 'Elige al menos un canal: correo o WhatsApp.',
+  unknown_authorization: 'Esa autorización no existe.',
 };
 
 export function describeIdentityError(err) {

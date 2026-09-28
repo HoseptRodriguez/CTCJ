@@ -15,6 +15,8 @@ const CLINICAL_ERROR_MESSAGES = {
   discipline_mismatch: 'Esta acción solo está disponible para Fisioterapeutas.',
   clinical_consent_required:
     'El jugador no ha autorizado a la administración a ver sus notas de fisioterapia.',
+  health_authorization_required:
+    'El jugador no ha autorizado el tratamiento de sus datos de salud. Pídele que lo haga en Mi CTCJ › Mis datos y privacidad (si es menor de edad, la da su acudiente desde su perfil).',
 };
 
 export function describeClinicalError(err) {

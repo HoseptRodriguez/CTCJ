@@ -40,6 +40,7 @@ model Club {
   competitionSeasons   CompetitionSeason[]
   tournaments          Tournament[]
   clinicalAppointments ClinicalAppointment[]
+  dataSubjectRequests  DataSubjectRequest[]
 
   @@map("clubs")
 }
@@ -89,17 +90,19 @@ model User {
   membershipStatusUpdatedAt DateTime? @map("membership_status_updated_at")
   membershipStatusUpdatedBy String?   @map("membership_status_updated_by") @db.Uuid
 
-  userRolesGranted    UserRole[]          @relation("GrantedBy")
-  userRolesRevoked    UserRole[]          @relation("RevokedBy")
-  userRoles           UserRole[]          @relation("UserRoleOwner")
-  refreshTokens       RefreshToken[]
-  consents            Consent[]           @relation("ConsentSubject")
-  consentsGiven       Consent[]           @relation("ConsentGivenBy")
-  emailVerifications  EmailVerification[]
-  passwordResets      PasswordReset[]
-  reservationsHeld    Reservation[]       @relation("HolderUser")
-  reservationsCreated Reservation[]       @relation("CreatedByUser")
-  paymentsRecorded    Payment[]           @relation("PaymentRecordedBy")
+  userRolesGranted     UserRole[]           @relation("GrantedBy")
+  userRolesRevoked     UserRole[]           @relation("RevokedBy")
+  userRoles            UserRole[]           @relation("UserRoleOwner")
+  refreshTokens        RefreshToken[]
+  consents             Consent[]            @relation("ConsentSubject")
+  consentsGiven        Consent[]            @relation("ConsentGivenBy")
+  dataRequests         DataSubjectRequest[] @relation("DataRequestSubject")
+  dataRequestsAnswered DataSubjectRequest[] @relation("DataRequestAnsweredBy")
+  emailVerifications   EmailVerification[]
+  passwordResets       PasswordReset[]
+  reservationsHeld     Reservation[]        @relation("HolderUser")
+  reservationsCreated  Reservation[]        @relation("CreatedByUser")
+  paymentsRecorded     Payment[]            @relation("PaymentRecordedBy")
 
   // Affiliation & guardianship (Phase 6)
   affiliationRequests     AffiliationRequest[]
@@ -1238,4 +1241,33 @@ model LegalDocument {
 
   @@unique([docType, version], map: "legal_documents_type_version_unique")
   @@map("legal_documents")
+}
+
+// Requests of the data subject (Ley 1581 de 2012, arts. 14 y 15): consultas
+// (10 business days) and reclamos (15), each with a radicado.
+model DataSubjectRequest {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId              String    @map("club_id") @db.Uuid
+  radicado            String    @unique @db.VarChar(20)
+  userId              String    @map("user_id") @db.Uuid
+  requestType         String    @map("request_type") @db.VarChar(10) // CONSULTA|RECLAMO
+  kind                String    @db.VarChar(12) // CONSULTA|CORRECCION|SUPRESION|REVOCATORIA|RECLAMO
+  description         String
+  status              String    @default("RECIBIDA") @db.VarChar(12) // RECIBIDA|EN_TRAMITE|RESPONDIDA
+  receivedAt          DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+  dueOn               DateTime  @map("due_on") @db.Date
+  answer              String?
+  answeredAt          DateTime? @map("answered_at") @db.Timestamptz(6)
+  answeredBy          String?   @map("answered_by") @db.Uuid
+  accountAnonymizedAt DateTime? @map("account_anonymized_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  club           Club  @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user           User  @relation("DataRequestSubject", fields: [userId], references: [id], onDelete: Restrict)
+  answeredByUser User? @relation("DataRequestAnsweredBy", fields: [answeredBy], references: [id], onDelete: Restrict)
+
+  @@index([userId, receivedAt(sort: Desc)], map: "data_subject_requests_user_idx")
+  @@index([status, dueOn], map: "data_subject_requests_open_idx")
+  @@map("data_subject_requests")
 }

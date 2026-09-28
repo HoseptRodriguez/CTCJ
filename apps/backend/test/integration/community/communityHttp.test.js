@@ -13,7 +13,7 @@ import { prisma, resetCommunity, TEST_CLUB_ID } from './testDb.js';
 
 const PASSWORD = 'ClaveSegura123';
 
-async function seedUser({ roleCode = ROLE_CODES.JUGADOR } = {}) {
+async function seedUser({ roleCode = ROLE_CODES.JUGADOR, acceptRules = true } = {}) {
   const passwordHasher = createArgon2PasswordHasher();
   const email = `user-${randomUUID()}@example.com`;
   const passwordHash = await passwordHasher.hash(PASSWORD);
@@ -35,6 +35,17 @@ async function seedUser({ roleCode = ROLE_CODES.JUGADOR } = {}) {
   if (roleCode !== ROLE_CODES.USUARIO) {
     const extraRole = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
     await prisma.userRole.create({ data: { userId: user.id, roleId: extraRole.id } });
+  }
+  if (acceptRules) {
+    // The Community rules, accepted at first use (proof in consents).
+    await prisma.consent.create({
+      data: {
+        userId: user.id,
+        consentType: 'COMMUNITY_RULES',
+        documentVersion: '1',
+        action: 'ACCEPTED',
+      },
+    });
   }
 
   return { id: user.id, email, password: PASSWORD };
@@ -335,5 +346,44 @@ describe('Community HTTP API (real Postgres)', () => {
     await request(app).get('/api/community/posts').expect(401);
     await request(app).post('/api/community/posts').send({ content: 'x' }).expect(401);
     await request(app).get('/api/admin/community/reports').expect(401);
+  });
+
+  it('first use: posting or commenting needs the Community rules accepted (403 until then)', async () => {
+    const author = await seedUser();
+    const newcomer = await seedUser({ acceptRules: false });
+    const tokenAuthor = await login(app, author.email, author.password);
+    const tokenNew = await login(app, newcomer.email, newcomer.password);
+    const post = await request(app)
+      .post('/api/community/posts')
+      .set('Authorization', `Bearer ${tokenAuthor}`)
+      .send({ content: 'Hola' })
+      .expect(201);
+
+    const refused = await request(app)
+      .post('/api/community/posts')
+      .set('Authorization', `Bearer ${tokenNew}`)
+      .send({ content: 'Mi primera publicacion' })
+      .expect(403);
+    expect(JSON.stringify(refused.body)).toContain('community_rules_not_accepted');
+    await request(app)
+      .post(`/api/community/posts/${post.body.id}/comments`)
+      .set('Authorization', `Bearer ${tokenNew}`)
+      .send({ content: 'Hola' })
+      .expect(403);
+
+    await request(app)
+      .put('/api/identity/me/authorizations/COMMUNITY_RULES')
+      .set('Authorization', `Bearer ${tokenNew}`)
+      .send({ accept: true })
+      .expect(200);
+    await request(app)
+      .post('/api/community/posts')
+      .set('Authorization', `Bearer ${tokenNew}`)
+      .send({ content: 'Mi primera publicacion' })
+      .expect(201);
+    const proof = await prisma.consent.findFirst({
+      where: { userId: newcomer.id, consentType: 'COMMUNITY_RULES' },
+    });
+    expect(proof.details).toEqual({ declaresPermissionOfPeopleShown: true });
   });
 });

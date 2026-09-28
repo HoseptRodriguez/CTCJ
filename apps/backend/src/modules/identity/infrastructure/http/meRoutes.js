@@ -4,6 +4,9 @@ import {
   requestGuardianshipSchema,
   updateMyProfileSchema,
   recordCookieConsentSchema,
+  setAuthorizationSchema,
+  setGuardianAuthorizationSchema,
+  completeAccountSchema,
 } from '@ctcj/shared';
 
 import { HttpError } from '../../../../shared/errors/httpError.js';
@@ -59,8 +62,32 @@ export function createMeRoutes(controller) {
     requireAuth,
     controller.withdrawMinorAuthorization,
   );
+  // The guardian's optional health-data authorization for the linked minor.
+  router.put(
+    '/guardianships/:id/health-authorization',
+    requireAuth,
+    validateBody(setGuardianAuthorizationSchema),
+    controller.setMinorHealthAuthorization,
+  );
+  // Optional authorizations ("Mis datos y privacidad"): see, accept, withdraw.
+  router.get('/authorizations', requireAuth, controller.getMyAuthorizations);
+  router.put(
+    '/authorizations/:type',
+    requireAuth,
+    validateBody(setAuthorizationSchema),
+    controller.setMyAuthorization,
+  );
   // What the signed-in person can't do yet (a minor pending authorization).
   router.get('/account-restrictions', requireAuth, controller.getAccountRestrictions);
+  // What an existing account must complete before continuing (birth date,
+  // acceptance of the privacy policy and terms in force).
+  router.get('/account-requirements', requireAuth, controller.getAccountRequirements);
+  router.post(
+    '/complete-account',
+    requireAuth,
+    validateBody(completeAccountSchema),
+    controller.completeAccount,
+  );
   // Proof of the cookie decision of a signed-in person.
   router.post(
     '/consents/cookies',

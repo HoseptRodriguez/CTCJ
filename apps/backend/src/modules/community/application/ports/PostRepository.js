@@ -44,4 +44,12 @@ export class PostRepository {
   async unhide(_id) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Deletes every post, comment, like and report of a person (account
+   * deletion). @returns {Promise<{ posts: number, comments: number, mediaUrls: string[] }>}
+   */
+  async eraseAuthor(_authorId) {
+    throw new Error('Not implemented');
+  }
 }

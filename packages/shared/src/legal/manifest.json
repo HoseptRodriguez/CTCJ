@@ -28,5 +28,20 @@
     "version": "1",
     "publishedOn": "2026-09-28",
     "sha256": "7251d3b4053d3f78aba6dbb7c8a71eff55774783f92eabe24a42dc70dbde6cca"
+  },
+  "HEALTH_DATA": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "43d2dabc0f263d9396fdc7ae325b3b6d50a95e28b0dfcd4b526b3ce061588147"
+  },
+  "COMMUNITY_RULES": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "722e885836c5d6f942698a06c6cf17273d1fe659d12683d40aa445a96f97718b"
+  },
+  "MARKETING": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "32e1cbcb1c58c2715f43254dba702e47ff35a4a6edc2398090ab839710b1b2e0"
   }
 }

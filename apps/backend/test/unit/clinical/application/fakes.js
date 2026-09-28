@@ -108,6 +108,16 @@ export function createFakePlayerEligibilityProvider(eligiblePlayerIds = new Set(
   };
 }
 
+/** @param {Set<string>} authorizedPlayerIds players whose health-data authorization is in force */
+export function createFakeHealthAuthorizationProvider(authorizedPlayerIds = new Set()) {
+  return {
+    authorizedPlayerIds,
+    async hasHealthAuthorization(playerId) {
+      return authorizedPlayerIds.has(playerId);
+    },
+  };
+}
+
 /** @param {Map<string, 'PSYCHOLOGY'|'PHYSIOTHERAPY'>} disciplineByPractitionerId */
 export function createFakePractitionerEligibilityProvider(disciplineByPractitionerId = new Map()) {
   return {

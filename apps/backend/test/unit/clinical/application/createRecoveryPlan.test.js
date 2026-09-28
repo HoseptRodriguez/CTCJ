@@ -8,6 +8,7 @@ import { PractitionerNotEligible } from '../../../../src/modules/clinical/applic
 import {
   createFakeClock,
   createFakePlayerEligibilityProvider,
+  createFakeHealthAuthorizationProvider,
   createFakePractitionerEligibilityProvider,
   createFakeRecoveryPlanRepository,
 } from './fakes.js';
@@ -21,6 +22,7 @@ describe('createRecoveryPlan', () => {
     createRecoveryPlan = createCreateRecoveryPlan({
       recoveryPlanRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      healthAuthorizationProvider: createFakeHealthAuthorizationProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([
           ['physio-1', 'PHYSIOTHERAPY'],

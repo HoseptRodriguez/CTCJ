@@ -36,10 +36,13 @@ import { createCanBookForMinor } from '../application/useCases/canBookForMinor.j
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
 import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
 import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
+import { createOptionalAuthorizationUseCases } from '../application/useCases/optionalAuthorizations.js';
 import { createSyncLegalDocuments } from '../application/useCases/syncLegalDocuments.js';
 import { createRecordCookieConsent } from '../application/useCases/recordCookieConsent.js';
+import { createAccountRequirementsUseCases } from '../application/useCases/accountRequirements.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
+import { createAnonymizeAccount } from '../application/useCases/anonymizeAccount.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
@@ -98,6 +101,11 @@ export function buildIdentityContainer({
     guardianshipRepository,
     checkIsMinor,
   });
+  const optionalAuthorizations = createOptionalAuthorizationUseCases({
+    consentRepository,
+    guardianshipRepository,
+    checkIsMinor,
+  });
   const passwordHasher = createArgon2PasswordHasher();
   const tokenService = createJwtTokenService({
     accessSecret: config.jwt.accessSecret,
@@ -132,6 +140,7 @@ export function buildIdentityContainer({
       tokenService,
       emailVerificationRepository,
       emailSender,
+      consentRepository,
       clock,
       clubId: DEFAULT_CLUB_ID,
       appPublicUrl: config.appPublicUrl,
@@ -219,17 +228,26 @@ export function buildIdentityContainer({
       guardianshipRepository,
       userRepository,
       minorAuthorizationFor: minorAuthorization.minorAuthorizationFor,
+      minorHealthAuthorizationFor: optionalAuthorizations.minorHealthAuthorizationFor,
     }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),
     checkIsMinor,
     ...minorAuthorization,
+    ...optionalAuthorizations,
     recordCookieConsent: createRecordCookieConsent({ consentRepository }),
+    ...createAccountRequirementsUseCases({ userRepository, consentRepository }),
     syncLegalDocuments: createSyncLegalDocuments({
       legalDocumentRepository: createPrismaLegalDocumentRepository(prismaClient),
     }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
+    anonymizeAccount: createAnonymizeAccount({
+      userRepository,
+      refreshTokenRepository,
+      avatarStorage,
+      clock,
+    }),
     searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),
   };
 }

@@ -3,14 +3,18 @@ import {
   BACKHAND_LABELS,
   DOMINANT_HAND,
   DOMINANT_HAND_LABELS,
+  HEALTH_DATA_AUTHORIZATION,
   MINOR_AUTHORIZATION,
 } from '@ctcj/shared';
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
+import { consentClient } from '../api/consentClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { Avatar } from '../components/ui/Avatar.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { AuthorizationText } from '../components/legal/OptionalAuthorization.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { RadioCards, SelectField, TextAreaField, TextField } from '../components/ui/Field.jsx';
@@ -22,6 +26,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { describeIdentityError } from '../lib/identityErrorMessages.js';
 
 import { useMyCtcj } from './mictcj/MyCtcjContext.jsx';
+import { HealthDataSection } from './mictcj/HealthDataSection.jsx';
 import { PhysioConsentSection } from './mictcj/PhysioConsentSection.jsx';
 import { REQUEST_STATUS_LABELS } from './mictcj/shared.jsx';
 
@@ -292,6 +297,88 @@ function MinorAuthorization({ guardianship, onChanged }) {
   );
 }
 
+/**
+ * The guardian's optional authorization for the minor's health data
+ * (psychology, neuropsychology, physiotherapy). Separate from the data and
+ * image authorization: a guardian may give one and not the other.
+ */
+function MinorHealthAuthorization({ guardianship, onChanged }) {
+  const toast = useToast();
+  const [confirming, setConfirming] = useState(null); // 'authorize' | 'withdraw'
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const auth = guardianship.healthAuthorization ?? { authorized: false };
+
+  async function run() {
+    setSaving(true);
+    setError(null);
+    try {
+      await consentClient.setMinorHealthAuthorization(guardianship.id, confirming === 'authorize');
+      toast({
+        title:
+          confirming === 'authorize'
+            ? 'Autorización de salud registrada'
+            : 'Autorización de salud retirada',
+        description: guardianship.minorEmail,
+      });
+      onChanged();
+    } catch (err) {
+      setError(describeIdentityError(err));
+    } finally {
+      setSaving(false);
+      setConfirming(null);
+    }
+  }
+
+  return (
+    <div className="mt-3 w-full space-y-3 border-t border-line pt-3">
+      <p className="text-body text-ink">
+        <strong>Datos de salud (opcional):</strong>{' '}
+        {auth.authorized
+          ? `autorizados desde el ${AUTHORIZED_ON.format(new Date(auth.authorizedAt))}.`
+          : 'sin autorizar. Sin esta autorización, psicología y fisioterapia no pueden atender al menor en el club.'}
+      </p>
+      <Button
+        variant="secondary"
+        onClick={() => setConfirming(auth.authorized ? 'withdraw' : 'authorize')}
+      >
+        {auth.authorized ? 'Retirar autorización de salud' : 'Leer y autorizar datos de salud'}
+      </Button>
+      {error && (
+        <p role="alert" className="text-body font-semibold text-danger">
+          {error}
+        </p>
+      )}
+      <ConfirmDialog
+        open={confirming === 'authorize'}
+        tone="primary"
+        title={HEALTH_DATA_AUTHORIZATION.title}
+        description={
+          <div className="space-y-2">
+            <p>Como acudiente, en nombre del menor:</p>
+            <AuthorizationText doc={HEALTH_DATA_AUTHORIZATION} />
+            <p className="font-semibold text-ink">Menor: {guardianship.minorEmail}</p>
+          </div>
+        }
+        confirmLabel="Sí, autorizo"
+        loading={saving}
+        onConfirm={run}
+        onCancel={() => setConfirming(null)}
+      />
+      <ConfirmDialog
+        open={confirming === 'withdraw'}
+        tone="danger"
+        title="¿Retirar la autorización de salud?"
+        description="Desde ahora no se podrán agendar citas ni registrar nueva información de salud del menor. Lo ya registrado se conserva como exige la ley."
+        confirmLabel="Sí, retirar"
+        loading={saving}
+        onConfirm={run}
+        onCancel={() => setConfirming(null)}
+      />
+    </div>
+  );
+}
+
 function GuardianshipSection() {
   const toast = useToast();
   const { guardianships, reloadGuardianships } = useMyCtcj();
@@ -342,7 +429,10 @@ function GuardianshipSection() {
                 label={REQUEST_STATUS_LABELS[g.status] ?? g.status}
               />
               {g.status === 'APPROVED' && (
-                <MinorAuthorization guardianship={g} onChanged={reloadGuardianships} />
+                <>
+                  <MinorAuthorization guardianship={g} onChanged={reloadGuardianships} />
+                  <MinorHealthAuthorization guardianship={g} onChanged={reloadGuardianships} />
+                </>
               )}
             </li>
           ))}
@@ -409,7 +499,23 @@ export function PlayerProfilePage() {
             </div>
           </Card>
           <GuardianshipSection />
-          {isJugador && <PhysioConsentSection />}
+          <Card
+            title="Mis datos y privacidad"
+            description="Tus autorizaciones, descargar tus datos, consultas y reclamos, o eliminar tu cuenta."
+          >
+            <Link
+              to="/mi-ctcj/privacidad"
+              className="focus-ring inline-flex min-h-btn items-center rounded-lg font-semibold text-navy-500 underline underline-offset-4"
+            >
+              Ir a Mis datos y privacidad
+            </Link>
+          </Card>
+          {isJugador && (
+            <>
+              <HealthDataSection />
+              <PhysioConsentSection />
+            </>
+          )}
         </>
       )}
     </div>

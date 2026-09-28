@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { MINOR_WITHOUT_CONSENT_REASON } from '@ctcj/shared';
 
 import { communityClient } from '../api/communityClient.js';
+import { consentClient } from '../api/consentClient.js';
 import { MessageIcon } from '../components/icons/MessageIcon.jsx';
 import { HeartIcon } from '../components/icons/HeartIcon.jsx';
+import { OptionalAuthorization } from '../components/legal/OptionalAuthorization.jsx';
 import { AnimatedList } from '../components/motion/AnimatedList.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -18,6 +20,7 @@ import { cn } from '../components/ui/cn.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { describeCommunityError } from '../lib/communityErrorMessages.js';
+import { useAsync } from '../lib/useAsync.js';
 
 import { MediaComposer } from './community/MediaComposer.jsx';
 import { PostMediaView } from './community/PostMediaView.jsx';
@@ -331,6 +334,36 @@ function PostCard({ post, currentUserId, onDeleted, onToggleLike }) {
 }
 
 /** Mi CTCJ → Comunidad. */
+/**
+ * First use of the Community: the rules (and the declaration about people
+ * who appear in photos and videos) are accepted before the composer shows.
+ * If they can't be loaded, the composer shows anyway: the server enforces.
+ */
+function CommunityRulesGate({ children }) {
+  const authorizations = useAsync(() => consentClient.getMyAuthorizations(), []);
+  if (authorizations.status === 'loading') return null;
+  const rules = authorizations.data?.items.find((i) => i.type === 'COMMUNITY_RULES');
+  if (authorizations.status !== 'ready' || !rules || rules.accepted) return children;
+  return (
+    <div className="space-y-2">
+      <p className="text-body text-ink-soft">
+        Antes de tu primera publicación o comentario, lee y acepta las reglas.
+      </p>
+      <OptionalAuthorization
+        item={rules}
+        isMinor={authorizations.data.isMinor}
+        headingLevel="h2"
+        onSaved={(saved) =>
+          authorizations.setData((d) => ({
+            ...d,
+            items: d.items.map((i) => (i.type === saved.type ? saved : i)),
+          }))
+        }
+      />
+    </div>
+  );
+}
+
 export function CommunityPage() {
   useDocumentTitle('Comunidad');
   const { user } = useAuth();
@@ -399,7 +432,9 @@ export function CommunityPage() {
         className="mb-0 md:mb-0"
       />
       <Card>
-        <MediaComposer userId={user.id} onPublished={refetch} />
+        <CommunityRulesGate>
+          <MediaComposer userId={user.id} onPublished={refetch} />
+        </CommunityRulesGate>
       </Card>
       {error && (
         <p role="alert" className="text-body font-semibold text-danger">

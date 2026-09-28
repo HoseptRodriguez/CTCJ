@@ -11,6 +11,7 @@ import {
   createFakeTokenService,
   createFakeEmailSender,
   createFakeClock,
+  createFakeConsentRepository,
 } from './fakes.js';
 
 const NOW = new Date('2026-08-01T10:00:00Z');
@@ -25,6 +26,7 @@ function buildDeps() {
     clock: createFakeClock(NOW),
     clubId: 'club-1',
     appPublicUrl: 'http://localhost:5173',
+    consentRepository: createFakeConsentRepository(),
   };
 }
 

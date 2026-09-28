@@ -1,15 +1,4 @@
-const ADULT_AGE = 18;
-
-/** Age in whole years on `today` (club calendar). */
-function ageOn(birthDate, today) {
-  const b = new Date(birthDate);
-  let age = today.getUTCFullYear() - b.getUTCFullYear();
-  const beforeBirthday =
-    today.getUTCMonth() < b.getUTCMonth() ||
-    (today.getUTCMonth() === b.getUTCMonth() && today.getUTCDate() < b.getUTCDate());
-  if (beforeBirthday) age -= 1;
-  return age;
-}
+import { isMinorByBirthDate } from '../../domain/policies/age.js';
 
 /**
  * Is this the account of a minor? Yes when their birth date says they are
@@ -32,9 +21,7 @@ export function createCheckIsMinor({
   return async function checkIsMinor({ userId }) {
     const user = await userRepository.findById(userId);
     if (!user) return { isMinor: true };
-    // Club calendar: UTC-5.
-    const today = new Date(clock.now().getTime() - 5 * 60 * 60 * 1000);
-    if (user.birthDate && ageOn(user.birthDate, today) < ADULT_AGE) return { isMinor: true };
+    if (user.birthDate && isMinorByBirthDate(user.birthDate, clock.now())) return { isMinor: true };
     return { isMinor: await guardianshipRepository.existsApprovedAsMinor(userId) };
   };
 }

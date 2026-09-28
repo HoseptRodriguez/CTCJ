@@ -25,6 +25,15 @@ export function createNullMinorStatusProvider() {
   };
 }
 
+/** Fails closed -- nobody posts without a known acceptance of the rules. */
+export function createNullCommunityRulesProvider() {
+  return {
+    async hasAcceptedRules() {
+      return false;
+    },
+  };
+}
+
 /** Fails open (empty map) -- this is display enrichment, not an authz gate. */
 export function createNullPlayerDirectoryProvider() {
   return {

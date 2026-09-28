@@ -1,5 +1,6 @@
 import { COMMUNITY_MEDIA_LIMITS } from '@ctcj/shared';
 
+import { CommunityRulesNotAccepted } from '../errors/CommunityRulesNotAccepted.js';
 import { DailyMediaLimitReached } from '../errors/DailyMediaLimitReached.js';
 import { InvalidMedia } from '../errors/InvalidMedia.js';
 import { MediaNotAllowedForMinor } from '../errors/MediaNotAllowedForMinor.js';
@@ -25,9 +26,11 @@ const TOKEN_TTL_MS = 10 * 60 * 1000;
  *   postRepository: import('../ports/PostRepository.js').PostRepository,
  *   mediaStorage: import('../ports/MediaStorage.js').MediaStorage,
  *   clock: import('../ports/Clock.js').Clock,
+ *   communityRulesProvider?: import('../ports/CommunityRulesProvider.js').CommunityRulesProvider,
  * }} deps
  */
 export function createAuthorizeVideoUpload({
+  communityRulesProvider,
   playerEligibilityProvider,
   minorStatusProvider,
   postRepository,
@@ -49,6 +52,9 @@ export function createAuthorizeVideoUpload({
     }
     if (await minorStatusProvider.isMinor(userId)) {
       throw new MediaNotAllowedForMinor();
+    }
+    if (communityRulesProvider && !(await communityRulesProvider.hasAcceptedRules(userId))) {
+      throw new CommunityRulesNotAccepted();
     }
     const now = clock.now();
     if (

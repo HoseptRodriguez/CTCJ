@@ -69,6 +69,14 @@ export const STAFF_NAV = [
         counter: 'requests',
       },
       {
+        key: 'datos-personales',
+        to: '/staff/datos-personales',
+        label: 'Datos personales',
+        icon: 'shield',
+        roles: [ADMIN],
+        counter: 'dataRequests',
+      },
+      {
         key: 'notas',
         to: '/staff/notas',
         label: 'Notas y rendimiento',

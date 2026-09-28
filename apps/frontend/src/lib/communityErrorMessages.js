@@ -23,6 +23,7 @@ const COMMUNITY_ERROR_MESSAGES = {
   media_unreadable_image: 'No pudimos leer una de las fotos. Si es HEIC, compártela como JPG.',
   media_video_not_owned: 'No encontramos el video que subiste. Intenta subirlo otra vez.',
   network_error: 'Se cortó la conexión. Revisa tu internet e intenta de nuevo.',
+  community_rules_not_accepted: 'Antes de publicar o comentar, acepta las reglas de la Comunidad.',
 };
 
 export function describeCommunityError(err) {

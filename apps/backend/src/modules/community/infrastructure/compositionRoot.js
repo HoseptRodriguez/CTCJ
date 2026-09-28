@@ -15,6 +15,7 @@ import { createDeleteContentAsStaff } from '../application/useCases/deleteConten
 import { createAuthorizeVideoUpload } from '../application/useCases/authorizeVideoUpload.js';
 import { createGetMediaCapabilities } from '../application/useCases/getMediaCapabilities.js';
 import { createSetPostVisibility } from '../application/useCases/setPostVisibility.js';
+import { createEraseMemberContent } from '../application/useCases/eraseMemberContent.js';
 
 import { createPrismaPostRepository } from './persistence/prismaPostRepository.js';
 import { createPrismaCommentRepository } from './persistence/prismaCommentRepository.js';
@@ -26,6 +27,7 @@ import {
   createNullPlayerDirectoryProvider,
   createNullNotificationSender,
   createNullMinorStatusProvider,
+  createNullCommunityRulesProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -47,6 +49,7 @@ export function buildCommunityContainer({
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
   notificationSender = createNullNotificationSender(),
   minorStatusProvider = createNullMinorStatusProvider(),
+  communityRulesProvider = createNullCommunityRulesProvider(),
   // Required only for posts with photos/videos (app.js passes Blob or local disk).
   mediaStorage,
   imageProcessor = createSharpImageProcessor(),
@@ -59,6 +62,7 @@ export function buildCommunityContainer({
 
   return {
     createPost: createCreatePost({
+      communityRulesProvider,
       postRepository,
       playerEligibilityProvider,
       clock,
@@ -67,6 +71,7 @@ export function buildCommunityContainer({
       imageProcessor,
     }),
     authorizeVideoUpload: createAuthorizeVideoUpload({
+      communityRulesProvider,
       playerEligibilityProvider,
       minorStatusProvider,
       postRepository,
@@ -82,7 +87,9 @@ export function buildCommunityContainer({
     ...createSetPostVisibility({ postRepository, clock }),
     listPosts: createListPosts({ postRepository, postLikeRepository, playerDirectoryProvider }),
     deleteMyPost: createDeleteMyPost({ postRepository, mediaStorage }),
+    eraseMemberContent: createEraseMemberContent({ postRepository, mediaStorage }),
     createComment: createCreateComment({
+      communityRulesProvider,
       minorStatusProvider,
       postRepository,
       commentRepository,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PASSWORD_MIN_LENGTH, registerSchema } from '@ctcj/shared';
 
@@ -7,18 +7,35 @@ import { CheckIcon } from '../components/icons/CheckIcon.jsx';
 import { AnimatedCheck } from '../components/motion/AnimatedCheck.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { cn } from '../components/ui/cn.js';
-import { PasswordField, TextField } from '../components/ui/Field.jsx';
+import { CheckboxField, PasswordField, TextField } from '../components/ui/Field.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { isMinorBirthDate } from '../lib/age.js';
 import { describeIdentityError } from '../lib/identityErrorMessages.js';
 
 import { AuthSplit, FormError } from './auth/AuthSplit.jsx';
 
-const INITIAL_FORM = { firstName: '', lastName: '', email: '', password: '' };
+const INITIAL_FORM = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  birthDate: '',
+  // Authorizations: never pre-ticked.
+  acceptPrivacy: false,
+  acceptTerms: false,
+  wantsMarketing: false,
+  marketingEmail: false,
+  marketingWhatsapp: false,
+};
+
+const LEGAL_LINK = 'focus-ring rounded font-semibold text-navy-500 underline underline-offset-4';
 
 const FIELD_MESSAGES = {
   firstName: 'Escribe tu nombre.',
   lastName: 'Escribe tu apellido.',
   email: 'Escribe tu correo completo, por ejemplo nombre@correo.com.',
+  acceptPrivacy: 'Para crear la cuenta debes autorizar el tratamiento de tus datos.',
+  acceptTerms: 'Para crear la cuenta debes aceptar los Términos y condiciones.',
 };
 
 export const PASSWORD_RULES = [
@@ -70,23 +87,52 @@ export function Register() {
   const [apiError, setApiError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const formRef = useRef(null);
+  const minor = isMinorBirthDate(form.birthDate);
 
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
+  const setField = (name) => (value) => setForm((prev) => ({ ...prev, [name]: value }));
+
+  // After a failed submit, take the person to the first field to fix.
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length) {
+      formRef.current?.querySelector('[aria-invalid="true"]')?.focus();
+    }
+  }, [fieldErrors]);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setApiError(null);
 
-    const result = registerSchema.safeParse(form);
+    const payload = {
+      email: form.email,
+      password: form.password,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      birthDate: form.birthDate,
+      acceptPrivacy: form.acceptPrivacy,
+      acceptTerms: form.acceptTerms,
+      // Minors never get promotions; otherwise only the channels chosen.
+      marketing: {
+        email: !minor && form.wantsMarketing && form.marketingEmail,
+        whatsapp: !minor && form.wantsMarketing && form.marketingWhatsapp,
+      },
+    };
+    const result = registerSchema.safeParse(payload);
+    const errors = {};
     if (!result.success) {
-      const errors = {};
       for (const issue of result.error.issues) {
         const field = issue.path[0];
         errors[field] ??= FIELD_MESSAGES[field] ?? issue.message;
       }
+    }
+    if (!minor && form.wantsMarketing && !form.marketingEmail && !form.marketingWhatsapp) {
+      errors.marketing = 'Elige por dónde quieres recibirlas: correo, WhatsApp o ambos.';
+    }
+    if (Object.keys(errors).length) {
       setFieldErrors(errors);
       return;
     }
@@ -130,7 +176,7 @@ export function Register() {
       description="Con tu cuenta puedes reservar canchas y seguir tu progreso."
     >
       <FormError>{apiError}</FormError>
-      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
           <TextField
             label="Nombre"
@@ -170,6 +216,80 @@ export function Register() {
           />
           <PasswordRules value={form.password} />
         </div>
+        <TextField
+          label="Fecha de nacimiento"
+          name="birthDate"
+          type="date"
+          autoComplete="bday"
+          value={form.birthDate}
+          onChange={handleChange}
+          error={fieldErrors.birthDate}
+          hint="La usamos para saber si eres menor de edad, como explica la Política de datos."
+        />
+        {minor && (
+          <p
+            role="status"
+            className="rounded-lg border-2 border-amber bg-amber-soft p-4 text-body text-ink"
+          >
+            Eres menor de edad: podrás entrar, pero para reservar y publicar en la Comunidad tu
+            acudiente debe vincular tu cuenta desde su perfil y dar la autorización para tus datos e
+            imagen. Tú no puedes darla por tu cuenta.
+          </p>
+        )}
+        <fieldset className="space-y-3">
+          <legend className="mb-1 text-body font-semibold text-ink">Autorizaciones</legend>
+          <CheckboxField
+            name="acceptPrivacy"
+            checked={form.acceptPrivacy}
+            onChange={setField('acceptPrivacy')}
+            error={fieldErrors.acceptPrivacy}
+          >
+            (Obligatoria) Autorizo el tratamiento de mis datos personales según la{' '}
+            <Link to="/privacidad" target="_blank" rel="noopener noreferrer" className={LEGAL_LINK}>
+              Política de Tratamiento de Datos
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </Link>
+            .
+          </CheckboxField>
+          <CheckboxField
+            name="acceptTerms"
+            checked={form.acceptTerms}
+            onChange={setField('acceptTerms')}
+            error={fieldErrors.acceptTerms}
+          >
+            (Obligatoria) Acepto los{' '}
+            <Link to="/terminos" target="_blank" rel="noopener noreferrer" className={LEGAL_LINK}>
+              Términos y condiciones
+              <span className="sr-only"> (se abre en otra pestaña)</span>
+            </Link>
+            .
+          </CheckboxField>
+          {!minor && (
+            <CheckboxField
+              name="wantsMarketing"
+              checked={form.wantsMarketing}
+              onChange={setField('wantsMarketing')}
+              error={fieldErrors.marketing}
+              hint="Solo en horario permitido: lunes a viernes de 7:00 a. m. a 7:00 p. m. y sábados de 8:00 a. m. a 3:00 p. m. Nunca domingos ni festivos."
+            >
+              (Opcional) Quiero recibir novedades y promociones del club.
+            </CheckboxField>
+          )}
+          {!minor && form.wantsMarketing && (
+            <fieldset className="ml-4 space-y-2 border-l-4 border-line pl-4">
+              <legend className="mb-1 text-body font-semibold text-ink">¿Por dónde?</legend>
+              <CheckboxField checked={form.marketingEmail} onChange={setField('marketingEmail')}>
+                Correo
+              </CheckboxField>
+              <CheckboxField
+                checked={form.marketingWhatsapp}
+                onChange={setField('marketingWhatsapp')}
+              >
+                WhatsApp
+              </CheckboxField>
+            </fieldset>
+          )}
+        </fieldset>
         <Button
           type="submit"
           size="lg"

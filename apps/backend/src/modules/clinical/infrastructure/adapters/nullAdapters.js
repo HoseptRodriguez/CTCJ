@@ -40,3 +40,12 @@ export function createInMemoryClinicalAuditLog() {
     },
   };
 }
+
+export function createNullHealthAuthorizationProvider() {
+  return {
+    // Fails closed -- no health data is recorded without a known authorization.
+    async hasHealthAuthorization() {
+      return false;
+    },
+  };
+}

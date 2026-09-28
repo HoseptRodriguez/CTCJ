@@ -40,6 +40,7 @@ const MyReservations = lazyPage(
 );
 const MyProgress = lazyPage(() => import('./pages/mictcj/ProgressTab.jsx'), 'ProgressTab');
 const MyRanking = lazyPage(() => import('./pages/mictcj/RankingTab.jsx'), 'RankingTab');
+const MyPrivacy = lazyPage(() => import('./pages/mictcj/PrivacyTab.jsx'), 'PrivacyTab');
 const PlayerProfilePage = lazyPage(
   () => import('./pages/PlayerProfilePage.jsx'),
   'PlayerProfilePage',
@@ -73,6 +74,10 @@ const PaymentsQueuePage = lazyPage(
 );
 const PlansPage = lazyPage(() => import('./pages/staff/PlansPage.jsx'), 'PlansPage');
 const RequestsPage = lazyPage(() => import('./pages/staff/RequestsPage.jsx'), 'RequestsPage');
+const DataRequestsPage = lazyPage(
+  () => import('./pages/staff/DataRequestsPage.jsx'),
+  'DataRequestsPage',
+);
 const TournamentsPage = lazyPage(
   () => import('./pages/staff/TournamentsPage.jsx'),
   'TournamentsPage',
@@ -118,6 +123,7 @@ export function App() {
                 <Route path="/mi-ctcj" element={<MyCtcjHome />} />
                 <Route path="/mi-ctcj/reservas" element={<MyReservations />} />
                 <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
+                <Route path="/mi-ctcj/privacidad" element={<MyPrivacy />} />
                 <Route element={<RequireJugador />}>
                   <Route path="/mi-ctcj/progreso" element={<MyProgress />} />
                   <Route path="/mi-ctcj/ranking" element={<MyRanking />} />
@@ -184,6 +190,7 @@ export function App() {
                 <Route element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR]} />}>
                   <Route path="/staff/precios" element={<CourtPricingPage />} />
                   <Route path="/staff/solicitudes" element={<RequestsPage />} />
+                  <Route path="/staff/datos-personales" element={<DataRequestsPage />} />
                   <Route path="/staff/planes" element={<PlansPage />} />
                   <Route path="/staff/finanzas" element={<FinancePage />} />
                 </Route>

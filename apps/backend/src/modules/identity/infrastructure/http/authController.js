@@ -22,7 +22,11 @@ function refreshCookieOptions() {
 /** @param {ReturnType<import('../compositionRoot.js').buildIdentityContainer>} container */
 export function createAuthController(container) {
   const register = asyncHandler(async (req, res) => {
-    await container.registerUser(req.body);
+    await container.registerUser({
+      ...req.body,
+      ipAddress: req.ip ?? null,
+      userAgent: req.get('user-agent')?.slice(0, 500) ?? null,
+    });
     res.status(201).end();
   });
 

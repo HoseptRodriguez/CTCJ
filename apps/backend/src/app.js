@@ -51,6 +51,7 @@ import { createIdentityPlayerEligibilityProvider as createCommunityPlayerEligibi
 import { createIdentityPlayerDirectoryProvider as createCommunityPlayerDirectoryProvider } from './modules/community/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createNotificationsSenderAdapter as createCommunityNotificationSender } from './modules/community/infrastructure/adapters/notificationSenderAdapter.js';
 import { createIdentityMinorStatusProvider as createCommunityMinorStatusProvider } from './modules/community/infrastructure/adapters/minorStatusProviderAdapter.js';
+import { createIdentityCommunityRulesProvider } from './modules/community/infrastructure/adapters/communityRulesProviderAdapter.js';
 import { createVercelBlobMediaStorage } from './modules/community/infrastructure/storage/vercelBlobMediaStorage.js';
 import { createLocalDiskMediaStorage } from './modules/community/infrastructure/storage/localDiskMediaStorage.js';
 import { buildBookingContainer } from './modules/booking/infrastructure/compositionRoot.js';
@@ -96,6 +97,15 @@ import { createMeRoutes as createClinicalMeRoutes } from './modules/clinical/inf
 import { createIdentityPlayerEligibilityProvider as createClinicalPlayerEligibilityProvider } from './modules/clinical/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPractitionerEligibilityProvider } from './modules/clinical/infrastructure/adapters/practitionerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createClinicalPlayerDirectoryProvider } from './modules/clinical/infrastructure/adapters/playerDirectoryProviderAdapter.js';
+import { createIdentityHealthAuthorizationProvider } from './modules/clinical/infrastructure/adapters/healthAuthorizationProviderAdapter.js';
+import { buildPrivacyContainer } from './modules/privacy/infrastructure/compositionRoot.js';
+import { createPrivacyController } from './modules/privacy/infrastructure/http/privacyController.js';
+import {
+  createPrivacyAdminRoutes,
+  createPrivacyMeRoutes,
+} from './modules/privacy/infrastructure/http/privacyRoutes.js';
+import { createIdentityPersonDirectory } from './modules/privacy/infrastructure/adapters/personDirectoryAdapter.js';
+import { createAccountEraser } from './modules/privacy/infrastructure/adapters/accountEraserAdapter.js';
 import { buildGoalsContainer } from './modules/goals/infrastructure/compositionRoot.js';
 import { createMeController as createGoalsMeController } from './modules/goals/infrastructure/http/meController.js';
 import { createMeRoutes as createGoalsMeRoutes } from './modules/goals/infrastructure/http/meRoutes.js';
@@ -239,6 +249,10 @@ export function createApp() {
     minorStatusProvider: createCommunityMinorStatusProvider({
       checkIsMinor: identityContainer.checkIsMinor,
       isPendingGuardianAuthorization: identityContainer.isPendingGuardianAuthorization,
+    }),
+    // Posting, commenting and uploading need the Community rules accepted.
+    communityRulesProvider: createIdentityCommunityRulesProvider({
+      hasAuthorizationInForce: identityContainer.hasAuthorizationInForce,
     }),
     mediaStorage: communityMediaStorage,
   });
@@ -419,11 +433,30 @@ export function createApp() {
     playerEligibilityProvider: clinicalPlayerEligibilityProvider,
     practitionerEligibilityProvider: clinicalPractitionerEligibilityProvider,
     playerDirectoryProvider: clinicalPlayerDirectoryProvider,
+    // Health data is only recorded with the explicit authorization in force.
+    healthAuthorizationProvider: createIdentityHealthAuthorizationProvider({
+      hasAuthorizationInForce: identityContainer.hasAuthorizationInForce,
+    }),
   });
   const clinicalAdminController = createClinicalAdminController(clinicalContainer);
   const clinicalMeController = createClinicalMeController(clinicalContainer);
   app.use('/api/admin/clinical', createClinicalAdminRoutes(clinicalAdminController));
   app.use('/api/clinical/me', createClinicalMeRoutes(clinicalMeController));
+
+  // The data subject's rights: download my data, consultas y reclamos with
+  // a radicado, and the club's inbox with the legal deadlines.
+  const privacyContainer = buildPrivacyContainer({
+    personDirectory: createIdentityPersonDirectory({
+      getUserSummaries: identityContainer.getUserSummaries,
+    }),
+    accountEraser: createAccountEraser({
+      eraseMemberContent: communityContainer.eraseMemberContent,
+      anonymizeAccount: identityContainer.anonymizeAccount,
+    }),
+  });
+  const privacyController = createPrivacyController(privacyContainer);
+  app.use('/api/privacy/me', createPrivacyMeRoutes(privacyController));
+  app.use('/api/admin/privacy', createPrivacyAdminRoutes(privacyController));
 
   // Other module routers are mounted here as each module is implemented.
 

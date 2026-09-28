@@ -32,15 +32,15 @@ Estado: parcial (Partes 1 a 4, 2026-09-28).
 
 Hoy **no hay ningún plazo definido y no se borra nada automáticamente**. El club debe fijarlos, con su contador y su abogado:
 
-| Datos                                                        | Plazo                                                                            |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| Cuenta y perfil tras la eliminación de la cuenta             | [COMPLETAR] (se anonimizará, Parte 5)                                            |
-| Facturas, pagos y soportes contables                         | [COMPLETAR: plazo que indique el contador] [VERIFICAR norma contable/tributaria] |
-| Historia clínica y notas de salud                            | [VERIFICAR: Resolución 1995 de 1999 y normas posteriores]                        |
-| Sesiones vencidas, tokens de verificación y recuperación, IP | [COMPLETAR] (propuesta técnica: purgar a los 90 días)                            |
-| Notificaciones leídas                                        | [COMPLETAR]                                                                      |
-| Registro de auditoría (`audit_logs`)                         | [COMPLETAR]                                                                      |
-| Prueba de consentimientos (`consents`)                       | [VERIFICAR] (mientras pueda exigirse la prueba)                                  |
+| Datos                                                        | Plazo                                                                               |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Cuenta y perfil tras la eliminación de la cuenta             | Se anonimiza al responder la solicitud (Parte 5). Plazo para atenderla: [COMPLETAR] |
+| Facturas, pagos y soportes contables                         | [COMPLETAR: plazo que indique el contador] [VERIFICAR norma contable/tributaria]    |
+| Historia clínica y notas de salud                            | [VERIFICAR: Resolución 1995 de 1999 y normas posteriores]                           |
+| Sesiones vencidas, tokens de verificación y recuperación, IP | [COMPLETAR] (propuesta técnica: purgar a los 90 días)                               |
+| Notificaciones leídas                                        | [COMPLETAR]                                                                         |
+| Registro de auditoría (`audit_logs`)                         | [COMPLETAR]                                                                         |
+| Prueba de consentimientos (`consents`)                       | [VERIFICAR] (mientras pueda exigirse la prueba)                                     |
 
 ## 3. Terceros y transferencias internacionales
 
@@ -77,9 +77,10 @@ Google Fonts **ya no se usa** (las fuentes se sirven desde el propio sitio).
 
 - **Hecho (Parte 2):** la cuenta de un menor queda "Pendiente de autorización del acudiente". Puede entrar y ver información, pero no reservar, no publicar en la Comunidad y no recibir promociones, hasta que su acudiente la vincule (y el club apruebe la vinculación) y acepte la autorización de datos e imagen. La prueba queda en `consents`.
 - **Menores registrados hoy:** en `ctcj_dev` hay **0 cuentas pendientes**. Solo 1 usuario tiene fecha de nacimiento (adulto) y no hay tutelas.
-- **Limitación:** un menor que no escriba su fecha de nacimiento y no esté vinculado a un acudiente **no se puede detectar**. [VERIFICAR con el abogado] si hay que pedir la fecha de nacimiento (o una declaración de mayoría de edad) en el registro. Se propone resolverlo en la Parte 5.
+- **Resuelto (Parte 5):** la fecha de nacimiento es obligatoria en el registro, y a quien ya tenía cuenta sin ella se le pide antes de continuar. Si alguien miente sobre su edad no se puede detectar [VERIFICAR con el abogado si basta la declaración].
 - El texto de la autorización del acudiente (versión 1, `packages/shared/src/constants/consents.js`) es una **propuesta** [VERIFICAR con el abogado].
-- **Mensajes promocionales:** hoy no existen. Cuando existan (Parte 5), las cuentas pendientes y las de menores sin autorización no deben recibirlos.
+- **Mensajes promocionales:** hoy el club no envía ninguno; solo se guarda la autorización (con canales). Un menor no puede aceptarlos por sí mismo, y en el registro ni siquiera se le ofrecen. Cuando se envíen, hay que usar `isWithinMarketingHours` (Ley 2300: lunes a viernes 7:00 a. m. – 7:00 p. m., sábados 8:00 a. m. – 3:00 p. m., nunca domingos ni festivos) y solo a quien tenga la autorización vigente.
+- **Datos de salud de un menor:** la autorización la da el acudiente desde "Cuentas vinculadas" (separada de la de datos e imagen). El menor no puede darla por sí mismo, pero sí retirarla [VERIFICAR con el abogado].
 
 ## 7. Seguridad
 
@@ -121,3 +122,28 @@ Datos y decisiones pendientes, por documento:
 - Lo único opcional hoy es "Letra grande" (Preferencias): no se guarda ni se lee sin consentimiento, y se borra al retirarlo.
 - No hay analítica. Si algún día se agrega, debe cargarse **solo** con `hasCookieConsent('ANALYTICS')` y registrarse en la Política de cookies y en `COOKIE_INVENTORY` (nueva versión de la política).
 - [VERIFICAR con el abogado] si la decisión de un visitante sin sesión necesita otra prueba además de la que guarda su navegador (hoy no se envía nada al servidor sin sesión, para no crear un dato personal nuevo).
+
+## 12. Consentimientos en formularios y derechos del titular (Parte 5)
+
+**Hecho:**
+
+- **Registro:** fecha de nacimiento obligatoria y tres casillas separadas y sin marcar: autorización de datos (obligatoria, con enlace), Términos (obligatoria, con enlace) y novedades/promociones (opcional, con canal correo o WhatsApp y el horario de la Ley 2300). A un menor no se le ofrecen promociones. Cada aceptación queda en `consents` con versión, fecha, IP y navegador.
+- **Cuentas existentes:** antes de continuar, una pantalla pide lo que falte (fecha de nacimiento, aceptación de la política y de los Términos vigentes). Lo mismo pasará cuando cambie la versión de esos textos.
+- **Datos de salud:** autorización explícita y opcional (tipo HEALTH_DATA). Sin ella, psicología, neuropsicología y fisioterapia **no pueden** agendar citas ni registrar notas, antecedentes, planes o aptitud (el servidor responde 403 con un mensaje claro para el personal). Lo ya registrado se sigue pudiendo leer. Está en Mi perfil, junto a la autorización para que Administración lea las notas de fisioterapia.
+  - **Ojo, datos de desarrollo:** ningún jugador de `ctcj_dev` tiene todavía esta autorización, así que el personal de salud no podrá registrar nada nuevo hasta que cada jugador (o su acudiente) la dé.
+- **Comunidad:** antes de la primera publicación o comentario hay que aceptar las reglas y declarar que se tiene permiso de las personas que aparecen en fotos y videos (y de su acudiente si es menor). El servidor lo exige para publicar, comentar y subir videos.
+  - **Ojo, datos de desarrollo:** los jugadores que ya publicaban tendrán que aceptar las reglas la próxima vez.
+- **Mis datos y privacidad** (Mi CTCJ › Mi perfil): ver, dar y retirar las autorizaciones opcionales; cambiar las cookies; descargar mis datos (JSON, sin datos de salud, como promete la política); corregir datos (en Mi perfil o por solicitud); pedir la eliminación de la cuenta; consultas y reclamos con número de radicado (`CTCJ-AAAA-00001`).
+- **Bandeja "Datos personales"** (solo Administración): consultas a 10 días hábiles y reclamos a 15, contados desde el día siguiente al recibo con los festivos de Colombia (Ley 51 de 1983). Aviso cuando quedan 3 días hábiles o menos, o está vencida, y contador en el menú.
+- **Eliminación de cuenta:** al responder una solicitud de eliminación, Administración puede anonimizar la cuenta: se reemplazan nombre, correo, teléfono, documento, fecha de nacimiento, foto (se borra el archivo), presentación y estilo de juego; se borra lo publicado en la Comunidad; se cierran todas las sesiones y la cuenta ya no puede entrar. Se conservan, sin nombre, facturas y pagos, registros de salud, la prueba de las autorizaciones y la propia solicitud.
+
+**Pendiente:**
+
+- [VERIFICAR con el abogado] las prórrogas (5 días hábiles más para consultas y 8 para reclamos): hoy la bandeja no las registra; habría que avisar a la persona antes del vencimiento.
+- [VERIFICAR] si el día del recibo cuenta, y qué pasa con una solicitud que llega un sábado, domingo o festivo (hoy: el plazo empieza el día hábil siguiente).
+- [VERIFICAR] reclamo incompleto (art. 15: 5 días para completarlo; a los 2 meses se entiende desistido): hoy no hay un estado para eso.
+- [COMPLETAR] el correo de datos personales (habeas data) como canal alterno para quien no tiene cuenta.
+- La respuesta de una solicitud solo se ve en Mi CTCJ: [VERIFICAR] si además hay que enviarla por correo.
+- La copia de los datos de salud se entrega hoy por consulta; [VERIFICAR] el procedimiento (historia clínica: Resolución 1995 de 1999).
+- Textos de las autorizaciones cortas (salud, reglas de la Comunidad, promociones), versión 1 en `packages/shared/src/legal/authorizations.js`: [VERIFICAR con el abogado].
+- Festivos: calculados por regla, no por lista oficial. [VERIFICAR] cada año con el calendario oficial.
