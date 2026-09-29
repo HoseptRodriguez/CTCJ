@@ -22,7 +22,8 @@
     "lint:arch": "depcruise apps/backend/src --config .dependency-cruiser.js",
     "format": "prettier --write .",
     "prepare": "husky",
-    "legal:check": "node scripts/legal-check.mjs"
+    "legal:check": "node scripts/legal-check.mjs",
+    "db:backup": "node scripts/backup-db.mjs"
   },
   "devDependencies": {
     "dependency-cruiser": "^16.4.2",

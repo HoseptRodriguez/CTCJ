@@ -56,12 +56,12 @@ Los encargados (desarrolladores y proveedores) avisan al club **en cuanto** sepa
 
 - **Producción:** [VERIFICAR] qué copias hace el proveedor de la base de datos (Render), si están cifradas, cuánto tiempo se guardan y quién puede restaurarlas.
 - **Copias manuales** (`pg_dump`): contienen **todos** los datos, incluidos los de salud. Por eso:
-  - **Siempre cifradas.** En Windows, con 7-Zip: `7z a -p -mhe=on copia.7z copia.sql` (AES-256, también oculta el nombre del archivo) y luego borrar el `.sql`. En Linux o macOS: `pg_dump ... | gpg --symmetric --cipher-algo AES256 -o copia.sql.gpg`.
+  - **Siempre cifradas**, con `npm run db:backup` (7-Zip, AES-256, nombres ocultos; comprueba el archivo y borra el `.sql`). Cómo crearlas y restaurarlas: `docs/DATABASE.md`.
   - La contraseña se guarda aparte (gestor de contraseñas del club), nunca junto a la copia.
   - Solo en equipos del club con disco cifrado (BitLocker, FileVault) y acceso restringido. Nunca en correos, chats ni carpetas compartidas.
   - Borrarlas cuando ya no sirvan. Plazo: [COMPLETAR].
   - Probar cada cierto tiempo que una copia se puede restaurar (en una base aparte).
-- **Hoy en el equipo de desarrollo** hay copias sin cifrar de la base de desarrollo en `C:\Users\KTFUS\ctcj-backups` (las hechas antes de cada migración). Contienen datos de prueba y de las cuentas reales creadas en desarrollo. Conviene cifrarlas o borrarlas (ver `LEGAL_PENDIENTES.md`, sección 7).
+- **Equipo de desarrollo:** desde el 2026-09-29 todas las copias están cifradas en `C:\Users\KTFUS\ctcj-backups` (las 12 anteriores, en `ctcj-backups-2026-09-29.7z`) y no queda ningún `.sql` sin cifrar.
 
 ## 5. Qué hace el sistema para prevenir
 
