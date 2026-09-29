@@ -9,9 +9,9 @@ Convenciones:
 - **[COMPLETAR]**: dato del negocio que debe dar el club.
 - **[VERIFICAR]**: dato legal o técnico que hay que confirmar antes de usarlo.
 
-El script `npm run legal:check` (Parte 9) impedirá publicar mientras quede alguno de estos marcadores en las páginas legales o en el pie de página.
+El script `npm run legal:check` (Parte 9) **impide publicar** mientras quede alguno de estos marcadores en las páginas legales o en el pie de página (sección 14).
 
-Estado: parcial (Partes 1 a 4, 2026-09-28).
+Estado: Partes 1 a 9 terminadas el 2026-09-28. Quedan los datos del club, las autorizaciones pendientes y la revisión del abogado.
 
 ---
 
