@@ -215,3 +215,17 @@ Mientras el club no entregue pruebas, el sitio usa la **versión segura**. Para 
 ## 16. Contenido de programas
 
 Regla: no se inventa información del club. Cada dato de las páginas `/programas/*` que falte está marcado `[COMPLETAR]` y el build de producción falla mientras quede alguno.
+
+Todo está en `apps/frontend/src/lib/programs.js`. Por cada programa (Clases para adultos, Escuela infantil, Competencia y ranking):
+
+| Dato                 | Estado                                                     |
+| -------------------- | ---------------------------------------------------------- |
+| ¿Para quién es?      | [COMPLETAR] edades y niveles                               |
+| ¿Qué incluye?        | [COMPLETAR] clases por semana, duración, materiales        |
+| Horarios             | [COMPLETAR] días y horas                                   |
+| Valor                | [COMPLETAR] valor, o poner "Consulta el valor"             |
+| Entrenadores         | [COMPLETAR] nombres (con su autorización para publicarlos) |
+| Preguntas frecuentes | [COMPLETAR] 3 a 5 preguntas con su respuesta               |
+
+- **Fotos:** adultos y competencia usan fotos de jugadores adultos (pendientes de su autorización, sección 5). La escuela infantil usa la foto de las canchas, sin personas, hasta tener fotos de niños con la autorización escrita de sus acudientes.
+- **Torneos públicos:** hoy no existe una página pública de torneos. La página de competencia enlaza al ranking y los torneos de Mi CTCJ (se necesita cuenta).

@@ -9,6 +9,7 @@ import { HeroBallTrajectory } from '../components/motion/HeroBallTrajectory.jsx'
 import { ParallaxPhoto } from '../components/motion/ParallaxPhoto.jsx';
 import { SplitHeadline } from '../components/motion/SplitHeadline.jsx';
 import { BrochureTitle, DiagonalSection } from '../components/brochure/Brochure.jsx';
+import { ProgramLinkCard } from '../components/brochure/ProgramLinkCard.jsx';
 import { ExternalLinkMark } from '../components/forms/ExternalLinkMark.jsx';
 import { InfoRequestForm } from '../components/forms/InfoRequestForm.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -16,6 +17,7 @@ import { ClubPhoto } from '../components/ui/ClubPhoto.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { ADDRESS, MAPS_LINK, WHATSAPP_LINK, WHATSAPP_NUMBER } from '../lib/clubInfo.js';
 import { CLUB_TEXTS } from '../lib/clubTexts.js';
+import { PROGRAMS } from '../lib/programs.js';
 
 import { FreeTodayCard } from './home/FreeTodayCard.jsx';
 
@@ -46,13 +48,8 @@ const QUICK_ACTIONS = [
   },
 ];
 
-const PROGRAMS = [
-  { photo: 'jugador-desplazamiento', label: 'Clases para adultos', className: 'md:row-span-2' },
-  // No photos of minors until the club holds their guardians' written
-  // authorization (src/lib/photo-rights.js).
-  { photo: 'canchas-panoramica-nubes', label: 'Escuela infantil', className: '' },
-  { photo: 'jugador-espera-recepcion', label: 'Competencia y ranking', className: '' },
-];
+/** Bento layout of the three program cards on the home page. */
+const PROGRAM_LAYOUT = { adultos: 'md:row-span-2', 'escuela-infantil': '', competencia: '' };
 
 export function HomePage() {
   useDocumentTitle('Inicio');
@@ -157,16 +154,9 @@ function Programs() {
           Academia Orlando Rodríguez: tenis para todas las edades y niveles.
         </p>
         <ul className="mt-8 grid auto-rows-[16rem] gap-4 md:grid-cols-2 md:auto-rows-[15rem]">
-          {PROGRAMS.map(({ photo, label, className }) => (
-            <li key={label} className={`relative overflow-hidden rounded-xl ${className}`}>
-              <ClubPhoto
-                name={photo}
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="h-full w-full"
-              />
-              <span className="absolute bottom-4 left-4 rounded-lg bg-navy-500 px-4 py-2 font-display text-h3 font-bold text-white shadow-md">
-                {label}
-              </span>
+          {PROGRAMS.map((program) => (
+            <li key={program.slug} className={PROGRAM_LAYOUT[program.slug]}>
+              <ProgramLinkCard program={program} className="h-full" />
             </li>
           ))}
         </ul>

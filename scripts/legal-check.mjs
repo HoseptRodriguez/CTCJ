@@ -1,7 +1,7 @@
 // npm run legal:check -- blocks publishing the site (Parte 9).
 //
 // Fails (exit 1) while any legal page or the footer still has a
-// [COMPLETAR ...] or [VERIFICAR ...] marker, or while a photo of a minor
+// [COMPLETAR ...] or [VERIFICAR ...] marker (also the program pages' content), or while a photo of a minor
 // without the guardian's authorization would be published. It runs first
 // in the production build (npm run build, used by Render), so the site
 // can't go live until the club completes its data and a lawyer reviews the
@@ -25,10 +25,11 @@ export function findMarkers(text) {
  *   documents: Array<{ type: string, title: string, path?: string|null }>,
  *   business: Record<string, unknown>,
  *   footerSources: Array<{ file: string, text: string }>,
+ *   contentSources?: Array<{ file: string, text: string }>,
  * }} input
  * @returns {Array<{ where: string, markers: string[] }>}
  */
-export function collectLegalProblems({ documents, business, footerSources }) {
+export function collectLegalProblems({ documents, business, footerSources, contentSources = [] }) {
   const problems = [];
   for (const doc of documents) {
     const markers = findMarkers(JSON.stringify(doc));
@@ -49,6 +50,10 @@ export function collectLegalProblems({ documents, business, footerSources }) {
     const markers = findMarkers(text);
     if (markers.length) problems.push({ where: `Pie de página (${file})`, markers });
   }
+  for (const { file, text } of contentSources) {
+    const markers = findMarkers(text);
+    if (markers.length) problems.push({ where: `Contenido de programas (${file})`, markers });
+  }
   return problems;
 }
 
@@ -60,10 +65,16 @@ async function main() {
     'apps/frontend/src/layout/Footer.jsx',
     'apps/frontend/src/layout/LegalLinks.jsx',
   ];
+  // Program pages: schedules, prices, ages, coaches... (never invented).
+  const contentFiles = ['apps/frontend/src/lib/programs.js'];
   const problems = collectLegalProblems({
     documents: shared.LEGAL_DOCUMENTS,
     business: shared.BUSINESS,
     footerSources: footerFiles.map((file) => ({
+      file,
+      text: readFileSync(path.join(ROOT, file), 'utf8'),
+    })),
+    contentSources: contentFiles.map((file) => ({
       file,
       text: readFileSync(path.join(ROOT, file), 'utf8'),
     })),

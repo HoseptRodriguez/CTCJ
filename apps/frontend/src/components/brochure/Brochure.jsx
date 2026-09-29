@@ -88,3 +88,26 @@ export function DiagonalSection({
 export function toneText(tone) {
   return TONES[tone].muted;
 }
+
+/**
+ * A diagonal cut between two sections: the upper section's color slants
+ * into the lower one's. Decorative only (hidden from screen readers).
+ *
+ * @param {{ from: string, to: string, flip?: boolean, className?: string }} props
+ *   `from` / `to`: Tailwind background classes (e.g. 'bg-navy-500', 'bg-page').
+ */
+export function DiagonalDivider({ from, to, flip = false, className }) {
+  return (
+    <div aria-hidden="true" className={cn('h-10 md:h-16', to, className)}>
+      <div
+        className={cn(
+          'h-full',
+          from,
+          flip
+            ? '[clip-path:polygon(0_0,100%_0,100%_100%,0_0)]'
+            : '[clip-path:polygon(0_0,100%_0,0_100%)]',
+        )}
+      />
+    </div>
+  );
+}

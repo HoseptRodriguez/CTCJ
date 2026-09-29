@@ -22,11 +22,13 @@ describe('npm run legal:check', () => {
       ],
       business: { legalName: 'Club S.A.S.', nit: '[COMPLETAR: NIT]' },
       footerSources: [{ file: 'Footer.jsx', text: '<p>[VERIFICAR horario]</p>' }],
+      contentSources: [{ file: 'programs.js', text: "price: '[COMPLETAR: valor]'" }],
     });
     expect(problems.map((p) => p.where)).toEqual([
       'Términos (/terminos)',
       'Datos del negocio del pie de página (packages/shared/src/legal/business.js)',
       'Pie de página (Footer.jsx)',
+      'Contenido de programas (programs.js)',
     ]);
     expect(problems[1].markers).toEqual(['nit: [COMPLETAR: NIT]']);
 
