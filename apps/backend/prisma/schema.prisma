@@ -43,6 +43,8 @@ model Club {
   dataSubjectRequests  DataSubjectRequest[]
   infoRequests         InfoRequest[]
 
+  announcements Announcement[]
+
   @@map("clubs")
 }
 
@@ -157,8 +159,12 @@ model User {
   mfaRecoveryCodes     MfaRecoveryCode[]
 
   // "Solicitar información": requests the staff handled, internal notes.
-  infoRequestsHandled InfoRequest[]     @relation("InfoRequestHandledBy")
-  infoRequestNotes    InfoRequestNote[]
+  infoRequestsHandled     InfoRequest[]            @relation("InfoRequestHandledBy")
+  infoRequestNotes        InfoRequestNote[]
+  notificationPreferences NotificationPreference[] @relation("NotificationPreferenceOwner")
+  notificationSetting     NotificationSetting?     @relation("NotificationSettingOwner")
+  emailDeliveriesReceived EmailDelivery[]          @relation("EmailDeliveryRecipient")
+  emailDeliveriesAbout    EmailDelivery[]          @relation("EmailDeliveryAbout")
 
   @@unique([clubId, email])
   @@map("users")
@@ -647,6 +653,11 @@ model Tournament {
   completedAt     DateTime? @map("completed_at")
   cancelledAt     DateTime? @map("cancelled_at")
   championId      String?   @map("champion_id") @db.Uuid // no FK -- points at the winning TournamentParticipant.id once COMPLETED
+  // Public page (/torneos): dates, and when registration was opened publicly
+  // (null = internal draft, never shown on the public site).
+  startsOn        DateTime? @map("starts_on") @db.Date
+  endsOn          DateTime? @map("ends_on") @db.Date
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz(6)
 
   club         Club                    @relation(fields: [clubId], references: [id], onDelete: Restrict)
   participants TournamentParticipant[]
@@ -714,6 +725,8 @@ model TournamentMatch {
   recordedBy          String?   @map("recorded_by") @db.Uuid // no FK, audit-only; null for byes
   notes               String?
   createdAt           DateTime  @default(now()) @map("created_at")
+  scheduledAt         DateTime? @map("scheduled_at") @db.Timestamptz(6) // when the match is played
+  courtName           String?   @map("court_name") @db.VarChar(60)
 
   tournament        Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   // CASCADE, not RESTRICT: a participant can only ever be deleted via its
@@ -1350,4 +1363,90 @@ model InfoRequestConsent {
 
   @@index([requestId], map: "info_request_consents_request_idx")
   @@map("info_request_consents")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications by email and announcements (Ley 2300 de 2023: service vs.
+// promotional). Service-notification switches per category and channel; a
+// missing row means "on". Promotional ones are the MARKETING consent, never
+// stored here. Channel PUSH is reserved for the PWA phase.
+// ---------------------------------------------------------------------------
+
+model NotificationPreference {
+  userId    String   @map("user_id") @db.Uuid
+  category  String   @db.VarChar(30) // RESULTS_NOTES|MY_TOURNAMENTS|CLUB_NOTICES
+  channel   String   @db.VarChar(10) // APP|EMAIL|PUSH
+  enabled   Boolean
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation("NotificationPreferenceOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, category, channel])
+  @@map("notification_preferences")
+}
+
+model NotificationSetting {
+  userId      String   @id @map("user_id") @db.Uuid
+  dailyDigest Boolean  @default(false) @map("daily_digest")
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation("NotificationSettingOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model Announcement {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId               String    @map("club_id") @db.Uuid
+  title                String    @db.VarChar(120)
+  body                 String // basic format: **bold**, lists, [links](https://...)
+  imageUrl             String?   @map("image_url")
+  imageAlt             String?   @map("image_alt") @db.VarChar(200)
+  kind                 String    @db.VarChar(15) // SERVICE|PROMOTIONAL
+  audienceType         String    @map("audience_type") @db.VarChar(15) // ALL|PLAYERS|CATEGORY|TOURNAMENT|GUARDIANS
+  audienceCategory     String?   @map("audience_category") @db.VarChar(20)
+  audienceTournamentId String?   @map("audience_tournament_id") @db.Uuid // no FK, like the rest of cross-module links
+  status               String    @default("SCHEDULED") @db.VarChar(15) // SCHEDULED|SENT|CANCELLED
+  scheduledFor         DateTime  @map("scheduled_for") @db.Timestamptz(6)
+  dispatchedAt         DateTime? @map("dispatched_at") @db.Timestamptz(6)
+  recipientsCount      Int?      @map("recipients_count")
+  excludedCount        Int?      @map("excluded_count")
+  createdBy            String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  cancelledAt          DateTime? @map("cancelled_at") @db.Timestamptz(6)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  // kind/audience/status/image CHECKs and indexes via raw-SQL migration.
+  @@map("announcements")
+}
+
+// One email to one person: the send queue and its history. No health data.
+model EmailDelivery {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientUserId   String?   @map("recipient_user_id") @db.Uuid // who receives it (the guardian, for a minor)
+  aboutUserId       String?   @map("about_user_id") @db.Uuid // who it is about
+  toEmail           String    @map("to_email") @db.VarChar(254)
+  kind              String    @db.VarChar(15) // SERVICE|PROMOTIONAL
+  category          String    @db.VarChar(30)
+  subject           String    @db.VarChar(200)
+  html              String
+  text              String
+  sourceType        String    @map("source_type") @db.VarChar(20) // EVENT|ANNOUNCEMENT|DIGEST
+  sourceId          String?   @map("source_id") @db.Uuid
+  status            String    @default("QUEUED") @db.VarChar(15) // QUEUED|DIGEST|SENT|FAILED|CANCELLED
+  notBefore         DateTime  @default(now()) @map("not_before") @db.Timestamptz(6)
+  deferredReason    String?   @map("deferred_reason") @db.VarChar(20) // HOURS|QUOTA
+  attempts          Int       @default(0) @db.SmallInt
+  lastError         String?   @map("last_error")
+  providerMessageId String?   @unique(map: "email_deliveries_provider_id_key") @map("provider_message_id") @db.VarChar(100)
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  openedAt          DateTime? @map("opened_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recipient User? @relation("EmailDeliveryRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  about     User? @relation("EmailDeliveryAbout", fields: [aboutUserId], references: [id], onDelete: SetNull)
+
+  // kind/status/source/attempts CHECKs and partial indexes via raw-SQL migration.
+  @@map("email_deliveries")
 }

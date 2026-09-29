@@ -136,3 +136,50 @@ export function isWithinMarketingHours(instant) {
   if (weekday === 6) return minutes >= 8 * 60 && minutes < 15 * 60;
   return minutes >= 7 * 60 && minutes < 19 * 60;
 }
+
+/** Service messages: any day, 7:00 a. m. to 9:00 p. m. (club time). */
+export function isWithinServiceHours(instant) {
+  const local = new Date(new Date(instant).getTime() + CLUB_OFFSET_MS);
+  const minutes = local.getUTCHours() * 60 + local.getUTCMinutes();
+  return minutes >= 7 * 60 && minutes < 21 * 60;
+}
+
+/** Allowed [start, end) minutes of a club date, or null when none. */
+function windowOf(ymd, kind) {
+  if (kind === 'SERVICE') return [7 * 60, 21 * 60];
+  const weekday = toUtcDate(ymd).getUTCDay();
+  if (weekday === 0 || isColombianHoliday(ymd)) return null;
+  if (weekday === 6) return [8 * 60, 15 * 60];
+  return [7 * 60, 19 * 60];
+}
+
+/**
+ * The first instant at or after `instant` when a message of this kind may
+ * be sent: the same instant if it is inside the allowed hours, otherwise
+ * the start of the next allowed window (a promotional message programmed
+ * for a Sunday goes out on Monday at 7:00 a. m., or Tuesday if Monday is a
+ * holiday).
+ *
+ * @param {Date|string|number} instant
+ * @param {'SERVICE'|'PROMOTIONAL'} kind
+ * @returns {Date}
+ */
+export function nextAllowedSendTime(instant, kind) {
+  const at = new Date(instant);
+  const inside = kind === 'SERVICE' ? isWithinServiceHours(at) : isWithinMarketingHours(at);
+  if (inside) return at;
+  let ymd = clubDateOf(at);
+  const local = new Date(at.getTime() + CLUB_OFFSET_MS);
+  const minutes = local.getUTCHours() * 60 + local.getUTCMinutes();
+  // Today, if the window hasn't opened yet; otherwise the next days.
+  let window = windowOf(ymd, kind);
+  if (!window || minutes >= window[0]) {
+    let date = toUtcDate(ymd);
+    do {
+      date = plusDays(date, 1);
+      ymd = ymdOf(date);
+      window = windowOf(ymd, kind);
+    } while (!window);
+  }
+  return new Date(toUtcDate(ymd).getTime() + window[0] * 60 * 1000 - CLUB_OFFSET_MS);
+}
