@@ -31,6 +31,11 @@ const IDENTITY_ERROR_MESSAGES = {
     'Esta autorización la da tu acudiente desde su perfil («Cuentas vinculadas»).',
   marketing_channel_required: 'Elige al menos un canal: correo o WhatsApp.',
   unknown_authorization: 'Esa autorización no existe.',
+  cannot_change_own_account: 'No puedes cambiar tu propia cuenta desde aquí.',
+  account_anonymized: 'Esta cuenta fue eliminada y no se puede reactivar.',
+  email_already_verified: 'Esta persona ya confirmó su correo.',
+  role_already_assigned: 'La persona ya tiene ese rol.',
+  role_not_assigned: 'La persona no tiene ese rol.',
 };
 
 export function describeIdentityError(err) {

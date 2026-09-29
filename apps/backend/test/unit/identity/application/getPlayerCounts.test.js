@@ -74,6 +74,8 @@ describe('getPlayerCounts', () => {
       SUSPENDED: 0,
       NONE: 1,
       total: 3,
+      // Every registered account, players or not.
+      users: 4,
     });
   });
 });

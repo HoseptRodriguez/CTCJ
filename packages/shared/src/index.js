@@ -32,3 +32,4 @@ export * from './validation/challengesSchemas.js';
 export * from './validation/communitySchemas.js';
 export * from './time/colombianCalendar.js';
 export * from './validation/dataRequestSchemas.js';
+export * from './validation/directorySchemas.js';

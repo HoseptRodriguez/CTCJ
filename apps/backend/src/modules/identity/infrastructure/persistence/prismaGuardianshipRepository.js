@@ -62,6 +62,14 @@ export function createPrismaGuardianshipRepository(prisma) {
       return records.map(toRow);
     },
 
+    async listByMinor(minorUserId) {
+      const records = await prisma.guardianship.findMany({
+        where: { minorUserId },
+        orderBy: { requestedAt: 'desc' },
+      });
+      return records.map(toRow);
+    },
+
     async listByStatus(status) {
       const records = await prisma.guardianship.findMany({
         where: { status },

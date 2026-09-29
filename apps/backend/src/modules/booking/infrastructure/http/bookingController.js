@@ -134,6 +134,11 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  // Staff: a player's reservations, for their file in the directory.
+  const getPlayerReservations = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyReservations({ userId: req.params.id }));
+  });
+
   const getOverduePolicy = asyncHandler(async (req, res) => {
     const result = await container.getOverdueBookingPolicy();
     res.status(200).json(result);
@@ -176,6 +181,7 @@ export function createBookingController(container) {
     getMonthlyRevenue,
     getMyTrainingFrequency,
     getMyReservations,
+    getPlayerReservations,
     getOverduePolicy,
     setOverduePolicy,
     getHoldDuration,

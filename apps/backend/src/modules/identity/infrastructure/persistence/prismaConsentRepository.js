@@ -44,6 +44,14 @@ export function createPrismaConsentRepository(prisma) {
       return toRow(record);
     },
 
+    async listByUser(userId) {
+      const records = await prisma.consent.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+      });
+      return records.map(toRow);
+    },
+
     async findLatest(userId, consentType) {
       const record = await prisma.consent.findFirst({
         where: { userId, consentType },

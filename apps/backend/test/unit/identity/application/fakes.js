@@ -44,6 +44,9 @@ export function createFakeUserRepository() {
       this.roleGrants = this.roleGrants ?? [];
       this.roleGrants.push({ userId, roleCode, grantedByUserId });
     },
+    async countUsers(clubId) {
+      return [...byId.values()].filter((u) => u.clubId === clubId).length;
+    },
     async countPlayersByMembershipStatus(clubId) {
       const counts = { ACTIVE: 0, PENDING: 0, OVERDUE: 0, INACTIVE: 0, SUSPENDED: 0, NONE: 0 };
       for (const user of byId.values()) {
@@ -451,6 +454,9 @@ export function createFakeConsentRepository() {
       };
       rows.push(row);
       return { ...row };
+    },
+    async listByUser(userId) {
+      return rows.filter((r) => r.userId === userId).map((r) => ({ ...r }));
     },
     async findLatest(userId, consentType) {
       const matching = rows.filter((r) => r.userId === userId && r.consentType === consentType);

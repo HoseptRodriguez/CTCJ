@@ -101,7 +101,12 @@ beforeEach(() => {
       },
     ],
   });
-  membershipClient.getPlayerCounts.mockResolvedValue({ ACTIVE: 12, OVERDUE: 2, total: 15 });
+  membershipClient.getPlayerCounts.mockResolvedValue({
+    ACTIVE: 12,
+    OVERDUE: 2,
+    total: 15,
+    users: 80,
+  });
   affiliationClient.listRequests.mockResolvedValue({
     requests: [{ id: 'a1', requestedAt: recently }],
   });
@@ -152,7 +157,15 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
     expect(within(stats).getByText('$ 35.000')).toBeInTheDocument();
     expect(await within(stats).findByText('$ 150.000')).toBeInTheDocument();
     expect(await within(stats).findByText('15')).toBeInTheDocument();
-    expect(within(stats).getByText('12 al día · 2 con pago vencido')).toBeInTheDocument();
+    expect(
+      within(stats).getByText(
+        '15 jugadores · 80 usuarios registrados · 12 al día · 2 con pago vencido',
+      ),
+    ).toBeInTheDocument();
+    expect(within(stats).getByRole('link', { name: /Ver jugadores/ })).toHaveAttribute(
+      'href',
+      '/staff/jugadores',
+    );
   });
 
   it('players: 0 "al día" and 2 overdue never contradict each other', async () => {
@@ -161,12 +174,15 @@ describe('AdminDashboard (panel de Admin/Recepción)', () => {
       OVERDUE: 2,
       NONE: 23,
       total: 25,
+      users: 1,
     });
     renderPage();
     const stats = await screen.findByRole('region', { name: 'Cifras del club' });
     expect(await within(stats).findByText('25')).toBeInTheDocument();
     expect(
-      within(stats).getByText('0 al día · 2 con pago vencido · 23 sin membresía'),
+      within(stats).getByText(
+        '25 jugadores · 1 usuario registrado · 0 al día · 2 con pago vencido · 23 sin membresía',
+      ),
     ).toBeInTheDocument();
     expect(within(stats).queryByText(/Jugadores activos/)).not.toBeInTheDocument();
   });

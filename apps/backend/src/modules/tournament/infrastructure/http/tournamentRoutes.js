@@ -29,6 +29,12 @@ export function createTournamentRoutes(controller) {
   const router = Router();
 
   router.get('/', controller.listTournaments); // public, bare list, no PII
+  router.get(
+    '/players/:id',
+    requireAuth,
+    requireRole(TOURNAMENT_STAFF_ROLES),
+    controller.listPlayerTournaments,
+  ); // staff: a player's tournaments (before '/:id')
   router.get('/:id', requireAuth, controller.getTournament); // any authenticated role, full bracket
 
   router.post(

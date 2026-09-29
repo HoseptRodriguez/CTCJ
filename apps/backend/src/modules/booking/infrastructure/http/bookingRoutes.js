@@ -71,6 +71,12 @@ export function createBookingRoutes(controller) {
 
   router.get('/me/training-frequency', requireAuth, controller.getMyTrainingFrequency);
   router.get('/my-reservations', requireAuth, controller.getMyReservations);
+  router.get(
+    '/players/:id/reservations',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    controller.getPlayerReservations,
+  );
 
   router.get(
     '/settings/overdue-policy',

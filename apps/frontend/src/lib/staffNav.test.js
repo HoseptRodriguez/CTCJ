@@ -13,6 +13,7 @@ describe('staffNavFor — same permission matrix as the routes', () => {
       'cobros',
       'entrenador',
       'clinico',
+      'jugadores',
       'membresias',
       'solicitudes',
       'datos-personales',
@@ -33,6 +34,7 @@ describe('staffNavFor — same permission matrix as the routes', () => {
       'inicio',
       'cobros',
       'clinico',
+      'jugadores',
       'membresias',
       'competicion',
       'torneos',
@@ -43,7 +45,7 @@ describe('staffNavFor — same permission matrix as the routes', () => {
 
   it('Entrenador: Inicio is the class panel (not listed twice), notes and competition', () => {
     const nav = staffNavFor(['USUARIO', 'ENTRENADOR']);
-    expect(keys(nav)).toEqual(['inicio', 'notas', 'competicion', 'torneos']);
+    expect(keys(nav)).toEqual(['inicio', 'jugadores', 'notas', 'competicion', 'torneos']);
     expect(home(nav)).toBe('/staff/panel-entrenador');
   });
 
@@ -71,6 +73,6 @@ describe('splitForBottomBar', () => {
   it('puts 4 destinations in the phone bar and the rest under "Más"', () => {
     const { primary, more } = splitForBottomBar(staffNavFor(['ADMINISTRADOR']));
     expect(primary.map((i) => i.key)).toEqual(['inicio', 'cobros', 'entrenador', 'clinico']);
-    expect(more).toHaveLength(10);
+    expect(more).toHaveLength(11);
   });
 });

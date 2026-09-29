@@ -68,7 +68,9 @@ export function StatusBadge({ status, label, size = 'md', className }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold',
+        // A long label may wrap on a narrow screen instead of pushing the
+        // page sideways; the icon keeps its size.
+        'inline-flex max-w-full items-center gap-1.5 rounded-full font-semibold [&>svg]:shrink-0',
         size === 'lg' ? 'px-4 py-1.5 text-body' : 'px-3 py-1 text-body-sm',
         style?.className ?? 'bg-status-suspended-bg text-status-suspended-fg',
         className,

@@ -80,8 +80,13 @@ describe('StaffLayout', () => {
     expect(await screen.findByText('Contenido')).toBeInTheDocument();
     const nav = sidebar();
     for (const group of ['Día a día', 'Jugadores', 'Competencia', 'Administración']) {
-      expect(within(nav).getByText(group)).toBeInTheDocument();
+      // "Jugadores" is both a group and its first link.
+      expect(within(nav).getAllByText(group)[0]).toBeInTheDocument();
     }
+    expect(within(nav).getByRole('link', { name: 'Jugadores' })).toHaveAttribute(
+      'href',
+      '/staff/jugadores',
+    );
     expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'href',
       '/staff/panel',

@@ -92,6 +92,14 @@ export function createPrismaTournamentRepository(prisma) {
       return records.map(toDomain);
     },
 
+    async listByPlayer(clubId, playerId) {
+      const records = await prisma.tournament.findMany({
+        where: { clubId, participants: { some: { members: { some: { playerId } } } } },
+        orderBy: { createdAt: 'desc' },
+      });
+      return records.map(toDomain);
+    },
+
     async addParticipant({ tournamentId, playerIds, registeredBy }) {
       const record = await prisma.tournamentParticipant.create({
         data: {

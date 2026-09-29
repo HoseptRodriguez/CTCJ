@@ -20,4 +20,9 @@ export class ConsentRepository {
   async findLatest(_userId, _consentType) {
     throw new Error('Not implemented');
   }
+
+  /** Every row of a person, oldest first (the full history). */
+  async listByUser(_userId) {
+    throw new Error('Not implemented');
+  }
 }

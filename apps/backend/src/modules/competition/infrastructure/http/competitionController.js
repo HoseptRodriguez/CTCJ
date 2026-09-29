@@ -83,6 +83,15 @@ export function createCompetitionController(container) {
     res.status(200).json(summary);
   });
 
+  // Staff: a player's standing, for their file in the directory.
+  const getPlayerSummary = asyncHandler(async (req, res) => {
+    const summary = await container.getMyCompetitionSummary({
+      playerId: req.params.id,
+      matchLimit: 10,
+    });
+    res.status(200).json(summary);
+  });
+
   const voidMatch = asyncHandler(async (req, res) => {
     const match = await container.voidMatch({
       matchId: req.params.id,
@@ -99,6 +108,7 @@ export function createCompetitionController(container) {
     getStandings,
     listMatches,
     getMyCompetitionSummary,
+    getPlayerSummary,
     getRecentClubMatches,
     recordMatch,
     voidMatch,

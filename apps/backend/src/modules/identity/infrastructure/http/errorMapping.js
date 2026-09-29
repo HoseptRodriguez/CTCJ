@@ -31,6 +31,11 @@ const STATUS_BY_CODE = {
   guardianship_not_pending: 409,
   minor_needs_guardian: 403,
   unknown_authorization: 404,
+  cannot_change_own_account: 409,
+  account_anonymized: 409,
+  email_already_verified: 409,
+  role_already_assigned: 409,
+  role_not_assigned: 409,
   marketing_channel_required: 400,
 };
 

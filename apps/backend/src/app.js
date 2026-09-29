@@ -98,6 +98,8 @@ import { createIdentityPlayerEligibilityProvider as createClinicalPlayerEligibil
 import { createIdentityPractitionerEligibilityProvider } from './modules/clinical/infrastructure/adapters/practitionerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createClinicalPlayerDirectoryProvider } from './modules/clinical/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createIdentityHealthAuthorizationProvider } from './modules/clinical/infrastructure/adapters/healthAuthorizationProviderAdapter.js';
+import { createStaffDirectoryController } from './modules/identity/infrastructure/http/staffDirectoryController.js';
+import { createStaffDirectoryRoutes } from './modules/identity/infrastructure/http/staffDirectoryRoutes.js';
 import { buildPrivacyContainer } from './modules/privacy/infrastructure/compositionRoot.js';
 import { createPrivacyController } from './modules/privacy/infrastructure/http/privacyController.js';
 import {
@@ -202,6 +204,11 @@ export function createApp() {
   app.use('/api/auth', createAuthRoutes(authController));
   app.use('/api/admin/roles', createRoleAdminRoutes(roleAdminController));
   app.use('/api/admin/users', createUserAdminRoutes(userAdminController));
+  // Staff directory of players and accounts (/staff/jugadores).
+  app.use(
+    '/api/admin/directory',
+    createStaffDirectoryRoutes(createStaffDirectoryController(identityContainer)),
+  );
   app.use('/api/identity/me', createMeRoutes(meController));
   app.use('/api/players', createPlayersRoutes(playersController));
   app.use(
@@ -385,6 +392,10 @@ export function createApp() {
   // all three producers exist, is safe -- mirrors tournament's identical
   // "consume a sibling module's already-built container" pattern above,
   // just wired after the fact instead of before.
+  // The directory shows each player's categories from the open season.
+  identityContainer.usePlayerCategoryProvider({
+    getCategories: (playerIds) => competitionContainer.getPlayerCategories({ playerIds }),
+  });
   identityContainer.getMyAchievements = createGetMyAchievements({
     competitionProgressProvider: createCompetitionProgressProviderAdapter({
       getMyCompetitionSummary: competitionContainer.getMyCompetitionSummary,

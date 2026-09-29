@@ -25,6 +25,7 @@ function toDomainUser(row, roleCodes) {
     documentType: row.documentType,
     documentNumber: row.documentNumber,
     avatarUrl: row.avatarUrl,
+    deletedAt: row.deletedAt ?? null,
   });
 }
 
@@ -124,6 +125,62 @@ export function createPrismaUserRepository(prisma) {
         },
       });
       return toDomainUser(updated, await getActiveRoleCodes(user.id));
+    },
+
+    async listForDirectory(clubId) {
+      const [rows, roles] = await Promise.all([
+        prisma.user.findMany({
+          where: { clubId },
+          orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            birthDate: true,
+            avatarUrl: true,
+            status: true,
+            membershipStatus: true,
+            dominantHand: true,
+            backhand: true,
+            lastLoginAt: true,
+            emailVerifiedAt: true,
+            createdAt: true,
+            deletedAt: true,
+            guardianshipsAsMinor: {
+              where: { status: 'APPROVED' },
+              select: { guardianUserId: true },
+            },
+          },
+        }),
+        prisma.$queryRaw`
+          SELECT v.user_id, v.role_code FROM user_roles_view v
+          JOIN users u ON u.id = v.user_id WHERE u.club_id = ${clubId}::uuid
+        `,
+      ]);
+      const rolesByUser = new Map();
+      for (const { user_id: userId, role_code: code } of roles) {
+        if (!rolesByUser.has(userId)) rolesByUser.set(userId, []);
+        rolesByUser.get(userId).push(code);
+      }
+      return rows.map(({ guardianshipsAsMinor, ...row }) => ({
+        ...row,
+        roleCodes: rolesByUser.get(row.id) ?? [],
+        approvedGuardianIds: guardianshipsAsMinor.map((g) => g.guardianUserId),
+      }));
+    },
+
+    async revokeRoleGrant(userId, roleCode, revokedByUserId) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
+      await prisma.userRole.updateMany({
+        where: { userId, roleId: role.id, revokedAt: null },
+        data: { revokedAt: new Date(), revokedBy: revokedByUserId },
+      });
+    },
+
+    async countUsers(clubId) {
+      return prisma.user.count({ where: { clubId, deletedAt: null } });
     },
 
     async countDemo() {

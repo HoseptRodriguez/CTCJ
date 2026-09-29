@@ -10,6 +10,8 @@ export function createGetPlayerCounts({ userRepository, clubId }) {
   return async function getPlayerCounts() {
     const counts = await userRepository.countPlayersByMembershipStatus(clubId);
     const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-    return { ...counts, total };
+    // Every registered account (players or not), for "1 jugador · 79 usuarios".
+    const users = await userRepository.countUsers(clubId);
+    return { ...counts, total, users };
   };
 }

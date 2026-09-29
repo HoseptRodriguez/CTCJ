@@ -45,6 +45,7 @@ export class User {
     documentType = null,
     documentNumber = null,
     avatarUrl = null,
+    deletedAt = null,
   }) {
     this.id = id;
     this.clubId = clubId;
@@ -58,6 +59,8 @@ export class User {
     this.lockedUntil = lockedUntil;
     this.lastLoginAt = lastLoginAt;
     this.emailVerifiedAt = emailVerifiedAt;
+    /** Set when the account was deleted (anonymized): it can never come back. */
+    this.deletedAt = deletedAt;
     this.membershipStatus = membershipStatus;
     this.membershipStatusUpdatedAt = membershipStatusUpdatedAt;
     this.membershipStatusUpdatedBy = membershipStatusUpdatedBy;

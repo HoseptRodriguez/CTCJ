@@ -256,18 +256,20 @@ function StatsSection({ schedule }) {
         value={value(players, () => totalPlayers)}
         emptyText={whenZero(players, () => totalPlayers === 0, 'Aún no hay jugadores registrados')}
         hint={
-          players.status === 'ready' && totalPlayers > 0
+          players.status === 'ready'
             ? [
-                `${p.ACTIVE ?? 0} al día`,
-                `${p.OVERDUE ?? 0} con pago vencido`,
+                `${totalPlayers} ${totalPlayers === 1 ? 'jugador' : 'jugadores'}`,
+                `${p.users ?? totalPlayers} ${(p.users ?? totalPlayers) === 1 ? 'usuario registrado' : 'usuarios registrados'}`,
+                totalPlayers > 0 ? `${p.ACTIVE ?? 0} al día` : null,
+                totalPlayers > 0 ? `${p.OVERDUE ?? 0} con pago vencido` : null,
                 p.NONE ? `${p.NONE} sin membresía` : null,
               ]
                 .filter(Boolean)
                 .join(' · ')
             : undefined
         }
-        to="/staff/membresias"
-        actionLabel="Ver membresías"
+        to="/staff/jugadores"
+        actionLabel="Ver jugadores"
       />
     </section>
   );

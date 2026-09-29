@@ -54,6 +54,13 @@ export const STAFF_NAV = [
     group: 'Jugadores',
     items: [
       {
+        key: 'jugadores',
+        to: '/staff/jugadores',
+        label: 'Jugadores',
+        icon: 'users',
+        roles: [ADMIN, RECEP, COACH],
+      },
+      {
         key: 'membresias',
         to: '/staff/membresias',
         label: 'Membresías',

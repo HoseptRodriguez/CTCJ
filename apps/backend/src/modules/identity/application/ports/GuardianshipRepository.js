@@ -53,4 +53,9 @@ export class GuardianshipRepository {
   async decide(_id, _status, _decidedAt, _decidedBy, _decisionNotes) {
     throw new Error('Not implemented');
   }
+
+  /** Every guardianship where the user is the minor. */
+  async listByMinor(_minorUserId) {
+    throw new Error('Not implemented');
+  }
 }

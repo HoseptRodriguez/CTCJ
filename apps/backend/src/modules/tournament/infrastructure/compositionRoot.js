@@ -9,6 +9,7 @@ import { createRecordMatchResult } from '../application/useCases/recordMatchResu
 import { createGetTournament } from '../application/useCases/getTournament.js';
 import { createListTournaments } from '../application/useCases/listTournaments.js';
 import { createCancelTournament } from '../application/useCases/cancelTournament.js';
+import { createListPlayerTournaments } from '../application/useCases/listPlayerTournaments.js';
 
 import { createPrismaTournamentRepository } from './persistence/prismaTournamentRepository.js';
 import {
@@ -46,5 +47,6 @@ export function buildTournamentContainer({
     getTournament: createGetTournament({ tournamentRepository, playerDirectoryProvider }),
     listTournaments: createListTournaments({ tournamentRepository, clubId }),
     cancelTournament: createCancelTournament({ tournamentRepository, clock }),
+    listPlayerTournaments: createListPlayerTournaments({ tournamentRepository, clubId }),
   };
 }

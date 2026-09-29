@@ -74,6 +74,11 @@ const PaymentsQueuePage = lazyPage(
 );
 const PlansPage = lazyPage(() => import('./pages/staff/PlansPage.jsx'), 'PlansPage');
 const RequestsPage = lazyPage(() => import('./pages/staff/RequestsPage.jsx'), 'RequestsPage');
+const PlayersDirectoryPage = lazyPage(
+  () => import('./pages/staff/PlayersDirectoryPage.jsx'),
+  'PlayersDirectoryPage',
+);
+const PlayerFilePage = lazyPage(() => import('./pages/staff/PlayerFilePage.jsx'), 'PlayerFilePage');
 const DataRequestsPage = lazyPage(
   () => import('./pages/staff/DataRequestsPage.jsx'),
   'DataRequestsPage',
@@ -156,6 +161,20 @@ export function App() {
                 <Route path="/staff" element={<StaffHome />} />
                 <Route path="/staff/competicion" element={<CompetitionPage />} />
                 <Route path="/staff/torneos" element={<TournamentsPage />} />
+                <Route
+                  element={
+                    <RequireRole
+                      roles={[
+                        ROLE_CODES.ADMINISTRADOR,
+                        ROLE_CODES.RECEPCION,
+                        ROLE_CODES.ENTRENADOR,
+                      ]}
+                    />
+                  }
+                >
+                  <Route path="/staff/jugadores" element={<PlayersDirectoryPage />} />
+                  <Route path="/staff/jugadores/:id" element={<PlayerFilePage />} />
+                </Route>
                 <Route
                   element={<RequireRole roles={[ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]} />}
                 >

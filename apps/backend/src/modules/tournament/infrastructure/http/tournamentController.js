@@ -68,7 +68,13 @@ export function createTournamentController(container) {
     res.status(200).json(tournament);
   });
 
+  const listPlayerTournaments = asyncHandler(async (req, res) => {
+    const tournaments = await container.listPlayerTournaments({ playerId: req.params.id });
+    res.status(200).json({ tournaments });
+  });
+
   return {
+    listPlayerTournaments,
     listTournaments,
     createTournament,
     getTournament,

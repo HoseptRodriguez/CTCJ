@@ -44,6 +44,8 @@ import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.j
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
 import { createAnonymizeAccount } from '../application/useCases/anonymizeAccount.js';
 import { createCountDemoAccounts } from '../application/useCases/checkDemoAccounts.js';
+import { createPlayerDirectoryUseCases } from '../application/useCases/playerDirectory.js';
+import { createStaffAccountActions } from '../application/useCases/staffAccountActions.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
@@ -57,6 +59,7 @@ import { createPrismaLegalDocumentRepository } from './persistence/prismaLegalDo
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
+import { createPrismaIdentityAuditLog } from './persistence/prismaIdentityAuditLog.js';
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
@@ -102,6 +105,10 @@ export function buildIdentityContainer({
     guardianshipRepository,
     checkIsMinor,
   });
+  // Competition is built after identity (it depends on identity), so the
+  // directory's category source is plugged in later by app.js.
+  let playerCategoryProvider = { getCategories: async () => new Map() };
+  const identityAuditLog = createPrismaIdentityAuditLog(prismaClient, DEFAULT_CLUB_ID);
   const optionalAuthorizations = createOptionalAuthorizationUseCases({
     consentRepository,
     guardianshipRepository,
@@ -244,6 +251,29 @@ export function buildIdentityContainer({
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
     countDemoAccounts: createCountDemoAccounts({ userRepository }),
+    ...createPlayerDirectoryUseCases({
+      userRepository,
+      guardianshipRepository,
+      consentRepository,
+      playerCategoryProvider: { getCategories: (ids) => playerCategoryProvider.getCategories(ids) },
+      isPendingGuardianAuthorization: minorAuthorization.isPendingGuardianAuthorization,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    /** app.js: where the directory's categories come from (competition). */
+    usePlayerCategoryProvider(provider) {
+      playerCategoryProvider = provider;
+    },
+    ...createStaffAccountActions({
+      userRepository,
+      refreshTokenRepository,
+      emailVerificationRepository,
+      emailSender,
+      tokenService,
+      auditLog: identityAuditLog,
+      clock,
+      appPublicUrl: config.appPublicUrl,
+    }),
     anonymizeAccount: createAnonymizeAccount({
       userRepository,
       refreshTokenRepository,
