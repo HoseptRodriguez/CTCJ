@@ -44,7 +44,7 @@ Hoy **no hay ningún plazo definido y no se borra nada automáticamente**. El cl
 
 ## 3. Terceros y transferencias internacionales
 
-Países y regiones de servidor **a completar en los Prompts 6 y 7**, cuando se elijan las regiones:
+Países y regiones de servidor **a completar cuando se elijan los proveedores y regiones de producción**:
 
 | Proveedor                              | Estado                                        |
 | -------------------------------------- | --------------------------------------------- |
@@ -120,7 +120,7 @@ El detalle está en `docs/LICENCIAS.md`, y los avisos que piden las licencias se
 
 ## 9. Textos legales (Parte 3)
 
-Páginas publicadas: `/privacidad`, `/terminos`, `/cookies`, `/reembolsos` y `/accesibilidad`, todas en su **versión 1** (borrador). El texto está en `packages/shared/src/legal/`.
+Páginas publicadas: `/privacidad`, `/terminos`, `/cookies`, `/reembolsos` y `/accesibilidad`, en su **versión 1** (borrador), salvo `/accesibilidad`, que va en la **versión 2** (Parte 7). El texto está en `packages/shared/src/legal/`.
 
 - **Control de versiones:** cada versión se guarda en `legal_documents` con el hash SHA-256 de su contenido. Si se cambia un texto sin subir la versión, una prueba falla y el servidor se niega a arrancar en producción.
 - **Ojo:** completar los datos del negocio cambia el contenido de las páginas, así que la primera versión que se publique será la **2** (hay que actualizar `version`, `publishedOn` y `manifest.json`).
@@ -138,7 +138,7 @@ Datos y decisiones pendientes, por documento:
 
 ## 10. Decisiones ya tomadas por el club
 
-- **Fecha de nacimiento obligatoria en el registro** (decidido el 2026-09-28; se implementa en la Parte 5). Sirve para saber si la persona es menor de edad y aplicar la autorización del acudiente, y así lo explica la política (sección 2). A quien ya tiene cuenta sin fecha de nacimiento se le pedirá en su próximo inicio de sesión, con una pantalla simple, antes de continuar.
+- **Fecha de nacimiento obligatoria en el registro** (decidido el 2026-09-28; hecho en la Parte 5). Sirve para saber si la persona es menor de edad y aplicar la autorización del acudiente, y así lo explica la política (sección 2). A quien ya tiene cuenta sin fecha de nacimiento se le pide en su próximo inicio de sesión, con una pantalla simple, antes de continuar.
 
 ## 11. Consentimiento de cookies (Parte 4)
 
