@@ -1,3 +1,4 @@
+import { ParallaxPhoto } from '../motion/ParallaxPhoto.jsx';
 import { ClubPhoto } from '../ui/ClubPhoto.jsx';
 import { cn } from '../ui/cn.js';
 
@@ -42,11 +43,13 @@ export function BrochureTitle({ as: Tag = 'h2', id, tone = 'white', children, cl
  * the diagonal runs along its bottom edge.
  *
  * @param {{ photo: string, photoAlt?: string, tone?: 'navy'|'lime', photoSide?: 'left'|'right',
- *   titleId: string, children: import('react').ReactNode }} props
+ *   titleId: string, parallax?: boolean, children: import('react').ReactNode }} props
+ *   `parallax`: the photo drifts gently with the scroll (ParallaxPhoto).
  */
 export function DiagonalSection({
   photo,
   photoAlt,
+  parallax = false,
   tone = 'navy',
   photoSide = 'left',
   titleId,
@@ -70,12 +73,23 @@ export function DiagonalSection({
               : 'md:[clip-path:polygon(18%_0,100%_0,100%_100%,0_100%)]',
           )}
         >
-          <ClubPhoto
-            name={photo}
-            alt={photoAlt}
-            sizes="(min-width: 768px) 50vw, 100vw"
-            className="absolute inset-0 h-full w-full"
-          />
+          {parallax ? (
+            <div className="absolute inset-0">
+              <ParallaxPhoto
+                name={photo}
+                alt={photoAlt}
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="h-full w-full"
+              />
+            </div>
+          ) : (
+            <ClubPhoto
+              name={photo}
+              alt={photoAlt}
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="absolute inset-0 h-full w-full"
+            />
+          )}
         </div>
         <div className="flex items-center px-4 py-12 md:w-1/2 md:px-12 lg:px-16">
           <div className="max-w-prose">{children}</div>

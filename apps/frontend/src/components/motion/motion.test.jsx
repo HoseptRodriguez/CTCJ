@@ -12,6 +12,7 @@ import { AnimatedList } from './AnimatedList.jsx';
 import { CountUp } from './CountUp.jsx';
 import { HeroBallTrajectory } from './HeroBallTrajectory.jsx';
 import { ParallaxPhoto } from './ParallaxPhoto.jsx';
+import { Reveal } from './Reveal.jsx';
 import { SlidePanel } from './SlidePanel.jsx';
 import { SplitHeadline } from './SplitHeadline.jsx';
 import { TabTransition } from './TabTransition.jsx';
@@ -39,6 +40,16 @@ function expectAtRest(el) {
   expect(el.style.opacity === '' || el.style.opacity === '1').toBe(true);
   expect(['', 'none', 'translate(0px, 0px)']).toContain(el.style.transform);
 }
+
+describe('Reveal with motion on', () => {
+  it('starts 16px lower and transparent, waiting to scroll into view', () => {
+    setReducedMotion(false);
+    render(<Reveal>Tarjeta</Reveal>);
+    const el = screen.getByText('Tarjeta');
+    expect(el.style.opacity).toBe('0');
+    expect(el.style.transform).toContain('translateY(16px)');
+  });
+});
 
 describe('with prefers-reduced-motion: everything shows its final state, unanimated', () => {
   // No motion-on counterpart for this one: jsdom can't measure SVG paths
@@ -68,6 +79,18 @@ describe('with prefers-reduced-motion: everything shows its final state, unanima
     const { container } = render(<CountUp value={1250} />);
     expect(container.querySelector('[data-part="count"]')).toHaveTextContent('1.250');
     expect(ScrollTrigger.getAll()).toHaveLength(0);
+  });
+
+  it('Reveal: content visible and in place, no fade or rise', () => {
+    setReducedMotion(true);
+    render(
+      <ul>
+        <Reveal as="li" index={2}>
+          Tarjeta
+        </Reveal>
+      </ul>,
+    );
+    expectAtRest(screen.getByText('Tarjeta'));
   });
 
   it('ParallaxPhoto: still photo, no scroll trigger created', () => {
