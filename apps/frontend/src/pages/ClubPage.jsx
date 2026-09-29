@@ -1,24 +1,19 @@
 import { BrochureTitle, DiagonalSection, toneText } from '../components/brochure/Brochure.jsx';
-import { FacebookIcon } from '../components/icons/FacebookIcon.jsx';
-import { InstagramIcon } from '../components/icons/InstagramIcon.jsx';
+import { ExternalLinkMark } from '../components/forms/ExternalLinkMark.jsx';
+import { InfoRequestForm } from '../components/forms/InfoRequestForm.jsx';
 import { MapPinIcon } from '../components/icons/MapPinIcon.jsx';
-import { TikTokIcon } from '../components/icons/TikTokIcon.jsx';
 import { WhatsAppIcon } from '../components/icons/WhatsAppIcon.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { ClubLogo } from '../components/ui/ClubLogo.jsx';
 import { ClubPhoto } from '../components/ui/ClubPhoto.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import {
   ADDRESS_FULL,
   MAPS_LINK,
   SOCIAL_HANDLE,
-  SOCIAL_LINKS,
   WHATSAPP_LINK,
   WHATSAPP_NUMBER,
 } from '../lib/clubInfo.js';
 import { CLUB_TEXTS } from '../lib/clubTexts.js';
-
-const SOCIAL_ICONS = { Instagram: InstagramIcon, Facebook: FacebookIcon, TikTok: TikTokIcon };
 
 function Intro() {
   return (
@@ -133,10 +128,8 @@ function FindUs() {
           icon={<MapPinIcon />}
         >
           Cómo llegar
+          <ExternalLinkMark />
         </Button>
-        <p className="mt-3 text-body text-ink-soft">
-          Se abre Google Maps, en otra aplicación o sitio.
-        </p>
       </div>
     </section>
   );
@@ -145,11 +138,14 @@ function FindUs() {
 function Contacts() {
   return (
     <section aria-labelledby="contactos" className="bg-navy-500 text-white">
-      <div className="mx-auto grid max-w-container items-center gap-10 px-4 py-14 md:grid-cols-[1fr_auto] md:px-8 md:py-20">
+      <div className="mx-auto grid max-w-container items-start gap-10 px-4 py-14 md:px-8 md:py-20 lg:grid-cols-[1fr_1.4fr]">
         <div>
           <BrochureTitle id="contactos" tone="navy">
             Contactos
           </BrochureTitle>
+          <p className={`mt-6 max-w-prose text-lead ${toneText('navy')}`}>
+            Escríbenos por WhatsApp o déjanos tus datos y te contactamos.
+          </p>
           <Button
             className="mt-8"
             size="lg"
@@ -160,36 +156,11 @@ function Contacts() {
             icon={<WhatsAppIcon />}
           >
             WhatsApp {WHATSAPP_NUMBER}
+            <ExternalLinkMark />
           </Button>
-          <p className={`mt-3 text-body ${toneText('navy')}`}>
-            Se abre WhatsApp, en otra aplicación.
-          </p>
           <p className={`mt-8 text-lead ${toneText('navy')}`}>Síguenos como {SOCIAL_HANDLE}</p>
-          <ul className="mt-3 flex flex-wrap gap-3" aria-label="Redes sociales">
-            {SOCIAL_LINKS.map(({ network, url }) => {
-              const Icon = SOCIAL_ICONS[network];
-              return (
-                <li key={network}>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="focus-ring inline-flex min-h-btn items-center gap-2 rounded-lg border-2 border-white/80 px-4 text-body font-semibold text-white hover:bg-white/10"
-                  >
-                    <Icon className="h-5 w-5" />
-                    {network}
-                    <span className="sr-only"> (se abre en otra aplicación o sitio)</span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-          <p className={`mt-3 text-body ${toneText('navy')}`}>
-            Las redes se abren en otra aplicación o sitio.
-          </p>
         </div>
-        {/* The full crest: its one appearance on this page. */}
-        <ClubLogo size="xl" onDark className="justify-self-center" />
+        <InfoRequestForm />
       </div>
     </section>
   );

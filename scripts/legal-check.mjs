@@ -64,6 +64,8 @@ async function main() {
   const footerFiles = [
     'apps/frontend/src/layout/Footer.jsx',
     'apps/frontend/src/layout/LegalLinks.jsx',
+    // Social networks shown in the footer.
+    'apps/frontend/src/lib/clubInfo.js',
   ];
   // Program pages: schedules, prices, ages, coaches... (never invented).
   const contentFiles = ['apps/frontend/src/lib/programs.js'];

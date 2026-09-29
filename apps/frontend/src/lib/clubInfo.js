@@ -13,9 +13,24 @@ export const MAPS_LINK =
   'https://www.google.com/maps/search/?api=1&query=' +
   encodeURIComponent('Club de Tenis Ciudad Jardín, Fusagasugá');
 
-// Same handle on every network.
+// The club hasn't given its profiles' addresses yet: never guess them. A
+// network is shown only once its url is a real https address.
 export const SOCIAL_LINKS = [
-  { network: 'Instagram', url: 'https://www.instagram.com/clubdetenisciudadjardin' },
-  { network: 'Facebook', url: 'https://www.facebook.com/clubdetenisciudadjardin' },
-  { network: 'TikTok', url: 'https://www.tiktok.com/@clubdetenisciudadjardin' },
+  { network: 'Instagram', url: '[COMPLETAR: URL del perfil de Instagram]' },
+  { network: 'Facebook', url: '[COMPLETAR: URL de la página de Facebook]' },
+  { network: 'TikTok', url: '[COMPLETAR: URL del perfil de TikTok]' },
 ];
+
+/** A complete https address (no placeholder, no spaces). */
+export function isPublishableUrl(value) {
+  if (typeof value !== 'string' || /[\s[\]]/.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname.includes('.');
+  } catch {
+    return false;
+  }
+}
+
+/** The networks the site may show (the rest stay hidden). */
+export const PUBLISHED_SOCIAL_LINKS = SOCIAL_LINKS.filter(({ url }) => isPublishableUrl(url));

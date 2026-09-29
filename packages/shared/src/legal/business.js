@@ -14,5 +14,6 @@ export const BUSINESS = Object.freeze({
   noticesAddress: '[COMPLETAR: dirección de notificaciones]',
   phone: '+57 310 864 6361',
   contactEmail: '[COMPLETAR: correo de contacto]',
+  attentionHours: '[COMPLETAR: horario de atención]',
   privacyEmail: '[COMPLETAR: correo para datos personales]',
 });

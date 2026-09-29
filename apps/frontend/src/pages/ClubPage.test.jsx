@@ -1,10 +1,17 @@
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CLUB_TEXTS } from '../lib/clubTexts.js';
 
 import { ClubPage } from './ClubPage.jsx';
+
+vi.mock('../api/infoRequestClient.js', () => ({
+  infoRequestClient: {
+    getFormToken: vi.fn().mockResolvedValue({ formToken: 't' }),
+    submit: vi.fn(),
+  },
+}));
 
 function renderPage() {
   return render(
@@ -27,6 +34,7 @@ describe('ClubPage (/el-club)', () => {
       'Nuestra historia',
       '¿Dónde encontrarnos?',
       'Contactos',
+      'Solicitar información',
     ]);
   });
 
@@ -62,18 +70,21 @@ describe('ClubPage (/el-club)', () => {
       'href',
       'https://wa.me/573108646361',
     );
-    const socials = screen.getByRole('list', { name: 'Redes sociales' });
-    expect(
-      within(socials)
-        .getAllByRole('link')
-        .map((a) => a.textContent.replace(' (se abre en otra aplicación o sitio)', '')),
-    ).toEqual(['Instagram', 'Facebook', 'TikTok']);
+    // One WhatsApp link only; the networks stay hidden until the club gives their URLs.
+    expect(screen.getAllByRole('link', { name: /WhatsApp/ })).toHaveLength(1);
+    expect(screen.queryByRole('list', { name: 'Redes sociales' })).not.toBeInTheDocument();
   });
 
-  it('the full crest appears exactly once', () => {
+  it('"Contactos" has the request form beside the contact block', () => {
+    renderPage();
+    const contacts = screen.getByRole('region', { name: 'Contactos' });
+    expect(within(contacts).getByRole('button', { name: 'Enviar solicitud' })).toBeInTheDocument();
+  });
+
+  it('no crest in "Contactos" (it was removed)', () => {
     renderPage();
     expect(
-      screen.getAllByRole('img', { name: 'Escudo del Club de Tenis Ciudad Jardín' }),
-    ).toHaveLength(1);
+      screen.queryByRole('img', { name: 'Escudo del Club de Tenis Ciudad Jardín' }),
+    ).not.toBeInTheDocument();
   });
 });

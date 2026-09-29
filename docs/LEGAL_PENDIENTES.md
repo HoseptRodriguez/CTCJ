@@ -229,3 +229,9 @@ Todo está en `apps/frontend/src/lib/programs.js`. Por cada programa (Clases par
 
 - **Fotos:** adultos y competencia usan fotos de jugadores adultos (pendientes de su autorización, sección 5). La escuela infantil usa la foto de las canchas, sin personas, hasta tener fotos de niños con la autorización escrita de sus acudientes.
 - **Torneos públicos:** hoy no existe una página pública de torneos. La página de competencia enlaza al ranking y los torneos de Mi CTCJ (se necesita cuenta).
+
+## 17. Pie de página y redes sociales
+
+- **Redes sociales:** faltan las direcciones reales de Instagram, Facebook y TikTok ([COMPLETAR] en `apps/frontend/src/lib/clubInfo.js`). Mientras falten, los íconos **no se muestran**; una prueba comprueba que cada red visible tenga un enlace `https` válido. Las direcciones anteriores eran supuestas y se quitaron.
+- **Correo de contacto** y **horario de atención** del pie: [COMPLETAR] en `packages/shared/src/legal/business.js` (`contactEmail`, `attentionHours`).
+- La barra inferior muestra razón social y NIT (sección 1).
