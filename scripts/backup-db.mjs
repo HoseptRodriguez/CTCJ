@@ -65,7 +65,7 @@ export function preflightProblem({ env, db, reason }) {
       'Créala una sola vez en PowerShell. La escribes tú cuando la pida, sin que se vea en pantalla',
       'ni quede en el historial ni en ningún archivo del proyecto:',
       "  $p = Read-Host 'Contraseña de las copias' -AsSecureString",
-      `  [Environment]::SetEnvironmentVariable('${PASSWORD_VAR}', [Runtime.InteropServices.Marshal]::PtrToStringAuth([Runtime.InteropServices.Marshal]::SecureStringToBSTR($p)), 'User')`,
+      `  [Environment]::SetEnvironmentVariable('${PASSWORD_VAR}', [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($p)), 'User')`,
       'Luego abre una terminal nueva y vuelve a ejecutar la copia.',
     ].join('\n');
   }

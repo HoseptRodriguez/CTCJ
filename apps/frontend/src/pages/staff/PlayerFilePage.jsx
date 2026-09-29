@@ -422,6 +422,15 @@ const ACTIONS = {
     run: (id) => directoryClient.reactivate(id),
     done: 'Cuenta reactivada',
   },
+  mfaReset: {
+    title: '¿Restablecer la verificación en dos pasos?',
+    text: (n) =>
+      `Úsalo si ${n} perdió el teléfono. Se desactiva, se cierran sus sesiones y, si su rol la exige, la configurará de nuevo al entrar.`,
+    confirm: 'Sí, restablecer',
+    run: (id) => directoryClient.resetMfa(id),
+    done: 'Verificación en dos pasos restablecida',
+    danger: true,
+  },
   resend: {
     title: '¿Reenviar el correo de confirmación?',
     text: (n) => `Le enviaremos a ${n} un enlace nuevo para confirmar su correo.`,
@@ -555,6 +564,11 @@ export function PlayerFilePage() {
                 onClick={() => setAction(f.active ? 'deactivate' : 'reactivate')}
               >
                 {f.active ? 'Desactivar cuenta' : 'Reactivar cuenta'}
+              </Button>
+            )}
+            {isAdmin && f.mfaEnabled && (
+              <Button variant="secondary" onClick={() => setAction('mfaReset')}>
+                Restablecer verificación en dos pasos
               </Button>
             )}
             {frontDesk && !f.emailVerified && (

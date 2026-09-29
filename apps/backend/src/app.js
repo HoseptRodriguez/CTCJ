@@ -119,7 +119,11 @@ import { createTrainingFrequencyProviderAdapter as createGoalsTrainingFrequencyP
 // compositionRoot.js AVATAR_UPLOADS_DIR resolution)
 const UPLOADS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../uploads');
 
-export function createApp() {
+/**
+ * @param {{ mfaEnforceStaff?: boolean }} [options] tests of the two-step
+ *   verification turn it on even where .env.test doesn't.
+ */
+export function createApp({ mfaEnforceStaff } = {}) {
   const app = express();
 
   // Render sits behind one reverse-proxy hop; without this, req.ip (used
@@ -192,7 +196,9 @@ export function createApp() {
   // but serving the whole uploads tree keeps this simple.
   app.use('/uploads', express.static(UPLOADS_DIR));
 
-  const identityContainer = buildIdentityContainer();
+  const identityContainer = buildIdentityContainer(
+    mfaEnforceStaff === undefined ? {} : { mfaEnforceStaff },
+  );
   const authController = createAuthController(identityContainer);
   const roleAdminController = createRoleAdminController(identityContainer);
   const userAdminController = createUserAdminController(identityContainer);

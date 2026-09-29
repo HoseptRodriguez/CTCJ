@@ -10,7 +10,7 @@ En PowerShell (la escribes cuando te la pida; no se ve ni queda en el historial)
 
 ```powershell
 $p = Read-Host 'Contraseña de las copias' -AsSecureString
-[Environment]::SetEnvironmentVariable('CTCJ_BACKUP_PASSWORD', [Runtime.InteropServices.Marshal]::PtrToStringAuth([Runtime.InteropServices.Marshal]::SecureStringToBSTR($p)), 'User')
+[Environment]::SetEnvironmentVariable('CTCJ_BACKUP_PASSWORD', [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($p)), 'User')
 ```
 
 Después abre una terminal nueva (las que ya estaban abiertas no ven la variable).

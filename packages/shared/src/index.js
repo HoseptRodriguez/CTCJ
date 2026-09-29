@@ -33,3 +33,5 @@ export * from './validation/communitySchemas.js';
 export * from './time/colombianCalendar.js';
 export * from './validation/dataRequestSchemas.js';
 export * from './validation/directorySchemas.js';
+export * from './constants/mfa.js';
+export * from './validation/mfaSchemas.js';

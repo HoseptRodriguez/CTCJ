@@ -9,6 +9,7 @@ import { PublicLayout } from './layout/PublicLayout.jsx';
 import { RouteLoading } from './layout/RouteLoading.jsx';
 import { ForgotPassword } from './pages/ForgotPassword.jsx';
 import { Login } from './pages/Login.jsx';
+import { MfaSetupPage } from './pages/auth/MfaSetupPage.jsx';
 import { Register } from './pages/Register.jsx';
 import { ReservationPage } from './pages/ReservationPage.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
@@ -114,6 +115,7 @@ export function App() {
               <Route path="/canchas" element={<ReservationPage />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/activar-verificacion" element={<MfaSetupPage />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />

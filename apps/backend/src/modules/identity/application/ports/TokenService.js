@@ -27,4 +27,17 @@ export class TokenService {
   hashOpaqueToken(_rawToken) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * A short-lived token for the two-step verification step of a sign-in
+   * ('login': enter a code; 'setup': turn it on). It is NOT an access token.
+   */
+  issueMfaToken(_userId, _purpose) {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {string|null} the user id, or null if invalid, expired or for another purpose */
+  verifyMfaToken(_token, _purpose) {
+    throw new Error('Not implemented');
+  }
 }

@@ -239,6 +239,7 @@ export function createPlayerDirectoryUseCases({
       return {
         ...base,
         membershipStatus: row.membershipStatus,
+        mfaEnabled: Boolean(row.mfaEnabled),
         minors: asGuardian.map((g) => link(g, g.minorUserId)),
         guardians: asMinor.map((g) => link(g, g.guardianUserId)),
         consents: consents.map((c) => ({

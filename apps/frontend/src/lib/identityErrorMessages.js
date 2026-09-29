@@ -36,10 +36,21 @@ const IDENTITY_ERROR_MESSAGES = {
   email_already_verified: 'Esta persona ya confirmó su correo.',
   role_already_assigned: 'La persona ya tiene ese rol.',
   role_not_assigned: 'La persona no tiene ese rol.',
+  mfa_code_invalid:
+    'El código no es correcto. Escribe el que muestra ahora la aplicación (cambia cada 30 segundos).',
+  mfa_locked:
+    'Hiciste demasiados intentos con códigos equivocados. Espera 15 minutos e intenta de nuevo.',
+  mfa_not_enabled: 'La verificación en dos pasos no está activada.',
+  mfa_already_enabled: 'La verificación en dos pasos ya está activada.',
+  mfa_required_for_role:
+    'Por tu rol en el club, la verificación en dos pasos es obligatoria y no se puede desactivar.',
+  mfa_setup_not_started: 'Primero escanea el código QR con la aplicación.',
+  invalid_mfa_token: 'Pasó mucho tiempo en este paso. Vuelve a entrar con tu correo y contraseña.',
+  mfa_setup_required: 'Debes activar la verificación en dos pasos para entrar.',
 };
 
 export function describeIdentityError(err) {
-  if (err?.status === 429) {
+  if (err?.status === 429 && err?.code !== 'mfa_locked') {
     return 'Hiciste demasiados intentos seguidos. Espera unos minutos e intenta de nuevo.';
   }
   if (err?.status === undefined && err?.message === 'Failed to fetch') {

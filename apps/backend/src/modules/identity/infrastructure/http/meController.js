@@ -147,6 +147,30 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
+  const getMfaStatus = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMfaStatus({ userId: req.user.id }));
+  });
+
+  const startMfaSetup = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.startMfaSetup({ userId: req.user.id }));
+  });
+
+  const confirmMfaSetup = asyncHandler(async (req, res) => {
+    res
+      .status(200)
+      .json(await container.confirmMfaSetup({ userId: req.user.id, code: req.body.code }));
+  });
+
+  const disableMfa = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.disableMfa({ userId: req.user.id, code: req.body.code }));
+  });
+
+  const regenerateRecoveryCodes = asyncHandler(async (req, res) => {
+    res
+      .status(200)
+      .json(await container.regenerateRecoveryCodes({ userId: req.user.id, code: req.body.code }));
+  });
+
   const getAccountRestrictions = asyncHandler(async (req, res) => {
     res.status(200).json(await container.getAccountRestrictions({ userId: req.user.id }));
   });
@@ -155,6 +179,11 @@ export function createMeController(container) {
     authorizeMinor,
     withdrawMinorAuthorization,
     getAccountRestrictions,
+    getMfaStatus,
+    startMfaSetup,
+    confirmMfaSetup,
+    disableMfa,
+    regenerateRecoveryCodes,
     getMyAuthorizations,
     setMyAuthorization,
     setMinorHealthAuthorization,

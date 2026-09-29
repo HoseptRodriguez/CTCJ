@@ -1,8 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { isMfaRequiredFor } from '@ctcj/shared';
 
 import { User } from '../../domain/entities/User.js';
 import { InvalidCredentials } from '../../domain/errors/InvalidCredentials.js';
 import { AccountLockedError } from '../../domain/errors/AccountLockedError.js';
+
+import { createIssueSession } from './issueSession.js';
 
 /**
  * @param {{
@@ -13,7 +15,14 @@ import { AccountLockedError } from '../../domain/errors/AccountLockedError.js';
  *   clock: import('../ports/Clock.js').Clock,
  *   clubId: string,
  *   refreshTokenTtlMs: number,
+ *   mfaRepository?: import('../ports/MfaRepository.js').MfaRepository,
+ *   mfaEnforced?: boolean,
  * }} deps
+ *
+ * With two-step verification on, the password alone doesn't open a
+ * session: the result is { mfaRequired, mfaToken } and the second step
+ * (completeMfaLogin) opens it. A role that requires it and doesn't have it
+ * yet gets { mfaSetupRequired, mfaToken } and must turn it on first.
  */
 export function createLoginUser({
   userRepository,
@@ -23,7 +32,16 @@ export function createLoginUser({
   clock,
   clubId,
   refreshTokenTtlMs,
+  mfaRepository,
+  mfaEnforced = false,
 }) {
+  const issueSession = createIssueSession({
+    tokenService,
+    refreshTokenRepository,
+    clock,
+    refreshTokenTtlMs,
+  });
+
   return async function loginUser({ email, password, ip, userAgent }) {
     const normalizedEmail = User.normalizeEmail(email);
     const user = await userRepository.findByEmail(clubId, normalizedEmail);
@@ -51,31 +69,16 @@ export function createLoginUser({
     user.recordSuccessfulLogin(now);
     await userRepository.update(user);
 
-    const roleCodes = user.listRoleCodes();
-    const { token: accessToken, expiresInSeconds } = tokenService.issueAccessToken(
-      user.id,
-      roleCodes,
-    );
+    if (mfaRepository) {
+      const mfa = await mfaRepository.getState(user.id);
+      if (mfa.enabled) {
+        return { mfaRequired: true, mfaToken: tokenService.issueMfaToken(user.id, 'login') };
+      }
+      if (mfaEnforced && isMfaRequiredFor(user.listRoleCodes())) {
+        return { mfaSetupRequired: true, mfaToken: tokenService.issueMfaToken(user.id, 'setup') };
+      }
+    }
 
-    const rawRefreshToken = tokenService.generateRefreshToken();
-    const refreshTokenHash = tokenService.hashRefreshToken(rawRefreshToken);
-    const familyId = randomUUID();
-    const refreshTokenExpiresAt = new Date(now.getTime() + refreshTokenTtlMs);
-    await refreshTokenRepository.create(
-      user.id,
-      refreshTokenHash,
-      familyId,
-      refreshTokenExpiresAt,
-      ip,
-      userAgent,
-    );
-
-    return {
-      accessToken,
-      expiresInSeconds,
-      refreshToken: rawRefreshToken,
-      refreshTokenExpiresAt,
-      roles: roleCodes,
-    };
+    return issueSession(user, { ip, userAgent });
   };
 }

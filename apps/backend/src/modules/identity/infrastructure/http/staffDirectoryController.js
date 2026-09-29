@@ -135,6 +135,10 @@ export function createStaffDirectoryController(container) {
       );
     }),
 
+    resetMfa: asyncHandler(async (req, res) => {
+      res.status(200).json(await container.resetMfa({ actor: actor(req), userId: req.params.id }));
+    }),
+
     resendVerification: asyncHandler(async (req, res) => {
       res
         .status(200)

@@ -14,6 +14,7 @@ const PRODUCTION = {
   MAIL_FROM: 'CTCJ <no-reply@ctcj.co>',
   BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_test',
   APP_PUBLIC_URL: 'https://ctcj.co',
+  MFA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
 };
 
 describe('parseEnv', () => {
@@ -40,6 +41,27 @@ describe('parseEnv', () => {
       expect(() => parseEnv(env)).toThrow(new RegExp(`${key}: .*required in production`));
     },
   );
+
+  it('two-step verification: a 32-byte key is required in production and can never be turned off there', () => {
+    const noKey = { ...PRODUCTION };
+    delete noKey.MFA_ENCRYPTION_KEY;
+    expect(() => parseEnv(noKey)).toThrow(/MFA_ENCRYPTION_KEY: .*required in production/);
+    expect(() => parseEnv({ ...PRODUCTION, MFA_ENCRYPTION_KEY: 'c2hvcnQ=' })).toThrow(
+      /MFA_ENCRYPTION_KEY/,
+    );
+    expect(() => parseEnv({ ...PRODUCTION, MFA_ENFORCE_STAFF: 'false' })).toThrow(
+      /MFA_ENFORCE_STAFF: .*cannot be turned off in production/,
+    );
+    const config = parseEnv(PRODUCTION);
+    expect(config.mfa.enforceStaff).toBe(true);
+    expect(config.mfa.key).toEqual(Buffer.alloc(32, 7));
+  });
+
+  it('outside production, MFA works without a key (dev-only key) and tests may turn enforcement off', () => {
+    const config = parseEnv({ ...BASE, NODE_ENV: 'test', MFA_ENFORCE_STAFF: 'false' });
+    expect(config.mfa.key).toHaveLength(32);
+    expect(config.mfa.enforceStaff).toBe(false);
+  });
 
   it('refuses to boot in production when APP_PUBLIC_URL is unset (localhost default)', () => {
     const env = { ...PRODUCTION };

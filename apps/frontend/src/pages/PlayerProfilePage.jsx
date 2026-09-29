@@ -28,6 +28,7 @@ import { describeIdentityError } from '../lib/identityErrorMessages.js';
 import { useMyCtcj } from './mictcj/MyCtcjContext.jsx';
 import { HealthDataSection } from './mictcj/HealthDataSection.jsx';
 import { PhysioConsentSection } from './mictcj/PhysioConsentSection.jsx';
+import { TwoStepSection } from './mictcj/TwoStepSection.jsx';
 import { REQUEST_STATUS_LABELS } from './mictcj/shared.jsx';
 
 const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -500,6 +501,7 @@ export function PlayerProfilePage() {
             </div>
           </Card>
           <GuardianshipSection />
+          <TwoStepSection />
           <Card
             title="Mis datos y privacidad"
             description="Tus autorizaciones, descargar tus datos, consultas y reclamos, o eliminar tu cuenta."

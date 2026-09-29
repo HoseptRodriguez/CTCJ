@@ -44,6 +44,9 @@ services:
       # Avatars go to Vercel Blob (Render's disk is wiped on every deploy).
       - key: BLOB_READ_WRITE_TOKEN
         sync: false
+      # Two-step verification: 32 random bytes in base64, set in the Render dashboard.
+      - key: MFA_ENCRYPTION_KEY
+        sync: false
       # Only needed once, to run scripts/bootstrapAdmin.js from the Render
       # shell; delete it after the first administrator exists.
       - key: BOOTSTRAP_TOKEN

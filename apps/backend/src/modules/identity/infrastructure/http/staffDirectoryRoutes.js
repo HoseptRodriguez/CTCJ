@@ -26,6 +26,8 @@ export function createStaffDirectoryRoutes(controller) {
   router.delete('/:id/player-role', ...admin, controller.revokePlayer);
   router.post('/:id/deactivate', ...admin, controller.deactivate);
   router.post('/:id/reactivate', ...admin, controller.reactivate);
+  // A lost phone: turns off the person's two-step verification (audited).
+  router.post('/:id/mfa-reset', ...admin, controller.resetMfa);
   router.post(
     '/:id/resend-verification',
     requireAuth,

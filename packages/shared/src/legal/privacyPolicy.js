@@ -11,8 +11,8 @@ export const PRIVACY_POLICY = Object.freeze({
   type: 'PRIVACY_POLICY',
   path: '/privacidad',
   title: 'Política de Tratamiento de Datos Personales',
-  version: '1',
-  publishedOn: '2026-09-28',
+  version: '2',
+  publishedOn: '2026-09-29',
   sections: [
     {
       id: 'responsable',
@@ -51,6 +51,11 @@ export const PRIVACY_POLICY = Object.freeze({
                 'Fecha de nacimiento',
                 'Al crear tu cuenta',
                 'Sí. La usamos para saber si eres menor de edad y, si lo eres, pedir la autorización de tu acudiente',
+              ],
+              [
+                'Verificación en dos pasos: la clave de tu aplicación de autenticación (guardada cifrada) y tus códigos de recuperación (solo una versión cifrada)',
+                'Si la activas en "Mi perfil". Es obligatoria para Administración, Psicología, Neuropsicología y Fisioterapia',
+                'Solo para esos roles',
               ],
               ['Teléfono, presentación ("Sobre mí") y foto de perfil', 'En "Mi perfil"', 'No'],
               ['Mano dominante y tipo de revés', 'En "Mi perfil"', 'No'],
@@ -216,6 +221,7 @@ export const PRIVACY_POLICY = Object.freeze({
         {
           list: [
             'Las contraseñas se guardan cifradas con un algoritmo de un solo sentido (argon2).',
+            'Administración y el personal de salud (Psicología, Neuropsicología y Fisioterapia) entran con verificación en dos pasos: además de la contraseña, un código que genera su teléfono. Cualquier otra persona puede activarla en "Mi perfil".',
             'Cada persona del club ve solo lo que su función necesita.',
             'Las lecturas de datos de salud por parte de Administración quedan registradas.',
             'Los registros técnicos del servidor no guardan contraseñas, tokens de sesión ni direcciones IP.',

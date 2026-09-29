@@ -148,6 +148,7 @@ export function createPrismaUserRepository(prisma) {
             emailVerifiedAt: true,
             createdAt: true,
             deletedAt: true,
+            mfaEnabled: true,
             guardianshipsAsMinor: {
               where: { status: 'APPROVED' },
               select: { guardianUserId: true },
@@ -188,6 +189,7 @@ export function createPrismaUserRepository(prisma) {
     },
 
     async anonymize(userId, now) {
+      await prisma.mfaRecoveryCode.deleteMany({ where: { userId } });
       await prisma.user.update({
         where: { id: userId },
         data: {
@@ -206,6 +208,10 @@ export function createPrismaUserRepository(prisma) {
           backhand: null,
           mfaEnabled: false,
           mfaSecret: null,
+          mfaEnabledAt: null,
+          mfaFailedCount: null,
+          mfaLockedUntil: null,
+          mfaLastStep: null,
           status: 'DEACTIVATED',
           deletedAt: now,
         },

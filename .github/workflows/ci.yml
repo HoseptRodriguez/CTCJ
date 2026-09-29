@@ -37,6 +37,9 @@ jobs:
       # default, by src/config/env.js's zod schema. .env.test provides this
       # locally but is correctly gitignored, so CI needs its own copy.
       JWT_ACCESS_SECRET: 'ci-test-secret-not-for-production-use-only'
+      # Test-only key; MFA enforcement off except in the MFA tests themselves.
+      MFA_ENCRYPTION_KEY: 'Y3Rjai10ZXN0LW9ubHktbWZhLWtleS0wMDAwMDAwMDA='
+      MFA_ENFORCE_STAFF: 'false'
 
     steps:
       - name: Checkout

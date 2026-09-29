@@ -36,13 +36,56 @@ export function createAuthController(container) {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     });
-    res.cookie(config.refreshToken.cookieName, result.refreshToken, refreshCookieOptions());
+    // Two-step verification: no session yet, only the step token.
+    if (result.mfaRequired || result.mfaSetupRequired) {
+      res.status(200).json({
+        mfaRequired: Boolean(result.mfaRequired),
+        mfaSetupRequired: Boolean(result.mfaSetupRequired),
+        mfaToken: result.mfaToken,
+      });
+      return;
+    }
+    sendSession(res, result);
+  });
+
+  /** Opens the session: refresh cookie + access token in the body. */
+  function sendSession(res, session, extra = {}) {
+    res.cookie(config.refreshToken.cookieName, session.refreshToken, refreshCookieOptions());
     res.status(200).json({
-      accessToken: result.accessToken,
-      expiresIn: result.expiresInSeconds,
+      accessToken: session.accessToken,
+      expiresIn: session.expiresInSeconds,
       tokenType: 'Bearer',
-      roles: result.roles,
+      roles: session.roles,
+      ...extra,
     });
+  }
+
+  const origin = (req) => ({ ip: req.ip, userAgent: req.headers['user-agent'] });
+
+  const mfaVerify = asyncHandler(async (req, res) => {
+    const result = await container.completeMfaLogin({
+      mfaToken: req.body.mfaToken,
+      code: req.body.code,
+      recoveryCode: req.body.recoveryCode,
+      ...origin(req),
+    });
+    sendSession(res, result, {
+      usedRecoveryCode: result.usedRecoveryCode,
+      recoveryCodesLeft: result.recoveryCodesLeft,
+    });
+  });
+
+  const mfaSetupStart = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.startMfaSetupFromLogin({ mfaToken: req.body.mfaToken }));
+  });
+
+  const mfaSetupConfirm = asyncHandler(async (req, res) => {
+    const result = await container.confirmMfaSetupFromLogin({
+      mfaToken: req.body.mfaToken,
+      code: req.body.code,
+      ...origin(req),
+    });
+    sendSession(res, result, { recoveryCodes: result.recoveryCodes });
   });
 
   const refresh = asyncHandler(async (req, res, next) => {
@@ -92,6 +135,9 @@ export function createAuthController(container) {
   return {
     register,
     login,
+    mfaVerify,
+    mfaSetupStart,
+    mfaSetupConfirm,
     refresh,
     verify,
     logout,

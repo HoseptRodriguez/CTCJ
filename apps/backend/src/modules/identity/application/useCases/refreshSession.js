@@ -1,4 +1,7 @@
+import { isMfaRequiredFor } from '@ctcj/shared';
+
 import { InvalidRefreshToken } from '../errors/InvalidRefreshToken.js';
+import { MfaSetupRequired } from '../errors/MfaSetupRequired.js';
 
 /**
  * @param {{
@@ -7,6 +10,8 @@ import { InvalidRefreshToken } from '../errors/InvalidRefreshToken.js';
  *   tokenService: import('../ports/TokenService.js').TokenService,
  *   clock: import('../ports/Clock.js').Clock,
  *   refreshTokenTtlMs: number,
+ *   mfaRepository?: import('../ports/MfaRepository.js').MfaRepository,
+ *   mfaEnforced?: boolean,
  * }} deps
  */
 export function createRefreshSession({
@@ -15,6 +20,8 @@ export function createRefreshSession({
   tokenService,
   clock,
   refreshTokenTtlMs,
+  mfaRepository,
+  mfaEnforced = false,
 }) {
   return async function refreshSession({ rawRefreshToken, ip, userAgent }) {
     const tokenHash = tokenService.hashRefreshToken(rawRefreshToken);
@@ -43,6 +50,16 @@ export function createRefreshSession({
     if (!user.canSignIn()) {
       await refreshTokenRepository.revokeFamily(record.familyId);
       throw new InvalidRefreshToken();
+    }
+
+    // A role that requires two-step verification and doesn't have it (an old
+    // session, or an Administración reset) must sign in again and turn it on.
+    if (mfaEnforced && mfaRepository && isMfaRequiredFor(user.listRoleCodes())) {
+      const mfa = await mfaRepository.getState(user.id);
+      if (!mfa.enabled) {
+        await refreshTokenRepository.revokeFamily(record.familyId);
+        throw new MfaSetupRequired();
+      }
     }
 
     const newRawToken = tokenService.generateRefreshToken();

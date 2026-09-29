@@ -46,6 +46,8 @@ import { createAnonymizeAccount } from '../application/useCases/anonymizeAccount
 import { createCountDemoAccounts } from '../application/useCases/checkDemoAccounts.js';
 import { createPlayerDirectoryUseCases } from '../application/useCases/playerDirectory.js';
 import { createStaffAccountActions } from '../application/useCases/staffAccountActions.js';
+import { createMfaUseCases } from '../application/useCases/mfa.js';
+import { createMfaLoginUseCases } from '../application/useCases/mfaLogin.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
@@ -60,6 +62,9 @@ import { createPrismaSystemSettingRepository } from './persistence/prismaSystemS
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
 import { createPrismaIdentityAuditLog } from './persistence/prismaIdentityAuditLog.js';
+import { createPrismaMfaRepository } from './persistence/prismaMfaRepository.js';
+import { createAesMfaCrypto } from './security/aesMfaCrypto.js';
+import { createQrSvgRenderer } from './security/qrSvgRenderer.js';
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
@@ -89,6 +94,8 @@ export function buildIdentityContainer({
   competitionProgressProvider = createNullCompetitionProgressProvider(),
   performanceProgressProvider = createNullPerformanceProgressProvider(),
   trainingFrequencyProvider = createNullTrainingFrequencyProvider(),
+  // Tests of the two-step verification turn it on even where .env.test doesn't.
+  mfaEnforceStaff = config.mfa.enforceStaff,
 } = {}) {
   const userRepository = createPrismaUserRepository(prismaClient);
   const roleRepository = createPrismaRoleRepository(prismaClient);
@@ -109,6 +116,7 @@ export function buildIdentityContainer({
   // directory's category source is plugged in later by app.js.
   let playerCategoryProvider = { getCategories: async () => new Map() };
   const identityAuditLog = createPrismaIdentityAuditLog(prismaClient, DEFAULT_CLUB_ID);
+  const mfaRepository = createPrismaMfaRepository(prismaClient);
   const optionalAuthorizations = createOptionalAuthorizationUseCases({
     consentRepository,
     guardianshipRepository,
@@ -141,6 +149,16 @@ export function buildIdentityContainer({
   const clock = systemClock;
   const refreshTokenTtlMs = config.refreshToken.ttlDays * 24 * 60 * 60 * 1000;
 
+  const mfa = createMfaUseCases({
+    userRepository,
+    mfaRepository,
+    mfaCrypto: createAesMfaCrypto({ key: config.mfa.key }),
+    qrRenderer: createQrSvgRenderer(),
+    refreshTokenRepository,
+    auditLog: identityAuditLog,
+    clock,
+  });
+
   return {
     registerUser: createRegisterUser({
       userRepository,
@@ -161,6 +179,8 @@ export function buildIdentityContainer({
       clock,
       clubId: DEFAULT_CLUB_ID,
       refreshTokenTtlMs,
+      mfaRepository,
+      mfaEnforced: mfaEnforceStaff,
     }),
     refreshSession: createRefreshSession({
       refreshTokenRepository,
@@ -168,6 +188,17 @@ export function buildIdentityContainer({
       tokenService,
       clock,
       refreshTokenTtlMs,
+      mfaRepository,
+      mfaEnforced: mfaEnforceStaff,
+    }),
+    ...mfa,
+    ...createMfaLoginUseCases({
+      userRepository,
+      tokenService,
+      refreshTokenRepository,
+      clock,
+      refreshTokenTtlMs,
+      mfa,
     }),
     verifyEmail: createVerifyEmail({
       emailVerificationRepository,

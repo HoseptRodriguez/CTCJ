@@ -25,6 +25,7 @@ export const directoryClient = {
     request(`/api/admin/directory/${userId}/player-role`, { method: 'DELETE' }),
   deactivate: (userId) => request(`/api/admin/directory/${userId}/deactivate`, { method: 'POST' }),
   reactivate: (userId) => request(`/api/admin/directory/${userId}/reactivate`, { method: 'POST' }),
+  resetMfa: (userId) => request(`/api/admin/directory/${userId}/mfa-reset`, { method: 'POST' }),
   resendVerification: (userId) =>
     request(`/api/admin/directory/${userId}/resend-verification`, { method: 'POST' }),
 

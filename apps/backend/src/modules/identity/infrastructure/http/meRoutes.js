@@ -7,9 +7,11 @@ import {
   setAuthorizationSchema,
   setGuardianAuthorizationSchema,
   completeAccountSchema,
+  mfaCodeSchema,
 } from '@ctcj/shared';
 
 import { HttpError } from '../../../../shared/errors/httpError.js';
+import { loginRateLimiter } from '../../../../shared/rateLimiters.js';
 
 import { requireAuth } from './middleware/requireAuth.js';
 import { validateBody } from './validators/authValidators.js';
@@ -76,6 +78,30 @@ export function createMeRoutes(controller) {
     requireAuth,
     validateBody(setAuthorizationSchema),
     controller.setMyAuthorization,
+  );
+  // Two-step verification from the profile (optional roles; required ones turn it on at sign-in).
+  router.get('/mfa', requireAuth, controller.getMfaStatus);
+  router.post('/mfa/setup/start', requireAuth, loginRateLimiter, controller.startMfaSetup);
+  router.post(
+    '/mfa/setup/confirm',
+    requireAuth,
+    loginRateLimiter,
+    validateBody(mfaCodeSchema),
+    controller.confirmMfaSetup,
+  );
+  router.post(
+    '/mfa/disable',
+    requireAuth,
+    loginRateLimiter,
+    validateBody(mfaCodeSchema),
+    controller.disableMfa,
+  );
+  router.post(
+    '/mfa/recovery-codes',
+    requireAuth,
+    loginRateLimiter,
+    validateBody(mfaCodeSchema),
+    controller.regenerateRecoveryCodes,
   );
   // What the signed-in person can't do yet (a minor pending authorization).
   router.get('/account-restrictions', requireAuth, controller.getAccountRestrictions);

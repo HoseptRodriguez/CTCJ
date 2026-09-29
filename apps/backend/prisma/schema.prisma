@@ -68,7 +68,11 @@ model User {
   status           String    @default("PENDING_VERIFICATION") @db.VarChar(20)
   emailVerifiedAt  DateTime? @map("email_verified_at")
   mfaEnabled       Boolean   @default(false) @map("mfa_enabled")
-  mfaSecret        String?   @map("mfa_secret")
+  mfaSecret        String?   @map("mfa_secret") // TOTP secret, encrypted (AES-256-GCM)
+  mfaEnabledAt     DateTime? @map("mfa_enabled_at") @db.Timestamptz(6)
+  mfaFailedCount   Int?      @map("mfa_failed_count") @db.SmallInt
+  mfaLockedUntil   DateTime? @map("mfa_locked_until") @db.Timestamptz(6)
+  mfaLastStep      BigInt?   @map("mfa_last_step")
   failedLoginCount Int       @default(0) @map("failed_login_count") @db.SmallInt
   lockedUntil      DateTime? @map("locked_until")
   lastLoginAt      DateTime? @map("last_login_at")
@@ -149,6 +153,7 @@ model User {
   communityComments    CommunityComment[]  @relation("CommunityCommentAuthor")
   communityPostLikes   CommunityPostLike[] @relation("CommunityPostLikeUser")
   communityReportsMade CommunityReport[]   @relation("CommunityReportReporter")
+  MfaRecoveryCode      MfaRecoveryCode[]
 
   @@unique([clubId, email])
   @@map("users")
@@ -1270,4 +1275,18 @@ model DataSubjectRequest {
   @@index([userId, receivedAt(sort: Desc)], map: "data_subject_requests_user_idx")
   @@index([status, dueOn], map: "data_subject_requests_open_idx")
   @@map("data_subject_requests")
+}
+
+// One-time recovery codes of the two-step verification: only a keyed hash.
+model MfaRecoveryCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash") @db.VarChar(64)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, codeHash], map: "mfa_recovery_codes_user_hash_key")
+  @@map("mfa_recovery_codes")
 }

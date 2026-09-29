@@ -36,6 +36,14 @@ const STATUS_BY_CODE = {
   email_already_verified: 409,
   role_already_assigned: 409,
   role_not_assigned: 409,
+  mfa_code_invalid: 401,
+  mfa_locked: 429,
+  mfa_not_enabled: 409,
+  mfa_already_enabled: 409,
+  mfa_required_for_role: 409,
+  mfa_setup_not_started: 409,
+  invalid_mfa_token: 401,
+  mfa_setup_required: 401,
   marketing_channel_required: 400,
 };
 
