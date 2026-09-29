@@ -32,15 +32,16 @@ Estado: Partes 1 a 9 terminadas el 2026-09-28. Quedan los datos del club, las au
 
 Hoy **no hay ningún plazo definido y no se borra nada automáticamente**. El club debe fijarlos, con su contador y su abogado:
 
-| Datos                                                        | Plazo                                                                               |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Cuenta y perfil tras la eliminación de la cuenta             | Se anonimiza al responder la solicitud (Parte 5). Plazo para atenderla: [COMPLETAR] |
-| Facturas, pagos y soportes contables                         | [COMPLETAR: plazo que indique el contador] [VERIFICAR norma contable/tributaria]    |
-| Historia clínica y notas de salud                            | [VERIFICAR: Resolución 1995 de 1999 y normas posteriores]                           |
-| Sesiones vencidas, tokens de verificación y recuperación, IP | [COMPLETAR] (propuesta técnica: purgar a los 90 días)                               |
-| Notificaciones leídas                                        | [COMPLETAR]                                                                         |
-| Registro de auditoría (`audit_logs`)                         | [COMPLETAR]                                                                         |
-| Prueba de consentimientos (`consents`)                       | [VERIFICAR] (mientras pueda exigirse la prueba)                                     |
+| Datos                                                        | Plazo                                                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Cuenta y perfil tras la eliminación de la cuenta             | Se anonimiza al responder la solicitud (Parte 5). Plazo para atenderla: [COMPLETAR]        |
+| Facturas, pagos y soportes contables                         | [COMPLETAR: plazo que indique el contador] [VERIFICAR norma contable/tributaria]           |
+| Historia clínica y notas de salud                            | [VERIFICAR: Resolución 1995 de 1999 y normas posteriores]                                  |
+| Sesiones vencidas, tokens de verificación y recuperación, IP | [COMPLETAR] (propuesta técnica: purgar a los 90 días)                                      |
+| Notificaciones leídas                                        | [COMPLETAR]                                                                                |
+| Registro de auditoría (`audit_logs`)                         | [COMPLETAR]                                                                                |
+| Prueba de consentimientos (`consents`)                       | [VERIFICAR] (mientras pueda exigirse la prueba)                                            |
+| Solicitudes de información descartadas o sin responder       | [COMPLETAR: meses] (`INFO_REQUEST_RETENTION_MONTHS`; mientras esté vacía no se borra nada) |
 
 ## 3. Terceros y transferencias internacionales
 
@@ -203,3 +204,14 @@ Mientras el club no entregue pruebas, el sitio usa la **versión segura**. Para 
 - Se ejecuta primero en `npm run build`, que es el build de producción que usa Render: **el sitio no se puede publicar hasta que el club complete los datos** y el abogado revise los textos.
 - Hoy (2026-09-28) faltan 41 datos o revisiones. Para desbloquear: completar lo de las secciones 1, 2 y 9, cambiar cada `[VERIFICAR]` por el texto confirmado por el abogado y, como cambia el contenido, subir la `version` de cada documento y actualizar `manifest.json` (sección 9).
 - El CI compila el frontend (`npm run build -w apps/frontend`, que ya bloquea las fotos de menores) pero no ejecuta este bloqueo, para no quedar en rojo mientras el club completa los datos.
+
+## 15. Solicitudes de información (formulario "Solicitar información")
+
+- **Plazo de borrado:** las solicitudes "Descartada" o que siguen "Nueva" se borran solas pasado `INFO_REQUEST_RETENTION_MONTHS` meses. Falta el número: [COMPLETAR: meses]. Mientras la variable esté vacía, **no se borra nada**. El mismo número debe ir en la Política de datos (sección 10).
+- **Correo del club que recibe el aviso:** `INFO_REQUEST_TO` [COMPLETAR: correo del club]. Si está vacía, la solicitud se guarda y aparece en la consola, pero no llega ningún correo al club.
+- **Prueba de la autorización:** como quien pide información no tiene cuenta, la prueba no va en `consents` (que exige un usuario) sino en `info_request_consents`, que solo admite filas nuevas. Al borrar la solicitud, la prueba se conserva sin los datos de contacto.
+- **Horario de atención** (se promete responder por WhatsApp "en horario de atención"): [COMPLETAR: horario de atención].
+
+## 16. Contenido de programas
+
+Regla: no se inventa información del club. Cada dato de las páginas `/programas/*` que falte está marcado `[COMPLETAR]` y el build de producción falla mientras quede alguno.

@@ -7,6 +7,7 @@ import { affiliationClient } from '../api/affiliationClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { communityAdminClient } from '../api/communityAdminClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
+import { infoRequestClient } from '../api/infoRequestClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { a11yViolations } from '../../test/axe.js';
@@ -24,6 +25,9 @@ vi.mock('../api/notificationsClient.js', () => ({
 vi.mock('../api/bookingClient.js', () => ({ bookingClient: { getSchedule: vi.fn() } }));
 vi.mock('../api/communityAdminClient.js', () => ({
   communityAdminClient: { listReports: vi.fn() },
+}));
+vi.mock('../api/infoRequestClient.js', () => ({
+  infoRequestClient: { countNew: vi.fn() },
 }));
 vi.mock('../api/affiliationClient.js', () => ({ affiliationClient: { listRequests: vi.fn() } }));
 vi.mock('../api/guardianshipClient.js', () => ({
@@ -66,6 +70,7 @@ beforeEach(() => {
     ],
   });
   communityAdminClient.listReports.mockResolvedValue({ reports: [{ id: 'x' }, { id: 'y' }] });
+  infoRequestClient.countNew.mockResolvedValue({ count: 4 });
   affiliationClient.listRequests.mockResolvedValue({ requests: [{ id: 'a' }] });
   guardianshipClient.listGuardianships.mockResolvedValue({
     guardianships: [{ id: 'g' }, { id: 'h' }],
@@ -101,6 +106,9 @@ describe('StaffLayout', () => {
     expect(
       await within(nav).findByRole('link', { name: 'Moderar comunidad 2 pendientes' }),
     ).toBeInTheDocument();
+    expect(
+      await within(nav).findByRole('link', { name: 'Solicitudes de información 4 pendientes' }),
+    ).toBeInTheDocument();
   });
 
   it('Recepción: no admin-only links and no admin-only counter requests', async () => {
@@ -111,7 +119,12 @@ describe('StaffLayout', () => {
     const nav = sidebar();
     expect(within(nav).getByRole('link', { name: /Cobros/ })).toBeInTheDocument();
     expect(within(nav).queryByRole('link', { name: 'Finanzas' })).not.toBeInTheDocument();
-    expect(within(nav).queryByRole('link', { name: /Solicitudes/ })).not.toBeInTheDocument();
+    expect(
+      within(nav).queryByRole('link', { name: /^Solicitudes( \d|$)/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(nav).getByRole('link', { name: /Solicitudes de información/ }),
+    ).toBeInTheDocument();
     expect(affiliationClient.listRequests).not.toHaveBeenCalled();
     expect(guardianshipClient.listGuardianships).not.toHaveBeenCalled();
   });

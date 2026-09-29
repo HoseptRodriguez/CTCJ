@@ -75,6 +75,10 @@ const PaymentsQueuePage = lazyPage(
 );
 const PlansPage = lazyPage(() => import('./pages/staff/PlansPage.jsx'), 'PlansPage');
 const RequestsPage = lazyPage(() => import('./pages/staff/RequestsPage.jsx'), 'RequestsPage');
+const InfoRequestsPage = lazyPage(
+  () => import('./pages/staff/InfoRequestsPage.jsx'),
+  'InfoRequestsPage',
+);
 const PlayersDirectoryPage = lazyPage(
   () => import('./pages/staff/PlayersDirectoryPage.jsx'),
   'PlayersDirectoryPage',
@@ -184,6 +188,7 @@ export function App() {
                   <Route path="/staff/pagos" element={<PaymentsQueuePage />} />
                   <Route path="/staff/membresias" element={<MembershipStatusPage />} />
                   <Route path="/staff/comunidad" element={<CommunityModerationPage />} />
+                  <Route path="/staff/solicitudes-informacion" element={<InfoRequestsPage />} />
                 </Route>
                 <Route
                   element={

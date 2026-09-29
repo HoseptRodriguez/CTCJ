@@ -35,3 +35,5 @@ export * from './validation/dataRequestSchemas.js';
 export * from './validation/directorySchemas.js';
 export * from './constants/mfa.js';
 export * from './validation/mfaSchemas.js';
+export * from './constants/infoRequests.js';
+export * from './validation/infoRequestSchemas.js';

@@ -47,6 +47,11 @@ services:
       # Two-step verification: 32 random bytes in base64, set in the Render dashboard.
       - key: MFA_ENCRYPTION_KEY
         sync: false
+      # "Solicitar información": the club's inbox and the auto-delete period (months).
+      - key: INFO_REQUEST_TO
+        sync: false
+      - key: INFO_REQUEST_RETENTION_MONTHS
+        sync: false
       # Only needed once, to run scripts/bootstrapAdmin.js from the Render
       # shell; delete it after the first administrator exists.
       - key: BOOTSTRAP_TOKEN

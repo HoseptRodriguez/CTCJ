@@ -6,6 +6,7 @@ import { affiliationClient } from '../api/affiliationClient.js';
 import { bookingClient } from '../api/bookingClient.js';
 import { communityAdminClient } from '../api/communityAdminClient.js';
 import { guardianshipClient } from '../api/guardianshipClient.js';
+import { infoRequestClient } from '../api/infoRequestClient.js';
 import { privacyClient } from '../api/privacyClient.js';
 import { membershipClient } from '../api/membershipClient.js';
 import { BarChartIcon } from '../components/icons/BarChartIcon.jsx';
@@ -13,6 +14,7 @@ import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
 import { ClipboardIcon } from '../components/icons/ClipboardIcon.jsx';
 import { HeartIcon } from '../components/icons/HeartIcon.jsx';
 import { HomeIcon } from '../components/icons/HomeIcon.jsx';
+import { InboxIcon } from '../components/icons/InboxIcon.jsx';
 import { LogOutIcon } from '../components/icons/LogOutIcon.jsx';
 import { MoreIcon } from '../components/icons/MoreIcon.jsx';
 import { NoteIcon } from '../components/icons/NoteIcon.jsx';
@@ -49,6 +51,7 @@ const ICONS = {
   chart: BarChartIcon,
   tag: TagIcon,
   shield: ShieldIcon,
+  inbox: InboxIcon,
 };
 
 /**
@@ -70,6 +73,7 @@ function useStaffCounters(roles, pathname) {
           unpaid: s.reservations.filter(isUnpaid).length,
         })),
         communityAdminClient.listReports().then((d) => ({ reports: d.reports.length })),
+        infoRequestClient.countNew().then((d) => ({ infoRequests: d.count })),
       );
     }
     if (isAdmin) {

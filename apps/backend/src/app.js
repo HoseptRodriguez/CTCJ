@@ -100,6 +100,12 @@ import { createIdentityPlayerDirectoryProvider as createClinicalPlayerDirectoryP
 import { createIdentityHealthAuthorizationProvider } from './modules/clinical/infrastructure/adapters/healthAuthorizationProviderAdapter.js';
 import { createStaffDirectoryController } from './modules/identity/infrastructure/http/staffDirectoryController.js';
 import { createStaffDirectoryRoutes } from './modules/identity/infrastructure/http/staffDirectoryRoutes.js';
+import { buildInquiriesContainer } from './modules/inquiries/infrastructure/compositionRoot.js';
+import { createInquiriesController } from './modules/inquiries/infrastructure/http/inquiriesController.js';
+import {
+  createAdminInquiriesRoutes,
+  createPublicInquiriesRoutes,
+} from './modules/inquiries/infrastructure/http/inquiriesRoutes.js';
 import { buildPrivacyContainer } from './modules/privacy/infrastructure/compositionRoot.js';
 import { createPrivacyController } from './modules/privacy/infrastructure/http/privacyController.js';
 import {
@@ -494,6 +500,11 @@ export function createApp({ mfaEnforceStaff } = {}) {
   const privacyController = createPrivacyController(privacyContainer);
   app.use('/api/privacy/me', createPrivacyMeRoutes(privacyController));
   app.use('/api/admin/privacy', createPrivacyAdminRoutes(privacyController));
+
+  // "Solicitar información": public form and the front desk's inbox.
+  const inquiriesController = createInquiriesController(buildInquiriesContainer());
+  app.use('/api/info-requests', createPublicInquiriesRoutes(inquiriesController));
+  app.use('/api/admin/info-requests', createAdminInquiriesRoutes(inquiriesController));
 
   // Other module routers are mounted here as each module is implemented.
 

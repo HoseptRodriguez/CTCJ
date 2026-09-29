@@ -7,6 +7,8 @@ import { prisma } from './shared/prismaClient.js';
 import { systemClock } from './modules/booking/application/ports/Clock.js';
 import { createExpireHoldsJob } from './modules/booking/infrastructure/jobs/expireHoldsJob.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
+import { buildInquiriesContainer } from './modules/inquiries/infrastructure/compositionRoot.js';
+import { createPurgeInfoRequestsJob } from './modules/inquiries/infrastructure/jobs/purgeInfoRequestsJob.js';
 
 const app = createApp();
 const identity = buildIdentityContainer();
@@ -52,9 +54,18 @@ const expireHoldsJob = config.isTest
   : createExpireHoldsJob({ prismaClient: prisma, clock: systemClock, lockedBy: `${process.pid}` });
 const expireHoldsJobHandle = expireHoldsJob?.start() ?? null;
 
+// Deletes old discarded or unanswered info requests, once the club sets the period.
+const purgeInfoRequestsHandle = config.isTest
+  ? null
+  : createPurgeInfoRequestsJob({
+      purgeOldInfoRequests: buildInquiriesContainer().purgeOldInfoRequests,
+      months: config.infoRequests.retentionMonths,
+    }).start();
+
 function shutdown(signal) {
   logger.info(`Received ${signal}, shutting down gracefully.`);
   expireHoldsJobHandle?.stop();
+  purgeInfoRequestsHandle?.stop();
   server.close(() => {
     logger.info('Server closed.');
     process.exit(0);

@@ -41,6 +41,7 @@ model Club {
   tournaments          Tournament[]
   clinicalAppointments ClinicalAppointment[]
   dataSubjectRequests  DataSubjectRequest[]
+  infoRequests         InfoRequest[]
 
   @@map("clubs")
 }
@@ -153,7 +154,11 @@ model User {
   communityComments    CommunityComment[]  @relation("CommunityCommentAuthor")
   communityPostLikes   CommunityPostLike[] @relation("CommunityPostLikeUser")
   communityReportsMade CommunityReport[]   @relation("CommunityReportReporter")
-  MfaRecoveryCode      MfaRecoveryCode[]
+  mfaRecoveryCodes     MfaRecoveryCode[]
+
+  // "Solicitar información": requests the staff handled, internal notes.
+  infoRequestsHandled InfoRequest[]     @relation("InfoRequestHandledBy")
+  infoRequestNotes    InfoRequestNote[]
 
   @@unique([clubId, email])
   @@map("users")
@@ -1289,4 +1294,60 @@ model MfaRecoveryCode {
 
   @@unique([userId, codeHash], map: "mfa_recovery_codes_user_hash_key")
   @@map("mfa_recovery_codes")
+}
+
+// "Solicitar información": requests from the public site, the staff inbox.
+model InfoRequest {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId         String    @map("club_id") @db.Uuid
+  fullName       String    @map("full_name") @db.VarChar(120)
+  phone          String    @db.VarChar(16)
+  email          String?   @db.VarChar(160)
+  program        String    @db.VarChar(20)
+  forWhom        String    @map("for_whom") @db.VarChar(6)
+  childAge       Int?      @map("child_age") @db.SmallInt
+  preferredTimes String[]  @default([]) @map("preferred_times")
+  message        String?   @db.VarChar(500)
+  marketingOptIn Boolean   @default(false) @map("marketing_opt_in")
+  status         String    @default("NUEVA") @db.VarChar(12)
+  handledBy      String?   @map("handled_by") @db.Uuid
+  handledAt      DateTime? @map("handled_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  club          Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  handledByUser User?                @relation("InfoRequestHandledBy", fields: [handledBy], references: [id], onDelete: SetNull)
+  notes         InfoRequestNote[]
+  consents      InfoRequestConsent[]
+
+  @@index([clubId, status, createdAt(sort: Desc)], map: "info_requests_status_idx")
+  @@map("info_requests")
+}
+
+model InfoRequestNote {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId String   @map("request_id") @db.Uuid
+  authorId  String?  @map("author_id") @db.Uuid
+  text      String   @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request InfoRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author  User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt], map: "info_request_notes_request_idx")
+  @@map("info_request_notes")
+}
+
+// Proof of the authorization in the form (append-only; outlives the request).
+model InfoRequestConsent {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId       String?  @map("request_id") @db.Uuid
+  consentType     String   @map("consent_type") @db.VarChar(30)
+  documentVersion String   @map("document_version") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request InfoRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([requestId], map: "info_request_consents_request_idx")
+  @@map("info_request_consents")
 }

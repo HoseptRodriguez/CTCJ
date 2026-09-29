@@ -45,6 +45,16 @@ const envSchema = z
     // (so the other suites can sign in as staff); never production.
     MFA_ENFORCE_STAFF: z.enum(['true', 'false']).default('true'),
 
+    // "Solicitar información": who gets the notice of a new request (the
+    // club's mailbox), and after how many months discarded or unanswered
+    // requests are deleted. Both decided by the club; empty = no notice / no
+    // automatic deletion yet (docs/LEGAL_PENDIENTES.md).
+    INFO_REQUEST_TO: z.string().email().optional().or(z.literal('')).default(''),
+    INFO_REQUEST_RETENTION_MONTHS: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.coerce.number().int().min(1).max(60).optional(),
+    ),
+
     APP_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   })
@@ -172,6 +182,11 @@ export function parseEnv(source) {
     mfa: Object.freeze({
       key: mfaKeyBytes(env.MFA_ENCRYPTION_KEY) ?? INSECURE_DEV_MFA_KEY,
       enforceStaff: env.MFA_ENFORCE_STAFF === 'true',
+    }),
+
+    infoRequests: Object.freeze({
+      notifyTo: env.INFO_REQUEST_TO,
+      retentionMonths: env.INFO_REQUEST_RETENTION_MONTHS ?? null,
     }),
 
     appPublicUrl: env.APP_PUBLIC_URL,

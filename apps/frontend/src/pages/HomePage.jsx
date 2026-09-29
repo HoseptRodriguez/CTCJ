@@ -9,10 +9,12 @@ import { HeroBallTrajectory } from '../components/motion/HeroBallTrajectory.jsx'
 import { ParallaxPhoto } from '../components/motion/ParallaxPhoto.jsx';
 import { SplitHeadline } from '../components/motion/SplitHeadline.jsx';
 import { BrochureTitle, DiagonalSection } from '../components/brochure/Brochure.jsx';
+import { ExternalLinkMark } from '../components/forms/ExternalLinkMark.jsx';
+import { InfoRequestForm } from '../components/forms/InfoRequestForm.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { ClubPhoto } from '../components/ui/ClubPhoto.jsx';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { WHATSAPP_LINK } from '../lib/clubInfo.js';
+import { ADDRESS, MAPS_LINK, WHATSAPP_LINK, WHATSAPP_NUMBER } from '../lib/clubInfo.js';
 import { CLUB_TEXTS } from '../lib/clubTexts.js';
 
 import { FreeTodayCard } from './home/FreeTodayCard.jsx';
@@ -61,6 +63,7 @@ export function HomePage() {
       <Programs />
       <ClayBlock />
       <AboutClub />
+      <RequestInfo />
     </>
   );
 }
@@ -167,18 +170,9 @@ function Programs() {
             </li>
           ))}
         </ul>
-        <Button
-          className="mt-8"
-          variant="secondary"
-          size="lg"
-          href={WHATSAPP_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
-          icon={<WhatsAppIcon />}
-        >
-          Preguntar por clases
+        <Button className="mt-8" variant="secondary" size="lg" href="#solicitar-informacion">
+          Solicitar información
         </Button>
-        <p className="mt-3 text-body text-ink-soft">Se abre WhatsApp, en otra aplicación.</p>
       </div>
     </section>
   );
@@ -235,6 +229,47 @@ function ClayBlock() {
           sizes="(min-width: 768px) 50vw, 100vw"
           className="aspect-[4/3] rounded-xl"
         />
+      </div>
+    </section>
+  );
+}
+
+/** "Solicitar información" next to the direct contact (WhatsApp, address). */
+function RequestInfo() {
+  return (
+    <section
+      id="solicitar-informacion"
+      aria-label="Solicitar información"
+      className="scroll-mt-24 bg-page"
+    >
+      <div className="mx-auto grid max-w-container gap-8 px-4 py-14 md:px-8 lg:grid-cols-[1fr_22rem]">
+        <InfoRequestForm />
+        <aside aria-labelledby="contacto-directo" className="space-y-4 text-ink">
+          <h2 id="contacto-directo" className="font-display text-h3 font-bold">
+            ¿Prefieres escribirnos?
+          </h2>
+          <Button
+            href={WHATSAPP_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="secondary"
+            size="lg"
+            icon={<WhatsAppIcon />}
+          >
+            WhatsApp {WHATSAPP_NUMBER}
+            <ExternalLinkMark />
+          </Button>
+          <p className="text-body">{ADDRESS}</p>
+          <a
+            href={MAPS_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring inline-block rounded font-semibold text-navy-500 underline underline-offset-4"
+          >
+            Cómo llegar
+            <ExternalLinkMark />
+          </a>
+        </aside>
       </div>
     </section>
   );

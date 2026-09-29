@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { a11yViolations } from '../test/axe.js';
 
 import { bookingClient } from './api/bookingClient.js';
+import { infoRequestClient } from './api/infoRequestClient.js';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { PublicLayout } from './layout/PublicLayout.jsx';
@@ -27,6 +28,9 @@ vi.mock('./api/notificationsClient.js', () => ({
     markNotificationRead: vi.fn(),
     markAllNotificationsRead: vi.fn(),
   },
+}));
+vi.mock('./api/infoRequestClient.js', () => ({
+  infoRequestClient: { getFormToken: vi.fn(), submit: vi.fn() },
 }));
 vi.mock('./api/bookingClient.js', () => ({
   bookingClient: {
@@ -62,6 +66,7 @@ function renderAt(path, element) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  infoRequestClient.getFormToken.mockResolvedValue({ formToken: 't' });
   useAuth.mockReturnValue({ status: 'anonymous', user: null, login: vi.fn(), logout: vi.fn() });
   for (const fn of Object.values(bookingClient)) {
     fn.mockResolvedValue({ courts: COURTS, reservations: [], date: '2026-09-28' });

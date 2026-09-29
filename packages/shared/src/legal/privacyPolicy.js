@@ -11,7 +11,7 @@ export const PRIVACY_POLICY = Object.freeze({
   type: 'PRIVACY_POLICY',
   path: '/privacidad',
   title: 'Política de Tratamiento de Datos Personales',
-  version: '2',
+  version: '3',
   publishedOn: '2026-09-29',
   sections: [
     {
@@ -56,6 +56,11 @@ export const PRIVACY_POLICY = Object.freeze({
                 'Verificación en dos pasos: la clave de tu aplicación de autenticación (guardada cifrada) y tus códigos de recuperación (solo una versión cifrada)',
                 'Si la activas en "Mi perfil". Es obligatoria para Administración, Psicología, Neuropsicología y Fisioterapia',
                 'Solo para esos roles',
+              ],
+              [
+                'Solicitud de información: nombre, celular, correo (opcional), programa de interés, para quién es, la edad del niño o niña (solo la edad, nunca su nombre), horario preferido y mensaje',
+                'Si llenas el formulario "Solicitar información", sin necesidad de tener cuenta',
+                'Nombre, celular, programa y para quién es: sí. Lo demás: no',
               ],
               ['Teléfono, presentación ("Sobre mí") y foto de perfil', 'En "Mi perfil"', 'No'],
               ['Mano dominante y tipo de revés', 'En "Mi perfil"', 'No'],
@@ -104,6 +109,7 @@ export const PRIVACY_POLICY = Object.freeze({
         {
           list: [
             'Crear y administrar tu cuenta, y verificar tu correo.',
+            'Responder tus solicitudes de información sobre clases y programas, por WhatsApp o por correo.',
             'Gestionar tus reservas de cancha y los cobros en recepción.',
             'Gestionar tu plan de la academia, tus facturas y sus pagos.',
             'Hacer tu seguimiento deportivo: notas, evaluaciones, metas, retos, torneos y ranking.',
@@ -243,6 +249,7 @@ export const PRIVACY_POLICY = Object.freeze({
             'Facturas, pagos y soportes contables: [COMPLETAR: plazo que indique el contador].',
             'Datos de salud: [VERIFICAR: plazo legal de la historia clínica].',
             'Datos de seguridad (sesiones, direcciones IP): [COMPLETAR].',
+            'Solicitudes de información descartadas o que nunca se respondieron: se borran automáticamente a los [COMPLETAR: meses] meses. La prueba de tu autorización se conserva sin tus datos de contacto.',
             'Prueba de tus autorizaciones: mientras pueda exigirse [VERIFICAR].',
           ],
         },

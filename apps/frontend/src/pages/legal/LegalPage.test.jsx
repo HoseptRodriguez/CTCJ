@@ -21,7 +21,7 @@ describe('legal pages', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Versión 2 · Última actualización: 29 de septiembre de 2026/),
+      screen.getByText(/Versión 3 · Última actualización: 29 de septiembre de 2026/),
     ).toBeInTheDocument();
     const toc = screen.getByRole('navigation', { name: 'Contenido' });
     expect(within(toc).getAllByRole('link')).toHaveLength(PRIVACY_POLICY.sections.length);

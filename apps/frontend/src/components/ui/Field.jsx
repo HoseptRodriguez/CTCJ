@@ -235,7 +235,8 @@ export const SelectField = forwardRef(function SelectField(
  * Large radio choice (whole card is the target, >= 64px). `options`:
  * [{ value, label, description? }]. A real radio group underneath.
  */
-export function RadioCards({ legend, name, options, value, onChange, className }) {
+export function RadioCards({ legend, name, options, value, onChange, className, error }) {
+  const errorId = `${name}-error`;
   return (
     <fieldset className={className}>
       <legend className="mb-2 text-body font-semibold text-ink">{legend}</legend>
@@ -259,6 +260,8 @@ export function RadioCards({ legend, name, options, value, onChange, className }
                 value={o.value}
                 checked={checked}
                 onChange={() => onChange(o.value)}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : undefined}
                 className="mt-1 h-6 w-6 shrink-0 accent-navy-500"
               />
               <span>
@@ -271,6 +274,7 @@ export function RadioCards({ legend, name, options, value, onChange, className }
           );
         })}
       </div>
+      <FieldError id={errorId}>{error}</FieldError>
     </fieldset>
   );
 }

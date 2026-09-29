@@ -48,3 +48,10 @@ export const passwordResetRateLimiter = createLimiter({
   max: 10,
   message: 'Too many password reset attempts. Please try again later.',
 });
+
+// Public "Solicitar información" form: a person sends one or two; a bot many.
+export const infoRequestRateLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Demasiadas solicitudes desde esta conexión. Intenta de nuevo en una hora.',
+});

@@ -76,6 +76,14 @@ export const STAFF_NAV = [
         counter: 'requests',
       },
       {
+        key: 'solicitudes-informacion',
+        to: '/staff/solicitudes-informacion',
+        label: 'Solicitudes de información',
+        icon: 'inbox',
+        roles: [ADMIN, RECEP],
+        counter: 'infoRequests',
+      },
+      {
         key: 'datos-personales',
         to: '/staff/datos-personales',
         label: 'Datos personales',
