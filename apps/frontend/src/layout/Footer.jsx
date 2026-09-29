@@ -155,11 +155,15 @@ export function Footer() {
           <span>
             {BUSINESS.legalName} · NIT {BUSINESS.nit}
           </span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true" className="hidden sm:inline">
+            ·
+          </span>
           <span>
             © {new Date().getFullYear()} {CLUB_NAME}
           </span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true" className="hidden sm:inline">
+            ·
+          </span>
           <span>Hecho en Fusagasugá</span>
         </p>
       </div>
