@@ -3,11 +3,14 @@ import {
   createTournamentSchema,
   addTournamentParticipantSchema,
   recordTournamentMatchResultSchema,
+  scheduleTournamentMatchSchema,
+  tournamentPublicInfoSchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
 import { requireAuth } from '../../../identity/infrastructure/http/middleware/requireAuth.js';
 import { requireRole } from '../../../identity/infrastructure/http/middleware/requireRole.js';
+import { publicReadRateLimiter } from '../../../../shared/rateLimiters.js';
 
 import { validateBody } from './validators/tournamentValidators.js';
 
@@ -29,6 +32,9 @@ export function createTournamentRoutes(controller) {
   const router = Router();
 
   router.get('/', controller.listTournaments); // public, bare list, no PII
+  // /torneos: no login. Only names (a minor's in short form), never contact data.
+  router.get('/public', publicReadRateLimiter, controller.listPublicTournaments);
+  router.get('/public/:id', publicReadRateLimiter, controller.getPublicTournament);
   router.get(
     '/players/:id',
     requireAuth,
@@ -69,6 +75,20 @@ export function createTournamentRoutes(controller) {
     requireRole(TOURNAMENT_STAFF_ROLES),
     validateBody(recordTournamentMatchResultSchema),
     controller.recordMatchResult,
+  );
+  router.put(
+    '/:id/public-info',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(tournamentPublicInfoSchema),
+    controller.setPublicInfo,
+  );
+  router.put(
+    '/:id/matches/:matchId/schedule',
+    requireAuth,
+    requireRole(TOURNAMENT_STAFF_ROLES),
+    validateBody(scheduleTournamentMatchSchema),
+    controller.scheduleMatch,
   );
   router.post(
     '/:id/cancel',

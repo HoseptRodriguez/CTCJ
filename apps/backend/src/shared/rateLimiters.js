@@ -55,3 +55,17 @@ export const infoRequestRateLimiter = createLimiter({
   max: 5,
   message: 'Demasiadas solicitudes desde esta conexión. Intenta de nuevo en una hora.',
 });
+
+// Public unsubscribe links: plenty for real use, not for token guessing.
+export const unsubscribeRateLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Demasiados intentos desde esta conexión. Intenta de nuevo más tarde.',
+});
+
+// Public tournament pages: cheap to read, but not to scrape in a loop.
+export const publicReadRateLimiter = createLimiter({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: 'Demasiadas consultas desde esta conexión. Intenta de nuevo en un minuto.',
+});

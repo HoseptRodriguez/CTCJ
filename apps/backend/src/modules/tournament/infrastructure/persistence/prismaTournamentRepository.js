@@ -1,3 +1,4 @@
+import { writeOutboxEvent } from '../../../../shared/outbox.js';
 import { Tournament } from '../../domain/entities/Tournament.js';
 
 function toDomain(record) {
@@ -14,6 +15,9 @@ function toDomain(record) {
     completedAt: record.completedAt,
     cancelledAt: record.cancelledAt,
     championId: record.championId,
+    startsOn: record.startsOn,
+    endsOn: record.endsOn,
+    publishedAt: record.publishedAt,
   });
 }
 
@@ -41,6 +45,8 @@ function toMatchRow(record) {
     playedAt: record.playedAt,
     recordedBy: record.recordedBy,
     notes: record.notes,
+    scheduledAt: record.scheduledAt ?? null,
+    courtName: record.courtName ?? null,
   };
 }
 
@@ -70,18 +76,51 @@ export function createPrismaTournamentRepository(prisma) {
       return record ? toDomain(record) : null;
     },
 
-    async update(tournament) {
-      const record = await prisma.tournament.update({
-        where: { id: tournament.id },
-        data: {
-          status: tournament.status,
-          drawGeneratedAt: tournament.drawGeneratedAt,
-          completedAt: tournament.completedAt,
-          cancelledAt: tournament.cancelledAt,
-          championId: tournament.championId,
-        },
-      });
+    /** The change and its outbox events (if any) in one transaction. */
+    async update(tournament, { events = [] } = {}) {
+      const [record] = await prisma.$transaction([
+        prisma.tournament.update({
+          where: { id: tournament.id },
+          data: {
+            status: tournament.status,
+            drawGeneratedAt: tournament.drawGeneratedAt,
+            completedAt: tournament.completedAt,
+            cancelledAt: tournament.cancelledAt,
+            championId: tournament.championId,
+            startsOn: tournament.startsOn,
+            endsOn: tournament.endsOn,
+            publishedAt: tournament.publishedAt,
+          },
+        }),
+        ...events.map((e) => writeOutboxEvent(prisma, e)),
+      ]);
       return toDomain(record);
+    },
+
+    /** Public site: published drafts, tournaments in progress and finished ones. */
+    async listPublic(clubId) {
+      const records = await prisma.tournament.findMany({
+        where: {
+          clubId,
+          OR: [
+            { status: 'DRAFT', publishedAt: { not: null } },
+            { status: { in: ['DRAW_GENERATED', 'COMPLETED'] } },
+          ],
+        },
+        orderBy: [{ startsOn: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+      });
+      return records.map(toDomain);
+    },
+
+    async saveMatchSchedule({ matchId, scheduledAt, courtName, events = [] }) {
+      const [record] = await prisma.$transaction([
+        prisma.tournamentMatch.update({
+          where: { id: matchId },
+          data: { scheduledAt, courtName },
+        }),
+        ...events.map((e) => writeOutboxEvent(prisma, e)),
+      ]);
+      return toMatchRow(record);
     },
 
     async listByClub(clubId) {
@@ -124,7 +163,7 @@ export function createPrismaTournamentRepository(prisma) {
       return records.map(toParticipantRow);
     },
 
-    async saveBracket({ tournament, seeds, matches }) {
+    async saveBracket({ tournament, seeds, matches, events = [] }) {
       // One transaction: every participant's seed, every round's match
       // rows (byes pre-resolved), and the tournament's DRAFT->
       // DRAW_GENERATED transition, all committed together.
@@ -148,6 +187,7 @@ export function createPrismaTournamentRepository(prisma) {
           where: { id: tournament.id },
           data: { status: tournament.status, drawGeneratedAt: tournament.drawGeneratedAt },
         }),
+        ...events.map((e) => writeOutboxEvent(prisma, e)),
       ]);
       return tournament;
     },
@@ -175,6 +215,7 @@ export function createPrismaTournamentRepository(prisma) {
       notes,
       propagateTo,
       tournament,
+      events = [],
     }) {
       const operations = [
         prisma.tournamentMatch.update({
@@ -205,6 +246,7 @@ export function createPrismaTournamentRepository(prisma) {
           }),
         );
       }
+      operations.push(...events.map((e) => writeOutboxEvent(prisma, e)));
       const [updatedMatch] = await prisma.$transaction(operations);
       return toMatchRow(updatedMatch);
     },

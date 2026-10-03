@@ -73,7 +73,41 @@ export function createTournamentController(container) {
     res.status(200).json({ tournaments });
   });
 
+  const setPublicInfo = asyncHandler(async (req, res) => {
+    const tournament = await container.setTournamentPublicInfo({
+      tournamentId: req.params.id,
+      startsOn: req.body.startsOn,
+      endsOn: req.body.endsOn,
+      publish: req.body.publish,
+    });
+    res.status(200).json(tournament);
+  });
+
+  const scheduleMatch = asyncHandler(async (req, res) => {
+    const match = await container.scheduleMatch({
+      tournamentId: req.params.id,
+      matchId: req.params.matchId,
+      scheduledAt: req.body.scheduledAt,
+      courtName: req.body.courtName,
+    });
+    res.status(200).json(match);
+  });
+
+  const listPublicTournaments = asyncHandler(async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=60');
+    res.status(200).json(await container.listPublicTournaments());
+  });
+
+  const getPublicTournament = asyncHandler(async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=60');
+    res.status(200).json(await container.getPublicTournament({ tournamentId: req.params.id }));
+  });
+
   return {
+    setPublicInfo,
+    scheduleMatch,
+    listPublicTournaments,
+    getPublicTournament,
     listPlayerTournaments,
     listTournaments,
     createTournament,

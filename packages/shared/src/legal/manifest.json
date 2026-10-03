@@ -43,5 +43,10 @@
     "version": "1",
     "publishedOn": "2026-09-28",
     "sha256": "32e1cbcb1c58c2715f43254dba702e47ff35a4a6edc2398090ab839710b1b2e0"
+  },
+  "MINOR_PUBLIC_NAME": {
+    "version": "1",
+    "publishedOn": "2026-09-29",
+    "sha256": "e140d1c60ed9fce94a333f5f3e8cc5e35cc83c96aa7446a84d6cb1e62f2c98eb"
   }
 }

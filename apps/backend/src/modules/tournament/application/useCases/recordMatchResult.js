@@ -3,6 +3,7 @@ import { MatchNotFound } from '../errors/MatchNotFound.js';
 import { MatchNotReady } from '../errors/MatchNotReady.js';
 import { MatchAlreadyRecorded } from '../errors/MatchAlreadyRecorded.js';
 import { InvalidWinnerParticipant } from '../../domain/errors/InvalidWinnerParticipant.js';
+import { matchChanged, matchResult } from '../events/tournamentEvents.js';
 
 function resolveWinnerParticipantId({ match, winnerSide, setsWonA, setsWonB }) {
   if (winnerSide !== 'A' && winnerSide !== 'B') {
@@ -66,6 +67,22 @@ export function createRecordMatchResult({ tournamentRepository, clock }) {
     const nextSlot = Math.floor(match.slot / 2);
     const nextMatch = allMatches.find((m) => m.round === nextRound && m.slot === nextSlot);
 
+    // Both players hear the result; when the winner's next rival is already
+    // known, the two players of that next match hear who they face.
+    const participants = await tournamentRepository.listParticipants(tournament.id);
+    const events = [matchResult(tournament, participants, match)];
+    if (nextMatch) {
+      const side = match.slot % 2 === 0 ? 'A' : 'B';
+      const next = {
+        ...nextMatch,
+        participantAId: side === 'A' ? winnerParticipantId : nextMatch.participantAId,
+        participantBId: side === 'B' ? winnerParticipantId : nextMatch.participantBId,
+      };
+      if (next.participantAId && next.participantBId) {
+        events.push(matchChanged(tournament, participants, next, ['RIVAL']));
+      }
+    }
+
     if (nextMatch) {
       return tournamentRepository.saveMatchResult({
         matchId,
@@ -77,6 +94,7 @@ export function createRecordMatchResult({ tournamentRepository, clock }) {
         notes,
         propagateTo: { matchId: nextMatch.id, side: match.slot % 2 === 0 ? 'A' : 'B' },
         tournament: null,
+        events,
       });
     }
 
@@ -92,6 +110,7 @@ export function createRecordMatchResult({ tournamentRepository, clock }) {
       notes,
       propagateTo: null,
       tournament,
+      events,
     });
   };
 }

@@ -27,5 +27,31 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
-  return { listMyNotifications, markNotificationRead, markAllNotificationsRead };
+  const getPreferences = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyNotificationPreferences({ userId: req.user.id }));
+  });
+
+  const updatePreferences = asyncHandler(async (req, res) => {
+    const result = await container.updateMyNotificationPreferences({
+      userId: req.user.id,
+      categories: req.body.categories,
+      dailyDigest: req.body.dailyDigest,
+      ipAddress: req.ip ?? null,
+      userAgent: req.get('user-agent') ?? null,
+    });
+    res.status(200).json(result);
+  });
+
+  const listNews = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.listMyNews({ userId: req.user.id }));
+  });
+
+  return {
+    listMyNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    getPreferences,
+    updatePreferences,
+    listNews,
+  };
 }

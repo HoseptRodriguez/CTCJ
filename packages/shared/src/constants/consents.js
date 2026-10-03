@@ -7,6 +7,7 @@ export const CONSENT_TYPE = Object.freeze({
   HEALTH_DATA: 'HEALTH_DATA',
   COMMUNITY_RULES: 'COMMUNITY_RULES',
   COOKIES: 'COOKIES',
+  MINOR_PUBLIC_NAME: 'MINOR_PUBLIC_NAME',
 });
 
 export const CONSENT_ACTION = Object.freeze({

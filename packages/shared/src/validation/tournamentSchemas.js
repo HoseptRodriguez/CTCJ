@@ -18,6 +18,24 @@ export const addTournamentParticipantSchema = z.object({
   playerIds: z.array(z.string().uuid()).min(1).max(2),
 });
 
+/** Administración: public dates and "Publicar" (opens registration on /torneos). */
+export const tournamentPublicInfoSchema = z
+  .object({
+    startsOn: dateOnly.nullable().optional(),
+    endsOn: dateOnly.nullable().optional(),
+    publish: z.boolean().optional(),
+  })
+  .refine((v) => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
+    message: 'La fecha de cierre no puede ser anterior a la de inicio.',
+    path: ['endsOn'],
+  });
+
+/** Staff: when and where a bracket match is played. */
+export const scheduleTournamentMatchSchema = z.object({
+  scheduledAt: z.string().datetime({ offset: true }).nullable(),
+  courtName: z.string().trim().max(60).nullable(),
+});
+
 export const recordTournamentMatchResultSchema = z.object({
   setsWonA: z.number().int().min(0).max(5),
   setsWonB: z.number().int().min(0).max(5),

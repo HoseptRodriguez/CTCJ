@@ -78,3 +78,29 @@ export const MARKETING_AUTHORIZATION = Object.freeze({
     },
   ],
 });
+
+/**
+ * The guardian lets /torneos show the minor's full name. Without it the
+ * public pages show only the first name and the initial ("Lucía R.").
+ */
+export const MINOR_PUBLIC_NAME_AUTHORIZATION = Object.freeze({
+  type: 'MINOR_PUBLIC_NAME',
+  path: null,
+  title: 'Autorización para mostrar el nombre completo del menor en los torneos',
+  version: '1',
+  publishedOn: '2026-09-29',
+  sections: [
+    {
+      id: 'texto',
+      heading: null,
+      blocks: [
+        {
+          p: 'Como acudiente, autorizo al club a mostrar el nombre y el apellido completos del menor en las páginas públicas de torneos (cuadros y resultados), junto con su categoría. Nunca se muestran datos de contacto.',
+        },
+        {
+          p: 'Sin esta autorización, en las páginas públicas solo aparece su nombre y la inicial del apellido. Puedo retirarla cuando quiera desde mi perfil, en la sección de menores a cargo.',
+        },
+      ],
+    },
+  ],
+});

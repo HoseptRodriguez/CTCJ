@@ -37,6 +37,7 @@ import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js'
 import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
 import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
 import { createOptionalAuthorizationUseCases } from '../application/useCases/optionalAuthorizations.js';
+import { createNotificationDirectory } from '../application/useCases/notificationDirectory.js';
 import { createSyncLegalDocuments } from '../application/useCases/syncLegalDocuments.js';
 import { createRecordCookieConsent } from '../application/useCases/recordCookieConsent.js';
 import { createAccountRequirementsUseCases } from '../application/useCases/accountRequirements.js';
@@ -63,6 +64,7 @@ import { createPrismaAffiliationRequestRepository } from './persistence/prismaAf
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
 import { createPrismaIdentityAuditLog } from './persistence/prismaIdentityAuditLog.js';
 import { createPrismaMfaRepository } from './persistence/prismaMfaRepository.js';
+import { createPrismaNotificationDirectoryRepository } from './persistence/prismaNotificationDirectoryRepository.js';
 import { createAesMfaCrypto } from './security/aesMfaCrypto.js';
 import { createQrSvgRenderer } from './security/qrSvgRenderer.js';
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
@@ -274,6 +276,11 @@ export function buildIdentityContainer({
     checkIsMinor,
     ...minorAuthorization,
     ...optionalAuthorizations,
+    ...createNotificationDirectory({
+      notificationDirectoryRepository: createPrismaNotificationDirectoryRepository(prismaClient),
+      clock: systemClock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
     recordCookieConsent: createRecordCookieConsent({ consentRepository }),
     ...createAccountRequirementsUseCases({ userRepository, consentRepository }),
     syncLegalDocuments: createSyncLegalDocuments({

@@ -1,4 +1,5 @@
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
+import { notePublished } from '../events/coachingEvents.js';
 
 /**
  * @param {{
@@ -31,6 +32,8 @@ export function createCreateNote({ coachNoteRepository, playerEligibilityProvide
       visibility,
       content,
       area,
+      // Only a note the player can read is announced to them.
+      eventsFor: visibility === 'PLAYER_VISIBLE' ? (note) => [notePublished(note)] : undefined,
     });
   };
 }

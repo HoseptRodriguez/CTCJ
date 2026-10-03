@@ -9,6 +9,7 @@ import { createExpireHoldsJob } from './modules/booking/infrastructure/jobs/expi
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
 import { buildInquiriesContainer } from './modules/inquiries/infrastructure/compositionRoot.js';
 import { createPurgeInfoRequestsJob } from './modules/inquiries/infrastructure/jobs/purgeInfoRequestsJob.js';
+import { createNotificationJobs } from './modules/notifications/infrastructure/jobs/notificationJobs.js';
 
 const app = createApp();
 const identity = buildIdentityContainer();
@@ -62,10 +63,19 @@ const purgeInfoRequestsHandle = config.isTest
       months: config.infoRequests.retentionMonths,
     }).start();
 
+// Announcements due, outbox events, email queue and the daily digest.
+const notificationJobsHandle = config.isTest
+  ? null
+  : createNotificationJobs({
+      container: app.locals.notifications,
+      digestHour: config.emailLimits.digestHour,
+    }).start();
+
 function shutdown(signal) {
   logger.info(`Received ${signal}, shutting down gracefully.`);
   expireHoldsJobHandle?.stop();
   purgeInfoRequestsHandle?.stop();
+  notificationJobsHandle?.stop();
   server.close(() => {
     logger.info('Server closed.');
     process.exit(0);

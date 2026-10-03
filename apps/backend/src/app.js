@@ -11,6 +11,7 @@ import { pinoHttp } from 'pino-http';
 
 import { config } from './config/env.js';
 import { errorForLog, httpLogOptions, logger } from './shared/logger.js';
+import { unsubscribeRateLimiter } from './shared/rateLimiters.js';
 import { toProblemDetail } from './shared/errors/httpError.js';
 import { assertUtf8Body, toBodyParserHttpError } from './shared/utf8Body.js';
 import { buildIdentityContainer } from './modules/identity/infrastructure/compositionRoot.js';
@@ -35,6 +36,11 @@ import { createPlayersRoutes } from './modules/identity/infrastructure/http/play
 import { buildNotificationsContainer } from './modules/notifications/infrastructure/compositionRoot.js';
 import { createMeController as createNotificationsMeController } from './modules/notifications/infrastructure/http/meController.js';
 import { createMeRoutes as createNotificationsMeRoutes } from './modules/notifications/infrastructure/http/meRoutes.js';
+import { createAnnouncementRoutes } from './modules/notifications/infrastructure/http/announcementRoutes.js';
+import {
+  createEmailEventsRoute,
+  createUnsubscribeRoutes,
+} from './modules/notifications/infrastructure/http/publicRoutes.js';
 import { buildChallengesContainer } from './modules/challenges/infrastructure/compositionRoot.js';
 import { createMeController as createChallengesMeController } from './modules/challenges/infrastructure/http/meController.js';
 import { createMeRoutes as createChallengesMeRoutes } from './modules/challenges/infrastructure/http/meRoutes.js';
@@ -89,6 +95,7 @@ import { createTournamentRoutes } from './modules/tournament/infrastructure/http
 import { createIdentityPlayerEligibilityProvider as createTournamentPlayerEligibilityProvider } from './modules/tournament/infrastructure/adapters/playerEligibilityProviderAdapter.js';
 import { createIdentityPlayerDirectoryProvider as createTournamentPlayerDirectoryProvider } from './modules/tournament/infrastructure/adapters/playerDirectoryProviderAdapter.js';
 import { createCompetitionStandingsProvider } from './modules/tournament/infrastructure/adapters/standingsProviderAdapter.js';
+import { createIdentityPublicNameProvider } from './modules/tournament/infrastructure/adapters/publicNameProviderAdapter.js';
 import { buildClinicalContainer } from './modules/clinical/infrastructure/compositionRoot.js';
 import { createClinicalAdminController } from './modules/clinical/infrastructure/http/clinicalAdminController.js';
 import { createClinicalAdminRoutes } from './modules/clinical/infrastructure/http/clinicalAdminRoutes.js';
@@ -189,6 +196,18 @@ export function createApp({ mfaEnforceStaff } = {}) {
       credentials: true,
     }),
   );
+  // Resend webhook: needs the raw body for its signature, so it goes
+  // before the JSON parser. The container is built below; the handler only
+  // runs on requests.
+  app.post(
+    '/api/notifications/email-events',
+    ...createEmailEventsRoute({
+      container: {
+        markEmailOpened: (input) => app.locals.notifications.markEmailOpened(input),
+      },
+      secret: config.resendWebhookSecret,
+    }),
+  );
   app.use(express.json({ verify: assertUtf8Body }));
   app.use(cookieParser());
   app.use(pinoHttp({ logger, autoLogging: !config.isTest, ...httpLogOptions }));
@@ -232,9 +251,49 @@ export function createApp({ mfaEnforceStaff } = {}) {
   // Notifications (Phase 3a) -- no cross-module deps of its own; built
   // right after identity since challenges (built next) needs its
   // createNotification function.
-  const notificationsContainer = buildNotificationsContainer();
+  // Emails and announcements (Ley 2300): who to write to and their
+  // promotional authorizations come from identity; categories and
+  // tournament players from competition and tournament, built further
+  // down (the closures only run on requests, after everything exists).
+  const notificationsContainer = buildNotificationsContainer({
+    logger,
+    contactDirectory: {
+      getNotificationContacts: identityContainer.getNotificationContacts,
+      listNotifiableUserIds: identityContainer.listNotifiableUserIds,
+    },
+    marketingGateway: {
+      getMarketingPreferences: identityContainer.getMarketingPreferences,
+      setMarketingPreferences: identityContainer.setMarketingPreferences,
+      stopMarketingEmails: identityContainer.stopMarketingEmails,
+    },
+    audienceDirectory: {
+      async playerIdsInCategory({ category }) {
+        const players = await identityContainer.listNotifiableUserIds({ scope: 'PLAYERS' });
+        // eslint-disable-next-line no-use-before-define
+        const categories = await competitionContainer.getPlayerCategories({ playerIds: players });
+        return players.filter((id) => (categories.get(id) ?? []).includes(category));
+      },
+      async playerIdsInTournament({ tournamentId }) {
+        // eslint-disable-next-line no-use-before-define
+        return (await tournamentContainer.getTournamentAudience({ tournamentId }))?.playerIds ?? [];
+      },
+      async tournamentName({ tournamentId }) {
+        // eslint-disable-next-line no-use-before-define
+        return (await tournamentContainer.getTournamentAudience({ tournamentId }))?.name ?? null;
+      },
+    },
+  });
+  app.locals.notifications = notificationsContainer;
   const notificationsMeController = createNotificationsMeController(notificationsContainer);
   app.use('/api/notifications/me', createNotificationsMeRoutes(notificationsMeController));
+  app.use(
+    '/api/notifications/unsubscribe',
+    createUnsubscribeRoutes({
+      container: notificationsContainer,
+      rateLimiter: unsubscribeRateLimiter,
+    }),
+  );
+  app.use('/api/admin/announcements', createAnnouncementRoutes(notificationsContainer));
 
   // Challenges (Phase 3a) -- needs both identity (eligibility/directory)
   // and notifications (createNotification), both already built above.
@@ -456,6 +515,10 @@ export function createApp({ mfaEnforceStaff } = {}) {
     playerEligibilityProvider: tournamentPlayerEligibilityProvider,
     playerDirectoryProvider: tournamentPlayerDirectoryProvider,
     standingsProvider: tournamentStandingsProvider,
+    publicNameProvider: createIdentityPublicNameProvider({
+      getUserSummaries: identityContainer.getUserSummaries,
+      fullNameAllowedFor: identityContainer.fullNameAllowedFor,
+    }),
   });
   const tournamentController = createTournamentController(tournamentContainer);
   app.use('/api/tournaments', createTournamentRoutes(tournamentController));

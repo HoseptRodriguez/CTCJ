@@ -55,6 +55,23 @@ const envSchema = z
       z.coerce.number().int().min(1).max(60).optional(),
     ),
 
+    // Notification emails, within the limits of the Resend plan (see
+    // https://resend.com/docs/knowledge-base/account-quotas-and-limits --
+    // free plan: 100/day, 3,000/month; 10 requests/second; 100 per batch).
+    // Change them when the club changes plans. Over a limit, emails wait
+    // for the next day (or month) and the console says so.
+    EMAIL_DAILY_QUOTA: z.coerce.number().int().min(1).default(100),
+    EMAIL_MONTHLY_QUOTA: z.coerce.number().int().min(1).default(3000),
+    EMAIL_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(100),
+    EMAIL_REQUESTS_PER_SECOND: z.coerce.number().int().min(1).max(100).default(10),
+    // Hour (club time, 0-23) of the daily digest email.
+    EMAIL_DIGEST_HOUR: z.coerce.number().int().min(7).max(20).default(18),
+    // Signing secret of the Resend webhook (opens); empty = no open tracking.
+    RESEND_WEBHOOK_SECRET: z.string().optional().default(''),
+    // Public URL of this API, for the one-click unsubscribe email header
+    // (RFC 8058). Empty = the header is left out; the link in the email works anyway.
+    API_PUBLIC_URL: z.string().url().optional().or(z.literal('')).default(''),
+
     APP_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   })
@@ -188,6 +205,16 @@ export function parseEnv(source) {
       notifyTo: env.INFO_REQUEST_TO,
       retentionMonths: env.INFO_REQUEST_RETENTION_MONTHS ?? null,
     }),
+
+    emailLimits: Object.freeze({
+      dailyQuota: env.EMAIL_DAILY_QUOTA,
+      monthlyQuota: env.EMAIL_MONTHLY_QUOTA,
+      batchSize: env.EMAIL_BATCH_SIZE,
+      requestsPerSecond: env.EMAIL_REQUESTS_PER_SECOND,
+      digestHour: env.EMAIL_DIGEST_HOUR,
+    }),
+    resendWebhookSecret: env.RESEND_WEBHOOK_SECRET,
+    apiPublicUrl: env.API_PUBLIC_URL,
 
     appPublicUrl: env.APP_PUBLIC_URL,
     corsOrigin: env.CORS_ORIGIN,
