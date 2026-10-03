@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { guardianshipClient } from '../api/guardianshipClient.js';
 import { HomeIcon } from '../components/icons/HomeIcon.jsx';
+import { InboxIcon } from '../components/icons/InboxIcon.jsx';
 import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
 import { MessageIcon } from '../components/icons/MessageIcon.jsx';
 import { TrendingUpIcon } from '../components/icons/TrendingUpIcon.jsx';
@@ -23,6 +24,7 @@ import { RouteLoading } from './RouteLoading.jsx';
 export const MY_CTCJ_TABS = [
   { to: '/mi-ctcj', end: true, label: 'Inicio', Icon: HomeIcon },
   { to: '/mi-ctcj/reservas', label: 'Reservas', Icon: CalendarIcon },
+  { to: '/mi-ctcj/novedades', label: 'Novedades', Icon: InboxIcon },
   { to: '/mi-ctcj/progreso', label: 'Mi progreso', Icon: TrendingUpIcon, jugadorOnly: true },
   { to: '/mi-ctcj/ranking', label: 'Ranking', Icon: TrophyIcon, jugadorOnly: true },
   { to: '/mi-ctcj/comunidad', label: 'Comunidad', Icon: MessageIcon, jugadorOnly: true },

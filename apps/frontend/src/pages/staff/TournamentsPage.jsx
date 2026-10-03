@@ -236,9 +236,186 @@ function ResultPanel({ tournamentId, match, labels, onClose, onSaved }) {
   );
 }
 
+const MATCH_TIME = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota',
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+/** ISO -> "YYYY-MM-DDTHH:mm" in club time (datetime-local input). */
+const toLocalInput = (iso) =>
+  iso ? new Date(new Date(iso).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 16) : '';
+
+/** When and where a match is played. Its players are told of the change. */
+function SchedulePanel({ tournamentId, match, labels, onClose, onSaved }) {
+  const toast = useToast();
+  const [when, setWhen] = useState(() => toLocalInput(match?.scheduledAt));
+  const [court, setCourt] = useState(match?.courtName ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      await tournamentClient.scheduleMatch(tournamentId, match.id, {
+        scheduledAt: when ? `${when}:00-05:00` : null,
+        courtName: court.trim() || null,
+      });
+      toast({
+        title: 'Partido programado',
+        description: 'Los jugadores reciben el aviso.',
+        tone: 'success',
+      });
+      onSaved();
+    } catch (err) {
+      setError(describeTournamentError(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <SlidePanel
+      open={match != null}
+      onClose={onClose}
+      title="Programar partido"
+      description={
+        match ? `${labels.a ?? 'Por definir'} vs ${labels.b ?? 'Por definir'}` : undefined
+      }
+      footer={
+        <Button size="lg" fullWidth loading={saving} loadingText="Guardando…" onClick={save}>
+          Guardar y avisar a los jugadores
+        </Button>
+      }
+    >
+      {match && (
+        <div className="space-y-6">
+          <TextField
+            label="Fecha y hora (hora de Colombia)"
+            type="datetime-local"
+            value={when}
+            onChange={(e) => setWhen(e.target.value)}
+          />
+          <TextField
+            label="Cancha"
+            hint="Por ejemplo: Cancha 1."
+            maxLength={60}
+            value={court}
+            onChange={(e) => setCourt(e.target.value)}
+          />
+          <FormAlert>{error}</FormAlert>
+        </div>
+      )}
+    </SlidePanel>
+  );
+}
+
+/**
+ * Administración: dates shown on /torneos and "Publicar" (opens the
+ * registration publicly and tells whoever authorized "Nuevos torneos").
+ */
+function PublicInfoCard({ tournament, onSaved }) {
+  const toast = useToast();
+  const [startsOn, setStartsOn] = useState(tournament.startsOn?.slice(0, 10) ?? '');
+  const [endsOn, setEndsOn] = useState(tournament.endsOn?.slice(0, 10) ?? '');
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState(null);
+  const canPublish = tournament.status === 'DRAFT' && !tournament.publishedAt;
+  const isPublic = Boolean(tournament.publishedAt) || tournament.status !== 'DRAFT';
+
+  async function save(publish) {
+    setBusy(true);
+    setError(null);
+    try {
+      await tournamentClient.setPublicInfo(tournament.id, {
+        startsOn: startsOn || null,
+        endsOn: endsOn || null,
+        publish,
+      });
+      toast({
+        title: publish ? 'Torneo publicado' : 'Fechas guardadas',
+        description: publish ? 'Ya aparece en /torneos.' : undefined,
+        tone: 'success',
+      });
+      onSaved();
+    } catch (err) {
+      setError(describeTournamentError(err));
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Página pública"
+      description={
+        isPublic
+          ? 'Este torneo se ve en la página pública de torneos (sin iniciar sesión).'
+          : 'Todavía es un borrador: no aparece en la página pública.'
+      }
+      async={{ status: 'ready', data: true }}
+    >
+      {() => (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Fecha de inicio"
+              type="date"
+              value={startsOn}
+              onChange={(e) => setStartsOn(e.target.value)}
+            />
+            <TextField
+              label="Fecha de cierre"
+              type="date"
+              value={endsOn}
+              onChange={(e) => setEndsOn(e.target.value)}
+            />
+          </div>
+          <FormAlert>{error}</FormAlert>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="secondary" loading={busy && !confirming} onClick={() => save(false)}>
+              Guardar fechas
+            </Button>
+            {canPublish && (
+              <Button onClick={() => setConfirming(true)}>Publicar y abrir inscripciones</Button>
+            )}
+            {isPublic && (
+              <Button
+                variant="ghost"
+                href={`/torneos/${tournament.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ver página pública
+                <span aria-hidden="true"> ↗</span>
+                <span className="sr-only"> (se abre en otra pestaña)</span>
+              </Button>
+            )}
+          </div>
+          <ConfirmDialog
+            open={confirming}
+            tone="primary"
+            title={`¿Publicar ${tournament.name}?`}
+            description="Aparece en la página pública de torneos con sus fechas, y se avisa a quienes autorizaron recibir “Nuevos torneos e inscripciones” (solo en el horario permitido para promociones)."
+            confirmLabel="Sí, publicar"
+            loading={busy}
+            onConfirm={() => save(true)}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 // --- Detail ----------------------------------------------------------------
 
-function MatchCard({ match, byId, canRecord, onRecord }) {
+function MatchCard({ match, byId, canRecord, onRecord, onSchedule }) {
   const a = participantLabel(byId.get(match.participantAId));
   const b = participantLabel(byId.get(match.participantBId));
   const done = match.winnerParticipantId != null;
@@ -268,16 +445,27 @@ function MatchCard({ match, byId, canRecord, onRecord }) {
           {match.setsWonA}-{match.setsWonB}
         </p>
       )}
+      {!done && (match.scheduledAt || match.courtName) && (
+        <p className="mt-2 text-body-sm text-ink-soft">
+          {match.scheduledAt && MATCH_TIME.format(new Date(match.scheduledAt))}
+          {match.courtName && ` · ${match.courtName}`}
+        </p>
+      )}
       {ready && canRecord && (
         <Button className="mt-3" variant="secondary" onClick={() => onRecord(match, { a, b })}>
           Registrar resultado
+        </Button>
+      )}
+      {!done && canRecord && onSchedule && (
+        <Button className="mt-3 ml-2" variant="ghost" onClick={() => onSchedule(match, { a, b })}>
+          {match.scheduledAt ? 'Cambiar hora o cancha' : 'Programar'}
         </Button>
       )}
     </div>
   );
 }
 
-function Bracket({ participants, matches, canRecord, onRecord }) {
+function Bracket({ participants, matches, canRecord, onRecord, onSchedule }) {
   const byId = new Map(participants.map((p) => [p.id, p]));
   const rounds = [...new Set(matches.map((m) => m.round))].sort((x, y) => x - y);
   const roundName = (r) => {
@@ -314,7 +502,13 @@ function Bracket({ participants, matches, canRecord, onRecord }) {
                   .sort((x, y) => x.slot - y.slot)
                   .map((m) => (
                     <li key={m.id}>
-                      <MatchCard match={m} byId={byId} canRecord={canRecord} onRecord={onRecord} />
+                      <MatchCard
+                        match={m}
+                        byId={byId}
+                        canRecord={canRecord}
+                        onRecord={onRecord}
+                        onSchedule={onSchedule}
+                      />
                     </li>
                   ))}
               </ul>
@@ -460,8 +654,11 @@ function TournamentDetail({ tournamentId, isAdmin, canManage, onBack, onListChan
           matches={matches}
           canRecord={canManage && isOpen}
           onRecord={(match, labels) => setPanel({ match, labels })}
+          onSchedule={(match, labels) => setPanel({ schedule: match, labels })}
         />
       )}
+
+      {isAdmin && isOpen && <PublicInfoCard tournament={tournament} onSaved={changed} />}
 
       {isAdmin && isOpen && (
         <Button variant="ghost" onClick={() => setConfirm('cancel')}>
@@ -482,6 +679,17 @@ function TournamentDetail({ tournamentId, isAdmin, canManage, onBack, onListChan
           }}
         />
       )}
+      <SchedulePanel
+        key={panel?.schedule?.id ?? 'schedule'}
+        tournamentId={tournamentId}
+        match={panel?.schedule ?? null}
+        labels={panel?.labels ?? { a: '', b: '' }}
+        onClose={() => setPanel(null)}
+        onSaved={() => {
+          setPanel(null);
+          changed();
+        }}
+      />
       <ResultPanel
         key={panel?.match?.id ?? 'result'}
         tournamentId={tournamentId}
@@ -505,9 +713,9 @@ function TournamentDetail({ tournamentId, isAdmin, canManage, onBack, onListChan
         }
         description={
           confirm === 'draw'
-            ? `Se arma el cuadro con los ${participants.length} inscritos. Después no se puede inscribir a nadie más.`
+            ? `Se arma el cuadro con los ${participants.length} inscritos y se les avisa. Después no se puede inscribir a nadie más.`
             : confirm === 'cancel'
-              ? 'El torneo queda cancelado para todos y no se puede reactivar.'
+              ? 'El torneo queda cancelado para todos, se avisa a los inscritos y no se puede reactivar.'
               : 'Sale de la lista de inscritos. Se puede volver a inscribir mientras las inscripciones sigan abiertas.'
         }
         confirmLabel={

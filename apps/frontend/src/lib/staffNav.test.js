@@ -16,6 +16,7 @@ describe('staffNavFor — same permission matrix as the routes', () => {
       'jugadores',
       'membresias',
       'solicitudes',
+      'comunicados',
       'solicitudes-informacion',
       'datos-personales',
       'notas',
@@ -75,6 +76,6 @@ describe('splitForBottomBar', () => {
   it('puts 4 destinations in the phone bar and the rest under "Más"', () => {
     const { primary, more } = splitForBottomBar(staffNavFor(['ADMINISTRADOR']));
     expect(primary.map((i) => i.key)).toEqual(['inicio', 'cobros', 'entrenador', 'clinico']);
-    expect(more).toHaveLength(12);
+    expect(more).toHaveLength(13);
   });
 });

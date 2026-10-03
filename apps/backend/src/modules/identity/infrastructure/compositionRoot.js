@@ -270,6 +270,7 @@ export function buildIdentityContainer({
       userRepository,
       minorAuthorizationFor: minorAuthorization.minorAuthorizationFor,
       minorHealthAuthorizationFor: optionalAuthorizations.minorHealthAuthorizationFor,
+      minorPublicNameFor: optionalAuthorizations.minorPublicNameFor,
     }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),

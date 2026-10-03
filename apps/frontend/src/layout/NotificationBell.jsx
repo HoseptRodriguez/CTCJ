@@ -155,6 +155,18 @@ export function NotificationBell({ tone = 'light' }) {
               </button>
             ))}
           </div>
+          <div className="border-t border-line p-2">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate('/mi-ctcj/notificaciones');
+              }}
+              className="focus-ring min-h-btn w-full rounded-lg px-3 text-left text-body font-semibold text-navy-500 underline underline-offset-4"
+            >
+              Configurar mis notificaciones
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

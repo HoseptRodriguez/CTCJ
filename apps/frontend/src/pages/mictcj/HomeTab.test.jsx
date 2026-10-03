@@ -145,7 +145,7 @@ describe('Mi CTCJ — Inicio', () => {
     expect(await screen.findByText('Sin membresía')).toBeInTheDocument();
   });
 
-  it('a plain USUARIO: no membership status, only Inicio and Reservas tabs, and player data is never fetched', async () => {
+  it('a plain USUARIO: no membership status, only Inicio, Reservas and Novedades tabs, and player data is never fetched', async () => {
     renderMyCtcj('/mi-ctcj', { roles: USUARIO });
     await screen.findByRole('heading', { level: 1, name: 'Hola, Ana' });
     const nav = screen.getByRole('navigation', { name: 'Mi CTCJ' });
@@ -153,7 +153,7 @@ describe('Mi CTCJ — Inicio', () => {
       within(nav)
         .getAllByRole('link')
         .map((l) => l.textContent),
-    ).toEqual(['Inicio', 'Reservas']);
+    ).toEqual(['Inicio', 'Reservas', 'Novedades']);
     expect(membershipClient.getMyStatus).not.toHaveBeenCalled();
     for (const fn of [
       coachingClient.getMyNotes,

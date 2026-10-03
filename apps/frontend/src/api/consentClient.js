@@ -30,6 +30,11 @@ export const consentClient = {
     request(`/api/identity/me/authorizations/${type}`, { method: 'PUT', body: payload }),
 
   /** The guardian accepts or withdraws the health-data authorization for a linked minor. */
+  setMinorPublicName: (guardianshipId, accept) =>
+    request(`/api/identity/me/guardianships/${guardianshipId}/public-name-authorization`, {
+      method: 'PUT',
+      body: { accept },
+    }),
   setMinorHealthAuthorization: (guardianshipId, accept) =>
     request(`/api/identity/me/guardianships/${guardianshipId}/health-authorization`, {
       method: 'PUT',

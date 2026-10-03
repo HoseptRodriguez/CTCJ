@@ -71,7 +71,11 @@ describe('Program pages', () => {
 
   it('competition also links to the ranking and tournaments', () => {
     renderAt('/programas/competencia');
-    expect(screen.getByRole('link', { name: 'Ver el ranking y los torneos' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Ver los torneos' })).toHaveAttribute(
+      'href',
+      '/torneos',
+    );
+    expect(screen.getByRole('link', { name: 'Ver el ranking' })).toHaveAttribute(
       'href',
       '/mi-ctcj/ranking',
     );

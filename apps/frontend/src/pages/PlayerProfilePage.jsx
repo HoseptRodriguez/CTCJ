@@ -4,6 +4,7 @@ import {
   DOMINANT_HAND,
   DOMINANT_HAND_LABELS,
   HEALTH_DATA_AUTHORIZATION,
+  MINOR_PUBLIC_NAME_AUTHORIZATION,
   MINOR_AUTHORIZATION,
 } from '@ctcj/shared';
 import { useRef, useState } from 'react';
@@ -299,6 +300,86 @@ function MinorAuthorization({ guardianship, onChanged }) {
 }
 
 /**
+ * Whether the public tournament pages may show the minor's full name.
+ * Without it they show the first name and the initial ("Lucía R.").
+ */
+function MinorPublicNameAuthorization({ guardianship, onChanged }) {
+  const toast = useToast();
+  const [confirming, setConfirming] = useState(null); // 'authorize' | 'withdraw'
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const authorized = guardianship.publicNameAuthorization?.authorized === true;
+
+  async function run() {
+    setSaving(true);
+    setError(null);
+    try {
+      await consentClient.setMinorPublicName(guardianship.id, confirming === 'authorize');
+      toast({
+        title:
+          confirming === 'authorize'
+            ? 'Se mostrará el nombre completo en los torneos'
+            : 'En los torneos se mostrará solo el nombre y la inicial',
+        description: guardianship.minorEmail,
+      });
+      onChanged();
+    } catch (err) {
+      setError(describeIdentityError(err));
+    } finally {
+      setSaving(false);
+      setConfirming(null);
+    }
+  }
+
+  return (
+    <div className="mt-3 w-full space-y-3 border-t border-line pt-3">
+      <p className="text-body text-ink">
+        <strong>Nombre en las páginas públicas de torneos:</strong>{' '}
+        {authorized
+          ? 'se muestra el nombre completo.'
+          : 'se muestra solo el nombre y la inicial del apellido (por ejemplo "Lucía R.").'}
+      </p>
+      <Button
+        variant="secondary"
+        onClick={() => setConfirming(authorized ? 'withdraw' : 'authorize')}
+      >
+        {authorized ? 'Mostrar solo nombre e inicial' : 'Leer y autorizar el nombre completo'}
+      </Button>
+      {error && (
+        <p role="alert" className="text-body font-semibold text-danger">
+          {error}
+        </p>
+      )}
+      <ConfirmDialog
+        open={confirming === 'authorize'}
+        tone="primary"
+        title={MINOR_PUBLIC_NAME_AUTHORIZATION.title}
+        description={
+          <div className="space-y-2">
+            <AuthorizationText doc={MINOR_PUBLIC_NAME_AUTHORIZATION} />
+            <p className="font-semibold text-ink">Menor: {guardianship.minorEmail}</p>
+          </div>
+        }
+        confirmLabel="Sí, autorizo"
+        loading={saving}
+        onConfirm={run}
+        onCancel={() => setConfirming(null)}
+      />
+      <ConfirmDialog
+        open={confirming === 'withdraw'}
+        tone="danger"
+        title="¿Mostrar solo el nombre y la inicial?"
+        description="Desde ahora las páginas públicas de torneos mostrarán solo el nombre y la inicial del apellido del menor."
+        confirmLabel="Sí, cambiar"
+        loading={saving}
+        onConfirm={run}
+        onCancel={() => setConfirming(null)}
+      />
+    </div>
+  );
+}
+
+/**
  * The guardian's optional authorization for the minor's health data
  * (psychology, neuropsychology, physiotherapy). Separate from the data and
  * image authorization: a guardian may give one and not the other.
@@ -433,6 +514,7 @@ function GuardianshipSection() {
                 <>
                   <MinorAuthorization guardianship={g} onChanged={reloadGuardianships} />
                   <MinorHealthAuthorization guardianship={g} onChanged={reloadGuardianships} />
+                  <MinorPublicNameAuthorization guardianship={g} onChanged={reloadGuardianships} />
                 </>
               )}
             </li>

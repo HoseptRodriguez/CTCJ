@@ -43,6 +43,24 @@ const MyReservations = lazyPage(
 const MyProgress = lazyPage(() => import('./pages/mictcj/ProgressTab.jsx'), 'ProgressTab');
 const MyRanking = lazyPage(() => import('./pages/mictcj/RankingTab.jsx'), 'RankingTab');
 const MyPrivacy = lazyPage(() => import('./pages/mictcj/PrivacyTab.jsx'), 'PrivacyTab');
+const MyNotifications = lazyPage(
+  () => import('./pages/mictcj/NotificationsTab.jsx'),
+  'NotificationsTab',
+);
+const MyNews = lazyPage(() => import('./pages/mictcj/NewsTab.jsx'), 'NewsTab');
+const TournamentsPublicPage = lazyPage(
+  () => import('./pages/tournaments/TournamentsPublicPage.jsx'),
+  'TournamentsPublicPage',
+);
+const TournamentPublicPage = lazyPage(
+  () => import('./pages/tournaments/TournamentPublicPage.jsx'),
+  'TournamentPublicPage',
+);
+const UnsubscribePage = lazyPage(() => import('./pages/UnsubscribePage.jsx'), 'UnsubscribePage');
+const AnnouncementsPage = lazyPage(
+  () => import('./pages/staff/AnnouncementsPage.jsx'),
+  'AnnouncementsPage',
+);
 const PlayerProfilePage = lazyPage(
   () => import('./pages/PlayerProfilePage.jsx'),
   'PlayerProfilePage',
@@ -118,6 +136,9 @@ export function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/el-club" element={<ClubPage />} />
               <Route path="/programas/:slug" element={<ProgramPage />} />
+              <Route path="/torneos" element={<TournamentsPublicPage />} />
+              <Route path="/torneos/:id" element={<TournamentPublicPage />} />
+              <Route path="/notificaciones/baja" element={<UnsubscribePage />} />
               <Route path="/canchas" element={<ReservationPage />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
@@ -137,6 +158,8 @@ export function App() {
                 <Route path="/mi-ctcj/reservas" element={<MyReservations />} />
                 <Route path="/mi-ctcj/perfil" element={<PlayerProfilePage />} />
                 <Route path="/mi-ctcj/privacidad" element={<MyPrivacy />} />
+                <Route path="/mi-ctcj/notificaciones" element={<MyNotifications />} />
+                <Route path="/mi-ctcj/novedades" element={<MyNews />} />
                 <Route element={<RequireJugador />}>
                   <Route path="/mi-ctcj/progreso" element={<MyProgress />} />
                   <Route path="/mi-ctcj/ranking" element={<MyRanking />} />
@@ -191,6 +214,7 @@ export function App() {
                   <Route path="/staff/membresias" element={<MembershipStatusPage />} />
                   <Route path="/staff/comunidad" element={<CommunityModerationPage />} />
                   <Route path="/staff/solicitudes-informacion" element={<InfoRequestsPage />} />
+                  <Route path="/staff/comunicados" element={<AnnouncementsPage />} />
                 </Route>
                 <Route
                   element={

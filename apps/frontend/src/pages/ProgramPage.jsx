@@ -162,11 +162,17 @@ function CompetitionLinks() {
         Ranking y torneos del club
       </h3>
       <p className="mt-2 text-lead text-white/90">
-        La tabla de la temporada, los retos y los torneos están en Mi CTCJ (con tu cuenta).
+        Los cuadros y resultados de los torneos se ven sin cuenta. La tabla de la temporada y los
+        retos están en Mi CTCJ.
       </p>
-      <Button tone="dark" variant="secondary" size="lg" to="/mi-ctcj/ranking" className="mt-6">
-        Ver el ranking y los torneos
-      </Button>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Button tone="dark" size="lg" to="/torneos">
+          Ver los torneos
+        </Button>
+        <Button tone="dark" variant="secondary" size="lg" to="/mi-ctcj/ranking">
+          Ver el ranking
+        </Button>
+      </div>
     </div>
   );
 }

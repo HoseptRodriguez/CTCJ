@@ -21,6 +21,7 @@ export function createListMyGuardianships({
   userRepository,
   minorAuthorizationFor,
   minorHealthAuthorizationFor,
+  minorPublicNameFor,
 }) {
   /**
    * @param {{ guardianUserId: string }} input
@@ -38,11 +39,17 @@ export function createListMyGuardianships({
           row.status === 'APPROVED' && minorHealthAuthorizationFor
             ? await minorHealthAuthorizationFor({ guardianUserId, minorUserId: row.minorUserId })
             : { authorized: false, authorizedAt: null, version: null };
+        // May /torneos show the minor's full name?
+        const publicNameAuthorization =
+          row.status === 'APPROVED' && minorPublicNameFor
+            ? await minorPublicNameFor({ guardianUserId, minorUserId: row.minorUserId })
+            : { authorized: false };
         return {
           ...row,
           minorEmail: minor?.email ?? null,
           minorAuthorization,
           healthAuthorization,
+          publicNameAuthorization,
         };
       }),
     );

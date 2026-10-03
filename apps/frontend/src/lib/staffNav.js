@@ -76,6 +76,13 @@ export const STAFF_NAV = [
         counter: 'requests',
       },
       {
+        key: 'comunicados',
+        to: '/staff/comunicados',
+        label: 'Comunicados',
+        icon: 'note',
+        roles: [ADMIN],
+      },
+      {
         key: 'solicitudes-informacion',
         to: '/staff/solicitudes-informacion',
         label: 'Solicitudes de información',

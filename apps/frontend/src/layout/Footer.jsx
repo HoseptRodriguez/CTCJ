@@ -27,6 +27,7 @@ const NAV = [
   { to: '/programas/adultos', label: 'Clases para adultos' },
   { to: '/programas/escuela-infantil', label: 'Escuela infantil' },
   { to: '/programas/competencia', label: 'Competencia y ranking' },
+  { to: '/torneos', label: 'Torneos' },
   { to: '/el-club', label: 'El club' },
   { to: '/mi-ctcj', label: 'Mi CTCJ' },
 ];

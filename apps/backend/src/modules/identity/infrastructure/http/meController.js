@@ -147,6 +147,16 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
+  const setMinorPublicName = asyncHandler(async (req, res) => {
+    const result = await container.setMinorPublicName({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      accept: req.body.accept,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
   const getMfaStatus = asyncHandler(async (req, res) => {
     res.status(200).json(await container.getMfaStatus({ userId: req.user.id }));
   });
@@ -187,6 +197,7 @@ export function createMeController(container) {
     getMyAuthorizations,
     setMyAuthorization,
     setMinorHealthAuthorization,
+    setMinorPublicName,
     recordCookieConsent,
     getAccountRequirements,
     completeAccount,

@@ -53,4 +53,23 @@ export const tournamentClient = {
   /** @param {string} tournamentId */
   cancelTournament: (tournamentId) =>
     request(`/api/tournaments/${tournamentId}/cancel`, { method: 'POST' }),
+
+  /**
+   * Administración: public dates and "Publicar" (opens registration on /torneos).
+   * @param {string} tournamentId @param {{startsOn?: string|null, endsOn?: string|null, publish?: boolean}} payload
+   */
+  setPublicInfo: (tournamentId, payload) =>
+    request(`/api/tournaments/${tournamentId}/public-info`, { method: 'PUT', body: payload }),
+
+  /** @param {string} tournamentId @param {string} matchId @param {{scheduledAt: string|null, courtName: string|null}} payload */
+  scheduleMatch: (tournamentId, matchId, payload) =>
+    request(`/api/tournaments/${tournamentId}/matches/${matchId}/schedule`, {
+      method: 'PUT',
+      body: payload,
+    }),
+
+  /** /torneos (no login): open, in progress and finished. */
+  listPublic: () => request('/api/tournaments/public'),
+  /** /torneos/:id (no login): dates, brackets and results, names only. */
+  getPublic: (tournamentId) => request(`/api/tournaments/public/${tournamentId}`),
 };

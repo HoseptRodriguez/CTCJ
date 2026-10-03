@@ -71,6 +71,13 @@ export function createMeRoutes(controller) {
     validateBody(setGuardianAuthorizationSchema),
     controller.setMinorHealthAuthorization,
   );
+  // The guardian lets /torneos show the minor's full name (otherwise "Lucía R.").
+  router.put(
+    '/guardianships/:id/public-name-authorization',
+    requireAuth,
+    validateBody(setGuardianAuthorizationSchema),
+    controller.setMinorPublicName,
+  );
   // Optional authorizations ("Mis datos y privacidad"): see, accept, withdraw.
   router.get('/authorizations', requireAuth, controller.getMyAuthorizations);
   router.put(

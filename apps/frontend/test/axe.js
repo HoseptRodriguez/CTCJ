@@ -16,6 +16,8 @@ export async function a11yViolations(context = document) {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
     rules: { 'color-contrast': { enabled: false } },
     resultTypes: ['violations'],
+    // jsdom can't reach inside iframes (the email preview); its HTML is tested on the server.
+    iframes: false,
   });
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
