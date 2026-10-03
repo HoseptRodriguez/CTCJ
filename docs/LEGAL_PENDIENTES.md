@@ -235,3 +235,14 @@ Todo está en `apps/frontend/src/lib/programs.js`. Por cada programa (Clases par
 - **Redes sociales:** faltan las direcciones reales de Instagram, Facebook y TikTok ([COMPLETAR] en `apps/frontend/src/lib/clubInfo.js`). Mientras falten, los íconos **no se muestran**; una prueba comprueba que cada red visible tenga un enlace `https` válido. Las direcciones anteriores eran supuestas y se quitaron.
 - **Correo de contacto** y **horario de atención** del pie: [COMPLETAR] en `packages/shared/src/legal/business.js` (`contactEmail`, `attentionHours`).
 - La barra inferior muestra razón social y NIT (sección 1).
+
+## 18. Notificaciones por correo y comunicados
+
+Ver `docs/NOTIFICACIONES.md`.
+
+- **Historial de correos enviados** (`email_deliveries`): plazo de conservación [COMPLETAR: plazo]. Hoy no se borra nada automáticamente.
+- **Resend:** contrato de transmisión de datos, país del servidor y plan contratado [VERIFICAR]. Al cambiar de plan, ajustar `EMAIL_DAILY_QUOTA` y `EMAIL_MONTHLY_QUOTA`.
+- **Aperturas de correo:** se registran solo si se configura `RESEND_WEBHOOK_SECRET` (Resend usa un píxel). Confirmar con el abogado que basta con informarlo en la política [VERIFICAR].
+- **Remitente** (`MAIL_FROM`): dominio verificado en Resend, por ejemplo `notificaciones@DOMINIO` [COMPLETAR: dominio].
+- **Clasificación servicio/promocional:** que el abogado confirme la lista de la sección 1 de `NOTIFICACIONES.md` [VERIFICAR].
+- **Torneos públicos:** ya existe `/torneos`. La línea de la sección 16 que decía que no había página pública queda superada.

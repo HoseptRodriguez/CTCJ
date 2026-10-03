@@ -61,15 +61,15 @@ export const MARKETING_AUTHORIZATION = Object.freeze({
   type: 'MARKETING',
   path: null,
   title: 'Autorización para recibir novedades y promociones',
-  version: '1',
-  publishedOn: '2026-09-28',
+  version: '2',
+  publishedOn: '2026-10-03',
   sections: [
     {
       id: 'texto',
       heading: null,
       blocks: [
         {
-          p: 'Quiero recibir novedades y promociones del club por los canales que elegí. Solo me escribirán de lunes a viernes de 7:00 a. m. a 7:00 p. m. y los sábados de 8:00 a. m. a 3:00 p. m., nunca domingos ni festivos. Puedo retirar esta autorización cuando quiera desde "Mis datos y privacidad".',
+          p: 'Quiero recibir novedades y promociones del club (torneos nuevos con inscripción abierta, eventos y promociones) sobre los temas y por los canales que elegí. Solo me escribirán de lunes a viernes de 7:00 a. m. a 7:00 p. m. y los sábados de 8:00 a. m. a 3:00 p. m., nunca domingos ni festivos. Puedo retirar esta autorización cuando quiera desde Mi CTCJ > Notificaciones, desde "Mis datos y privacidad" o con el enlace "Dejar de recibir estos correos" de cada correo.',
         },
         {
           p: 'Los mensajes del servicio (confirmación de reservas, facturas o cambio de contraseña) no dependen de esta autorización.',

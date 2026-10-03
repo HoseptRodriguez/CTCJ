@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRIVACY_POLICY, registerSchema, TERMS } from '@ctcj/shared';
+import { MARKETING_AUTHORIZATION, PRIVACY_POLICY, registerSchema, TERMS } from '@ctcj/shared';
 
 import { createRegisterUser } from '../../../../src/modules/identity/application/useCases/registerUser.js';
 import { createAccountRequirementsUseCases } from '../../../../src/modules/identity/application/useCases/accountRequirements.js';
@@ -69,7 +69,7 @@ describe('sign-up: birth date and authorizations', () => {
     ).toEqual([
       ['PRIVACY_POLICY', PRIVACY_POLICY.version, null],
       ['TERMS', TERMS.version, null],
-      ['MARKETING', '1', { channels: ['whatsapp'] }],
+      ['MARKETING', MARKETING_AUTHORIZATION.version, { channels: ['whatsapp'] }],
     ]);
     expect(deps.consentRepository.rows.every((r) => r.ipAddress === '10.0.0.1')).toBe(true);
   });

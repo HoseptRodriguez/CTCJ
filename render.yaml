@@ -52,6 +52,21 @@ services:
         sync: false
       - key: INFO_REQUEST_RETENTION_MONTHS
         sync: false
+      # Notification emails: limits of the Resend plan (docs/NOTIFICACIONES.md).
+      - key: EMAIL_DAILY_QUOTA
+        value: "100"
+      - key: EMAIL_MONTHLY_QUOTA
+        value: "3000"
+      - key: EMAIL_BATCH_SIZE
+        value: "100"
+      - key: EMAIL_REQUESTS_PER_SECOND
+        value: "10"
+      - key: EMAIL_DIGEST_HOUR
+        value: "18"
+      - key: RESEND_WEBHOOK_SECRET
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
       # Only needed once, to run scripts/bootstrapAdmin.js from the Render
       # shell; delete it after the first administrator exists.
       - key: BOOTSTRAP_TOKEN

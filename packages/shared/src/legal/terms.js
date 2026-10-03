@@ -10,8 +10,8 @@ export const TERMS = Object.freeze({
   type: 'TERMS',
   path: '/terminos',
   title: 'Términos y condiciones de uso',
-  version: '1',
-  publishedOn: '2026-09-28',
+  version: '2',
+  publishedOn: '2026-10-03',
   sections: [
     {
       id: 'quienes-somos',
@@ -103,8 +103,32 @@ export const TERMS = Object.freeze({
       ],
     },
     {
+      id: 'avisos',
+      heading: '7. Avisos y comunicaciones',
+      blocks: [
+        {
+          p: 'Te avisamos, dentro de la app y por correo, de lo que tienes con el club: reservas, facturas, membresía, notas y evaluaciones de tu entrenador, tus torneos y los comunicados operativos (por ejemplo, cierre de canchas por lluvia). Estos avisos del servicio se envían de 7:00 a. m. a 9:00 p. m.; los que no son de tu cuenta los puedes apagar en Mi CTCJ > Notificaciones.',
+        },
+        {
+          p: 'Las promociones, eventos y torneos nuevos solo te llegan si los autorizas, en los días y horas que permite la Ley 2300 de 2023, y puedes dejar de recibirlos con un clic desde cualquier correo. Si prefieres, recibe un solo resumen al día.',
+        },
+        {
+          p: 'Si eres menor de edad, los correos le llegan a tu acudiente.',
+        },
+      ],
+    },
+    {
+      id: 'torneos',
+      heading: '8. Torneos y páginas públicas',
+      blocks: [
+        {
+          p: 'Los torneos del club tienen una página pública, que cualquiera puede ver sin iniciar sesión, con sus fechas, categorías, cuadros y resultados. Al inscribirte en un torneo, tu nombre y tu categoría aparecen en ella; nunca tus datos de contacto. Si eres menor de edad, aparece solo tu nombre y la inicial de tu apellido, salvo que tu acudiente autorice el nombre completo.',
+        },
+      ],
+    },
+    {
       id: 'responsabilidad',
-      heading: '7. Responsabilidad',
+      heading: '9. Responsabilidad',
       blocks: [
         {
           p: 'El club responde por la prestación de sus servicios según la ley colombiana, incluido el Estatuto del Consumidor (Ley 1480 de 2011). Nada de estos términos limita los derechos que la ley te da como consumidor.',
@@ -113,7 +137,7 @@ export const TERMS = Object.freeze({
     },
     {
       id: 'cambios',
-      heading: '8. Cambios a estos términos',
+      heading: '10. Cambios a estos términos',
       blocks: [
         {
           p: 'Si cambiamos estos términos, te avisaremos con al menos [COMPLETAR: días de aviso] días de anticipación por correo o en Mi CTCJ. Si no estás de acuerdo con los nuevos términos, puedes cerrar tu cuenta antes de que entren en vigor. Cada versión queda guardada, con su fecha.',
@@ -122,7 +146,7 @@ export const TERMS = Object.freeze({
     },
     {
       id: 'ley',
-      heading: '9. Ley aplicable y PQRS',
+      heading: '11. Ley aplicable y PQRS',
       blocks: [
         { p: 'Estos términos se rigen por las leyes de la República de Colombia.' },
         {

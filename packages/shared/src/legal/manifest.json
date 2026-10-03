@@ -1,13 +1,13 @@
 {
   "PRIVACY_POLICY": {
-    "version": "3",
-    "publishedOn": "2026-09-29",
-    "sha256": "71f1a1dd64d1d38c10c4e408818c4892827176fa8ceb9c214b2cfe9929b77729"
+    "version": "4",
+    "publishedOn": "2026-10-03",
+    "sha256": "5f955b6c2195948fe5f5099fe3b8b6ef310e2d1206c217ed7820fb3e71dce4e4"
   },
   "TERMS": {
-    "version": "1",
-    "publishedOn": "2026-09-28",
-    "sha256": "32a4bbd5c4f71e5e700163708c5b95b853412e7877aa6d0632ff47bee3772522"
+    "version": "2",
+    "publishedOn": "2026-10-03",
+    "sha256": "5883e524daa7bc7d6e144bdf66d63a4d0625e8ae0f27576732b6b435870ceb5b"
   },
   "COOKIES": {
     "version": "1",
@@ -40,9 +40,9 @@
     "sha256": "722e885836c5d6f942698a06c6cf17273d1fe659d12683d40aa445a96f97718b"
   },
   "MARKETING": {
-    "version": "1",
-    "publishedOn": "2026-09-28",
-    "sha256": "32e1cbcb1c58c2715f43254dba702e47ff35a4a6edc2398090ab839710b1b2e0"
+    "version": "2",
+    "publishedOn": "2026-10-03",
+    "sha256": "05544f861082b61bd6735bbd1b74c33f625726a64bbcd970fbe6d2b9d4d88672"
   },
   "MINOR_PUBLIC_NAME": {
     "version": "1",
