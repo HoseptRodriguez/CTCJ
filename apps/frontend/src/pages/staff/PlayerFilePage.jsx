@@ -32,6 +32,7 @@ import {
 } from '../mictcj/shared.jsx';
 
 import { FitnessBadge } from './PhysioAccess.jsx';
+import { StaffRolesCard } from './StaffRolesCard.jsx';
 import { MembershipBadgeFor } from './PlayersDirectoryPage.jsx';
 
 const { ADMINISTRADOR, RECEPCION, ENTRENADOR } = ROLE_CODES;
@@ -579,6 +580,9 @@ export function PlayerFilePage() {
           </div>
         )}
       </Card>
+      {isAdmin && !f.deleted && f.id !== user?.id && (
+        <StaffRolesCard file={f} onChanged={file.reload} />
+      )}
       <Tabs label={`Ficha de ${name}`} tabs={tabs} />
       <ConfirmDialog
         open={action != null}

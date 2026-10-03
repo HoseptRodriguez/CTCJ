@@ -35,6 +35,9 @@ const IDENTITY_ERROR_MESSAGES = {
   account_anonymized: 'Esta cuenta fue eliminada y no se puede reactivar.',
   email_already_verified: 'Esta persona ya confirmó su correo.',
   role_already_assigned: 'La persona ya tiene ese rol.',
+  staff_role_not_allowed: 'Ese rol no se asigna desde aquí.',
+  staff_role_needs_active_account:
+    'La cuenta debe estar activa y con el correo confirmado para darle un rol del personal.',
   role_not_assigned: 'La persona no tiene ese rol.',
   mfa_code_invalid:
     'El código no es correcto. Escribe el que muestra ahora la aplicación (cambia cada 30 segundos).',

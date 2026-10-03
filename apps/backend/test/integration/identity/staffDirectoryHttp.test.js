@@ -159,6 +159,47 @@ describe('Staff directory HTTP API (real Postgres)', () => {
     ]);
   });
 
+  it('"Roles del personal": Administración gives and takes coach, reception, health and admin roles', async () => {
+    const roleUrl = (code) => `/api/admin/directory/${player.id}/roles/${code}`;
+    const rolesOf = async (id) =>
+      (
+        await prisma.$queryRaw`SELECT role_code FROM user_roles_view WHERE user_id = ${id}::uuid ORDER BY role_code`
+      ).map((r) => r.role_code);
+
+    // Only Administración; never a role outside the staff list.
+    await post(tokens.recepcion, roleUrl('ENTRENADOR')).expect(403);
+    await post(tokens.admin, roleUrl('USUARIO')).expect(400);
+    // Nobody changes their own roles (no one locks themselves out).
+    await request(app)
+      .delete(`/api/admin/directory/${admin.id}/roles/ADMINISTRADOR`)
+      .set('Authorization', `Bearer ${tokens.admin}`)
+      .expect(409);
+
+    for (const code of ['ENTRENADOR', 'FISIOTERAPEUTA', 'RECEPCION']) {
+      await post(tokens.admin, roleUrl(code)).expect(200);
+    }
+    await post(tokens.admin, roleUrl('ENTRENADOR')).expect(409); // already has it
+    expect(await rolesOf(player.id)).toEqual(
+      expect.arrayContaining(['ENTRENADOR', 'FISIOTERAPEUTA', 'RECEPCION']),
+    );
+
+    const res = await request(app)
+      .delete(roleUrl('FISIOTERAPEUTA'))
+      .set('Authorization', `Bearer ${tokens.admin}`)
+      .expect(200);
+    expect(res.body.roles).not.toContain('FISIOTERAPEUTA');
+
+    const actions = (
+      await prisma.$queryRaw`SELECT action FROM audit_logs WHERE entity_id = ${player.id}::uuid AND action LIKE 'user.role.%' ORDER BY occurred_at, id`
+    ).map((r) => r.action);
+    expect(actions).toEqual([
+      'user.role.grant',
+      'user.role.grant',
+      'user.role.grant',
+      'user.role.revoke',
+    ]);
+  });
+
   it('reception can resend the verification email to who never confirmed', async () => {
     const outsider = (
       await get(tokens.recepcion, '/api/admin/directory?tab=all&q=Sin Rol').expect(200)

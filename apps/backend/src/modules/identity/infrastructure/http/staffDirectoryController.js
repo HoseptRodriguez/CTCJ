@@ -107,6 +107,17 @@ export function createStaffDirectoryController(container) {
         );
     }),
 
+    setStaffRole: asyncHandler(async (req, res) => {
+      res.status(200).json(
+        await container.setStaffRole({
+          actor: actor(req),
+          userId: req.params.id,
+          roleCode: req.params.roleCode,
+          grant: req.method === 'POST',
+        }),
+      );
+    }),
+
     revokePlayer: asyncHandler(async (req, res) => {
       res
         .status(200)

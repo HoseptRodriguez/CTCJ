@@ -21,6 +21,7 @@ vi.mock('../../api/directoryClient.js', () => ({
     deactivate: vi.fn(),
     reactivate: vi.fn(),
     resendVerification: vi.fn(),
+    setStaffRole: vi.fn(),
     getPlayerReservations: vi.fn(),
     getPlayerCompetition: vi.fn(),
     getPlayerTournaments: vi.fn(),
@@ -179,6 +180,25 @@ describe('Ficha del jugador', () => {
     );
     await user.click(await screen.findByRole('button', { name: 'Sí, reenviar' }));
     expect(directoryClient.resendVerification).toHaveBeenCalledWith('ana');
+  });
+
+  it('Administración: "Roles del personal" gives a coach role after confirming', async () => {
+    const user = userEvent.setup();
+    directoryClient.setStaffRole.mockResolvedValue({ userId: 'ana', roles: ['ENTRENADOR'] });
+    renderAs(['ADMINISTRADOR']);
+    const coach = await screen.findByRole('switch', { name: 'Entrenador' });
+    expect(coach).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('switch', { name: 'Fisioterapia' })).toBeInTheDocument();
+    await user.click(coach);
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent(/rol de Entrenador/);
+    await user.click(screen.getByRole('button', { name: 'Sí, dar el rol' }));
+    expect(directoryClient.setStaffRole).toHaveBeenCalledWith('ana', 'ENTRENADOR', true);
+  });
+
+  it("roles: never on one's own file, and not for reception", async () => {
+    renderAs(['RECEPCION']);
+    await screen.findByRole('heading', { name: /Ana Gómez/ });
+    expect(screen.queryByRole('heading', { name: 'Roles del personal' })).not.toBeInTheDocument();
   });
 
   it('no serious accessibility violations', async () => {

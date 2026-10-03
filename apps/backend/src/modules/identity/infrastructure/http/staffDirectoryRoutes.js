@@ -24,6 +24,9 @@ export function createStaffDirectoryRoutes(controller) {
   router.get('/:id', ...staff, controller.getFile);
   router.post('/:id/player-role', ...admin, controller.grantPlayer);
   router.delete('/:id/player-role', ...admin, controller.revokePlayer);
+  // "Roles del personal": Administración, Recepción, entrenadores y salud.
+  router.post('/:id/roles/:roleCode', ...admin, controller.setStaffRole);
+  router.delete('/:id/roles/:roleCode', ...admin, controller.setStaffRole);
   router.post('/:id/deactivate', ...admin, controller.deactivate);
   router.post('/:id/reactivate', ...admin, controller.reactivate);
   // A lost phone: turns off the person's two-step verification (audited).

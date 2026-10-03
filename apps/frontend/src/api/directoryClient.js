@@ -23,6 +23,11 @@ export const directoryClient = {
     request(`/api/admin/directory/${userId}/player-role`, { method: 'POST' }),
   revokePlayerRole: (userId) =>
     request(`/api/admin/directory/${userId}/player-role`, { method: 'DELETE' }),
+  /** Roles del personal (Administración): give or take one staff role. */
+  setStaffRole: (userId, roleCode, grant) =>
+    request(`/api/admin/directory/${userId}/roles/${roleCode}`, {
+      method: grant ? 'POST' : 'DELETE',
+    }),
   deactivate: (userId) => request(`/api/admin/directory/${userId}/deactivate`, { method: 'POST' }),
   reactivate: (userId) => request(`/api/admin/directory/${userId}/reactivate`, { method: 'POST' }),
   resetMfa: (userId) => request(`/api/admin/directory/${userId}/mfa-reset`, { method: 'POST' }),

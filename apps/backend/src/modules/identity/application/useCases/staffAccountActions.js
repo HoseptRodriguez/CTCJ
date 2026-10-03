@@ -6,9 +6,20 @@ import { CannotChangeOwnAccount } from '../errors/CannotChangeOwnAccount.js';
 import { EmailAlreadyVerified } from '../errors/EmailAlreadyVerified.js';
 import { RoleAlreadyAssigned } from '../errors/RoleAlreadyAssigned.js';
 import { RoleNotAssigned } from '../errors/RoleNotAssigned.js';
+import { StaffRoleNeedsActiveAccount, StaffRoleNotAllowed } from '../errors/StaffRoleNotAllowed.js';
 import { UserNotFound } from '../errors/UserNotFound.js';
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Roles Administración gives and takes from a person's file. */
+export const STAFF_ROLE_CODES = Object.freeze([
+  ROLE_CODES.ADMINISTRADOR,
+  ROLE_CODES.RECEPCION,
+  ROLE_CODES.ENTRENADOR,
+  ROLE_CODES.PSICOLOGO,
+  ROLE_CODES.NEUROPSICOLOGO,
+  ROLE_CODES.FISIOTERAPEUTA,
+]);
 
 /**
  * What the staff can do to an account from its file: give or take the
@@ -80,6 +91,45 @@ export function createStaffAccountActions({
         { roles: user.listRoleCodes() },
       );
       return { userId, isJugador: grant };
+    },
+
+    /**
+     * "Roles del personal": Administración gives or takes a staff role
+     * (Administración, Recepción, Entrenador, Psicología, Neuropsicología,
+     * Fisioterapia). Never on one's own account (no one can lock
+     * themselves out, and there is always the admin doing it). Giving one
+     * needs an active account with a confirmed email. The roles with
+     * access to the console or to health data ask for two-step
+     * verification at the next sign-in. Audited like every other change.
+     *
+     * @param {{ actor: { userId: string, roles: string[] }, userId: string, roleCode: string, grant: boolean }} input
+     */
+    async setStaffRole({ actor, userId, roleCode, grant }) {
+      if (!STAFF_ROLE_CODES.includes(roleCode)) throw new StaffRoleNotAllowed();
+      const user = await target(actor, userId);
+      if (user.deletedAt) throw new AccountAnonymized();
+      const has = user.hasRole(roleCode);
+      if (grant && has) throw new RoleAlreadyAssigned();
+      if (!grant && !has) throw new RoleNotAssigned();
+      if (grant && (user.status !== UserStatus.ACTIVE || !user.emailVerifiedAt)) {
+        throw new StaffRoleNeedsActiveAccount();
+      }
+      const before = user.listRoleCodes();
+      if (grant) {
+        user.grantRole(roleCode, true);
+        await userRepository.addRoleGrant(userId, roleCode, actor.userId);
+      } else {
+        user.revokeRole(roleCode);
+        await userRepository.revokeRoleGrant(userId, roleCode, actor.userId);
+      }
+      await audit(
+        actor,
+        grant ? 'user.role.grant' : 'user.role.revoke',
+        userId,
+        { roles: before },
+        { roles: user.listRoleCodes() },
+      );
+      return { userId, roles: user.listRoleCodes() };
     },
 
     /**
