@@ -2,7 +2,8 @@
 /**
  * Capturas de pantalla para el manual de usuario.
  *
- *   node scripts/screenshots.js
+ *   node scripts/screenshots.js            (todo, desde cero)
+ *   node scripts/screenshots.js admin      (solo esos roles; agrega al final)
  *
  * Requiere el frontend en http://localhost:5173 (o SCREENSHOTS_BASE_URL), el
  * backend activo y las cuentas de prueba creadas con:
@@ -367,26 +368,48 @@ async function main() {
   const auth = { password: TEST_PASSWORD, totp: { ...totp, secret: TEST_TOTP_SECRET } };
   const users = Object.fromEntries(TEST_USERS.map((u) => [u.key, u]));
 
+  // `node scripts/screenshots.js admin jugador`: solo esos roles, sin borrar
+  // lo existente; la numeración sigue y se agregan al final de indice.txt.
+  const onlyRoles = process.argv.slice(2);
+  const unknown = onlyRoles.filter((key) => !ROLE_LABELS[key]);
+  if (unknown.length) throw new Error(`Roles desconocidos: ${unknown.join(', ')}`);
+  const partial = onlyRoles.length > 0;
+
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  for (const f of fs.readdirSync(OUT_DIR))
-    if (f.endsWith('.png')) fs.unlinkSync(path.join(OUT_DIR, f));
+  const existing = fs.readdirSync(OUT_DIR).filter((f) => f.endsWith('.png'));
+  if (partial) {
+    counter = Math.max(0, ...existing.map((f) => Number.parseInt(f, 10) || 0));
+  } else {
+    for (const f of existing) fs.unlinkSync(path.join(OUT_DIR, f));
+  }
 
   const browser = await chromium.launch();
   try {
-    await capturePublic(browser);
-    await captureLoginError(browser, users.usuario);
-    for (const key of ROLE_ORDER) await captureRole(browser, key, users[key], auth);
+    if (partial) {
+      for (const key of onlyRoles) await captureRole(browser, key, users[key], auth);
+    } else {
+      await capturePublic(browser);
+      await captureLoginError(browser, users.usuario);
+      for (const key of ROLE_ORDER) await captureRole(browser, key, users[key], auth);
+    }
   } finally {
     await browser.close();
-    const lines = [
-      'Capturas de pantalla de la plataforma CTCJ para el manual de usuario',
-      `Generadas: ${new Date().toISOString()}  |  Viewport: ${VIEWPORT.width}x${VIEWPORT.height}  |  ${BASE_URL}`,
-      'Cuentas de prueba (isDemo) creadas con apps/backend/prisma/seedTestUsers.js.',
-      '',
-      ...index.map(({ file, description }) => `${file.padEnd(48)} ${description}`),
-      '',
-    ];
-    fs.writeFileSync(path.join(OUT_DIR, 'indice.txt'), lines.join('\n'), 'utf8');
+    const entries = index.map(({ file, description }) => `${file.padEnd(48)} ${description}`);
+    if (partial) {
+      fs.appendFileSync(path.join(OUT_DIR, 'indice.txt'), `${entries.join('\n')}\n`, 'utf8');
+    } else {
+      const header = [
+        'Capturas de pantalla de la plataforma CTCJ para el manual de usuario',
+        `Generadas: ${new Date().toISOString()}  |  Viewport: ${VIEWPORT.width}x${VIEWPORT.height}  |  ${BASE_URL}`,
+        'Cuentas de prueba (isDemo) creadas con apps/backend/prisma/seedTestUsers.js.',
+        '',
+      ];
+      fs.writeFileSync(
+        path.join(OUT_DIR, 'indice.txt'),
+        [...header, ...entries, ''].join('\n'),
+        'utf8',
+      );
+    }
     log(`\n${index.length} capturas en ${path.relative(ROOT, OUT_DIR)}`);
   }
 }
