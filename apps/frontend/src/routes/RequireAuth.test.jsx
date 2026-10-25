@@ -27,7 +27,7 @@ function renderWithStatus(status) {
 describe('RequireAuth', () => {
   it('shows a loading state without redirecting while status is loading', () => {
     renderWithStatus('loading');
-    expect(screen.getByText('Cargando...')).toBeInTheDocument();
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
     expect(screen.queryByText('Contenido privado')).not.toBeInTheDocument();
     expect(screen.queryByText('Pagina de login')).not.toBeInTheDocument();
   });

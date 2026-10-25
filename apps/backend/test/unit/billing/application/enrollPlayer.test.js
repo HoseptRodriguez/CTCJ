@@ -7,8 +7,9 @@ import { PlanNotActive } from '../../../../src/modules/billing/application/error
 import { PlanNotFound } from '../../../../src/modules/billing/application/errors/PlanNotFound.js';
 
 import {
-  createFakePlanRepository,
+  createFakeAuditLog,
   createFakeMembershipRepository,
+  createFakePlanRepository,
   createFakePlayerEligibilityProvider,
 } from './fakes.js';
 
@@ -30,7 +31,11 @@ describe('enrollPlayer', () => {
   beforeEach(() => {
     deps = buildDeps();
     enrollPlayer = createEnrollPlayer(deps);
-    createPlan = createCreatePlan({ planRepository: deps.planRepository, clubId: CLUB_ID });
+    createPlan = createCreatePlan({
+      planRepository: deps.planRepository,
+      auditLog: createFakeAuditLog(),
+      clubId: CLUB_ID,
+    });
   });
 
   it('enrolls an eligible player successfully', async () => {

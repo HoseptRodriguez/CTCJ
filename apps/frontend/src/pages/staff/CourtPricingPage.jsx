@@ -1,24 +1,94 @@
-import { useEffect, useState } from 'react';
+import { MAX_HOLD_DURATION_MINUTES, MIN_HOLD_DURATION_MINUTES } from '@ctcj/shared';
+import { useState } from 'react';
 
 import { bookingClient } from '../../api/bookingClient.js';
+import { SlidePanel } from '../../components/motion/SlidePanel.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx';
+import { TextField } from '../../components/ui/Field.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { StatusBadge } from '../../components/ui/StatusBadge.jsx';
+import { useToast } from '../../components/ui/Toast.jsx';
 import { describeBookingError } from '../../lib/bookingErrorMessages.js';
+import { formatCop } from '../../lib/format.js';
+import { useAsync } from '../../lib/useAsync.js';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
+import { SectionCard } from '../mictcj/shared.jsx';
 
-function CourtRow({ court, onSaved }) {
-  const [value, setValue] = useState(court.priceCop != null ? String(court.priceCop) : '');
-  const [saving, setSaving] = useState(false);
+import { FormAlert, StaffRow } from './staffShared.jsx';
+
+const CHANGED_AT = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'America/Bogota',
+});
+
+const reservationsKeepPrice = (n) =>
+  n === 0
+    ? 'No hay reservas próximas en esta cancha.'
+    : n === 1
+      ? '1 reserva próxima conserva el precio con el que se hizo.'
+      : `${n} reservas próximas conservan el precio con el que se hicieron.`;
+
+/** Previous → new price, who and when, newest first. */
+function CourtPriceHistory({ async: history }) {
+  if (history.status === 'loading')
+    return <p className="text-body text-ink-soft">Cargando historial…</p>;
+  if (history.status === 'error')
+    return <p className="text-body text-ink">No pudimos cargar el historial.</p>;
+  if (history.status !== 'ready') return null;
+  if (history.data.history.length === 0)
+    return <p className="text-body text-ink-soft">Todavía no hay cambios registrados.</p>;
+  return (
+    <ul className="divide-y divide-line">
+      {history.data.history.map((h) => (
+        <li key={h.id} className="py-3 text-body">
+          <p className="font-semibold text-ink">
+            {h.previousPriceCop != null ? `${formatCop(h.previousPriceCop)} → ` : ''}
+            {formatCop(h.newPriceCop)}
+          </p>
+          <p className="text-ink-soft">
+            {CHANGED_AT.format(new Date(h.changedAt))}
+            {h.changedByName ? ` · ${h.changedByName}` : ''}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PricePanel({ court, onClose, onSaved }) {
+  const toast = useToast();
+  const history = useAsync(() => bookingClient.getCourtPriceHistory(court.id), [court?.id], {
+    enabled: court != null,
+  });
+  const upcoming = history.status === 'ready' ? history.data.upcomingReservations : null;
+  const [value, setValue] = useState(court?.priceCop != null ? String(court.priceCop) : '');
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const price = Number(value);
 
-  async function handleSave() {
-    setSaving(true);
+  function review() {
+    if (!value || !Number.isInteger(price) || price < 1)
+      return setError('Escribe el precio en pesos, sin puntos ni decimales.');
+    if (price === court.priceCop) return setError('Es el mismo precio que ya tiene.');
     setError(null);
-    setSaved(false);
+    setConfirming(true);
+  }
+
+  async function save() {
+    setSaving(true);
     try {
-      const result = await bookingClient.setCourtPrice(court.id, Number(value));
+      const result = await bookingClient.setCourtPrice(court.id, price);
+      toast({
+        title: 'Precio actualizado',
+        description: `${court.name}: ${formatCop(result.priceCop)} por hora. ${reservationsKeepPrice(result.upcomingReservations)}`,
+        tone: 'success',
+      });
       onSaved(court.id, result.priceCop);
-      setSaved(true);
     } catch (err) {
+      setConfirming(false);
       setError(describeBookingError(err));
     } finally {
       setSaving(false);
@@ -26,83 +96,280 @@ function CourtRow({ court, onSaved }) {
   }
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-neutral-200 bg-canvas p-4">
-      <div>
-        <p className="font-display font-semibold text-primary">{court.name}</p>
-        <p className="text-sm text-secondary">
-          {court.priceCop != null
-            ? `Precio actual: $${court.priceCop.toLocaleString('es-CO')}`
-            : 'Sin precio configurado'}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="sr-only" htmlFor={`price-${court.id}`}>
-          Precio por hora en pesos
-        </label>
-        <input
-          id={`price-${court.id}`}
-          type="number"
-          min="1"
-          step="1"
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setSaved(false);
-          }}
-          placeholder="Pesos por hora"
-          className="w-36 rounded-md border border-neutral-300 bg-canvas px-3 py-2 text-sm"
-        />
-        <Button variant="primary" onClick={handleSave} disabled={saving || !value}>
-          {saving ? 'Guardando...' : 'Guardar'}
-        </Button>
-      </div>
-      {error ? <p className="w-full text-sm text-error">{error}</p> : null}
-      {saved ? <p className="w-full text-sm text-success">Precio actualizado.</p> : null}
-    </li>
+    <>
+      <SlidePanel
+        open={court != null}
+        onClose={onClose}
+        title={court ? `Precio de ${court.name}` : ''}
+        footer={
+          <Button size="lg" fullWidth onClick={review}>
+            Guardar precio
+          </Button>
+        }
+      >
+        {court && (
+          <div className="space-y-6">
+            <div className="rounded-xl bg-page p-5">
+              <p className="text-body font-semibold text-ink-soft">Precio actual por hora</p>
+              <p className="font-display text-stat font-bold text-ink">
+                {court.priceCop != null ? formatCop(court.priceCop) : 'Sin precio'}
+              </p>
+            </div>
+            <TextField
+              label="Nuevo precio por hora (en pesos)"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value.replace(/\D/g, ''));
+                setError(null);
+              }}
+              hint={value ? `Quedaría en ${formatCop(price)}` : 'Ejemplo: 35000'}
+            />
+            <p className="rounded-lg bg-navy-50 p-4 text-body text-ink">
+              El nuevo precio aplica a las reservas nuevas. Las reservas ya hechas conservan el
+              precio con el que se reservaron.
+              {upcoming != null && (
+                <strong className="mt-2 block">{reservationsKeepPrice(upcoming)}</strong>
+              )}
+            </p>
+            <FormAlert>{error}</FormAlert>
+            <div>
+              <h3 className="mb-2 text-lead font-bold text-ink">Historial de precios</h3>
+              <CourtPriceHistory async={history} />
+            </div>
+          </div>
+        )}
+      </SlidePanel>
+      <ConfirmDialog
+        open={confirming}
+        tone="primary"
+        title={`¿Cambiar el precio de ${court?.name ?? ''}?`}
+        description={`Pasa de ${court?.priceCop != null ? formatCop(court.priceCop) : 'sin precio'} a ${formatCop(price)} por hora para las reservas nuevas.${upcoming ? ` ${reservationsKeepPrice(upcoming)}` : ''}`}
+        confirmLabel="Sí, cambiar precio"
+        loading={saving}
+        onConfirm={save}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
+  );
+}
+
+/** Admin setting: minutes a player has to confirm a held hour. */
+function HoldDurationCard() {
+  const toast = useToast();
+  const policy = useAsync(() => bookingClient.getHoldDuration(), []);
+  const [value, setValue] = useState('');
+  const [error, setError] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const minutes = Number(value);
+
+  function review() {
+    if (
+      !Number.isInteger(minutes) ||
+      minutes < MIN_HOLD_DURATION_MINUTES ||
+      minutes > MAX_HOLD_DURATION_MINUTES
+    ) {
+      return setError(
+        `Escribe un número de minutos entre ${MIN_HOLD_DURATION_MINUTES} y ${MAX_HOLD_DURATION_MINUTES}.`,
+      );
+    }
+    if (minutes === policy.data?.minutes)
+      return setError('Es el mismo tiempo que ya está configurado.');
+    setError(null);
+    setConfirming(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const result = await bookingClient.setHoldDuration(minutes);
+      policy.setData(() => result);
+      setValue('');
+      toast({
+        title: 'Tiempo actualizado',
+        description: `Las reservas nuevas se guardan ${result.minutes} minutos.`,
+        tone: 'success',
+      });
+    } catch (err) {
+      setError(describeBookingError(err));
+    } finally {
+      setSaving(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Tiempo para confirmar una reserva"
+      description="Cuando alguien toca una hora libre, se la guardamos este tiempo mientras confirma. Si no confirma, la hora vuelve a quedar libre."
+      async={policy}
+      className="mt-8"
+    >
+      {(d) => (
+        <div className="space-y-4">
+          <p className="text-lead text-ink">
+            Ahora: <strong>{d.minutes} minutos</strong>
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <TextField
+              label="Nuevo tiempo (minutos)"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value.replace(/\D/g, ''));
+                setError(null);
+              }}
+              hint={`Entre ${MIN_HOLD_DURATION_MINUTES} y ${MAX_HOLD_DURATION_MINUTES} minutos.`}
+            />
+            <Button onClick={review}>Guardar tiempo</Button>
+          </div>
+          <FormAlert>{error}</FormAlert>
+          <ConfirmDialog
+            open={confirming}
+            tone="primary"
+            title="¿Cambiar el tiempo para confirmar?"
+            description={`Pasa de ${d.minutes} a ${minutes} minutos. Aplica a las reservas nuevas; las que ya están en espera conservan su tiempo.`}
+            confirmLabel="Sí, cambiar tiempo"
+            loading={saving}
+            onConfirm={save}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+/** Admin setting: a held hour can take the same court's next hour (2 hours). */
+function SecondHourCard() {
+  const toast = useToast();
+  const policy = useAsync(() => bookingClient.getSecondHourPolicy(), []);
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const enabled = policy.data?.enabled;
+
+  async function toggle() {
+    setSaving(true);
+    try {
+      const result = await bookingClient.setSecondHourPolicy(!enabled);
+      policy.setData(() => result);
+      toast({
+        title: result.enabled
+          ? 'Reservas de 2 horas activadas'
+          : 'Reservas de 2 horas desactivadas',
+        tone: 'success',
+      });
+    } catch (err) {
+      toast({
+        title: 'No pudimos cambiar la opción',
+        description: describeBookingError(err),
+        tone: 'error',
+      });
+    } finally {
+      setSaving(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Reservas de 2 horas seguidas"
+      description="Al reservar una hora, si la siguiente de la misma cancha está libre, el jugador puede agregarla. Es una sola reserva: una confirmación, una cancelación y un cobro."
+      async={policy}
+      className="mt-8"
+    >
+      {() => (
+        <div className="flex flex-wrap items-center gap-4">
+          <StatusBadge
+            status={enabled ? 'al-dia' : 'suspendida'}
+            label={enabled ? 'Activadas' : 'Desactivadas'}
+          />
+          <Button variant={enabled ? 'secondary' : 'primary'} onClick={() => setConfirming(true)}>
+            {enabled ? 'Desactivar reservas de 2 horas' : 'Activar reservas de 2 horas'}
+          </Button>
+          <ConfirmDialog
+            open={confirming}
+            tone="primary"
+            title={
+              enabled ? '¿Desactivar las reservas de 2 horas?' : '¿Activar las reservas de 2 horas?'
+            }
+            description={
+              enabled
+                ? 'Ya no se ofrecerá "+ Agregar otra hora". Las reservas de 2 horas ya hechas se mantienen.'
+                : 'Al reservar, se ofrecerá agregar la hora siguiente cuando esté libre.'
+            }
+            confirmLabel={enabled ? 'Sí, desactivar' : 'Sí, activar'}
+            loading={saving}
+            onConfirm={toggle}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
+      )}
+    </SectionCard>
   );
 }
 
 export function CourtPricingPage() {
-  const [courts, setCourts] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    bookingClient
-      .listCourts()
-      .then((data) => {
-        if (!cancelled) setCourts(data.courts);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function handleSaved(courtId, priceCop) {
-    setCourts((prev) => prev.map((c) => (c.id === courtId ? { ...c, priceCop } : c)));
-  }
+  useDocumentTitle('Precios de canchas');
+  const courts = useAsync(() => bookingClient.listCourts().then((d) => d.courts), []);
+  const [editingId, setEditingId] = useState(null);
+  const editing = courts.data?.find((c) => c.id === editingId) ?? null;
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-primary">Precios de canchas</h1>
-      <p className="mt-1 text-secondary">
-        El precio se cobra al confirmar la reserva y queda fijo para esa reserva, aunque el precio
-        de la cancha cambie después.
-      </p>
-
-      {error ? <p className="mt-6 text-error">No se pudieron cargar las canchas.</p> : null}
-      {!error && !courts ? <p className="mt-6 text-secondary">Cargando...</p> : null}
-
-      {courts ? (
-        <ul className="mt-6 space-y-3">
-          {courts.map((court) => (
-            <CourtRow key={court.id} court={court} onSaved={handleSaved} />
-          ))}
-        </ul>
-      ) : null}
+      <PageHeader
+        title="Precios de canchas"
+        description="El precio queda fijo en cada reserva al confirmarla, aunque después cambies el precio de la cancha."
+      />
+      <SectionCard
+        title="Canchas"
+        async={courts}
+        isEmpty={(d) => d.length === 0}
+        empty={{ title: 'No hay canchas activas' }}
+        errorTitle="No pudimos cargar las canchas"
+      >
+        {(list) => (
+          <ul className="space-y-3">
+            {list.map((c) => (
+              <li key={c.id}>
+                <StaffRow
+                  title={c.name}
+                  subtitle={c.priceCop != null ? `${formatCop(c.priceCop)} por hora` : undefined}
+                  badge={
+                    c.priceCop == null ? (
+                      <StatusBadge status="pendiente" label="Sin precio" />
+                    ) : null
+                  }
+                  meta={
+                    c.priceCop == null ? 'No se puede cobrar hasta que tenga precio.' : undefined
+                  }
+                  actions={
+                    <Button
+                      variant={c.priceCop == null ? 'primary' : 'secondary'}
+                      onClick={() => setEditingId(c.id)}
+                    >
+                      {c.priceCop == null ? 'Poner precio' : 'Cambiar precio'}
+                    </Button>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+      <h2 className="mt-10 font-display text-h2 font-bold text-ink">Configuración de reservas</h2>
+      <HoldDurationCard />
+      <SecondHourCard />
+      <PricePanel
+        key={editingId ?? 'none'}
+        court={editing}
+        onClose={() => setEditingId(null)}
+        onSaved={(id, priceCop) => {
+          courts.setData((list) => list.map((c) => (c.id === id ? { ...c, priceCop } : c)));
+          setEditingId(null);
+        }}
+      />
     </div>
   );
 }

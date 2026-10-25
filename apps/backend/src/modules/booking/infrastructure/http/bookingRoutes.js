@@ -8,6 +8,8 @@ import {
   listPaymentsQuerySchema,
   paymentsMonthlyQuerySchema,
   overduePolicySchema,
+  holdDurationSchema,
+  setSecondHourPolicySchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -26,6 +28,9 @@ export function createBookingRoutes(controller) {
   router.post('/hold', requireAuth, validateBody(holdSchema), controller.hold);
   router.post('/confirm', requireAuth, validateBody(confirmSchema), controller.confirm);
   router.post('/:id/cancel', requireAuth, controller.cancel);
+  // The optional second hour of a held reservation (same court, next hour).
+  router.post('/:id/second-hour', requireAuth, controller.addSecondHour);
+  router.delete('/:id/second-hour', requireAuth, controller.removeSecondHour);
 
   router.put(
     '/courts/:id/price',
@@ -33,6 +38,12 @@ export function createBookingRoutes(controller) {
     requireRole(ROLE_CODES.ADMINISTRADOR),
     validateBody(setCourtPriceSchema),
     controller.setCourtPrice,
+  );
+  router.get(
+    '/courts/:id/price-history',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    controller.getCourtPriceHistory,
   );
   router.post(
     '/:id/payment',
@@ -59,6 +70,13 @@ export function createBookingRoutes(controller) {
   );
 
   router.get('/me/training-frequency', requireAuth, controller.getMyTrainingFrequency);
+  router.get('/my-reservations', requireAuth, controller.getMyReservations);
+  router.get(
+    '/players/:id/reservations',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.RECEPCION]),
+    controller.getPlayerReservations,
+  );
 
   router.get(
     '/settings/overdue-policy',
@@ -72,6 +90,25 @@ export function createBookingRoutes(controller) {
     requireRole(ROLE_CODES.ADMINISTRADOR),
     validateBody(overduePolicySchema),
     controller.setOverduePolicy,
+  );
+
+  // Public: the booking page tells everyone "Confirma en N minutos".
+  router.get('/settings/hold-duration', controller.getHoldDuration);
+  router.put(
+    '/settings/hold-duration',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(holdDurationSchema),
+    controller.setHoldDuration,
+  );
+  // Public: the booking page only offers "+ Agregar otra hora" when it's on.
+  router.get('/settings/second-hour', controller.getSecondHourPolicy);
+  router.put(
+    '/settings/second-hour',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    validateBody(setSecondHourPolicySchema),
+    controller.setSecondHourPolicy,
   );
 
   return router;

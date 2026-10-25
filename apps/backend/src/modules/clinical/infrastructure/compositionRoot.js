@@ -19,15 +19,23 @@ import { createCreateMedicalHistoryEntry } from '../application/useCases/createM
 import { createResolveMedicalHistoryEntry } from '../application/useCases/resolveMedicalHistoryEntry.js';
 import { createListMedicalHistory } from '../application/useCases/listMedicalHistory.js';
 import { createGetMyMedicalHistory } from '../application/useCases/getMyMedicalHistory.js';
+import { createGetPhysioSummary } from '../application/useCases/getPhysioSummary.js';
+import { createSetFitnessStatus } from '../application/useCases/setFitnessStatus.js';
+import { createListPhysioNotesForAdmin } from '../application/useCases/listPhysioNotesForAdmin.js';
+import { createClinicalConsentUseCases } from '../application/useCases/clinicalConsent.js';
 
 import { createPrismaAppointmentRepository } from './persistence/prismaAppointmentRepository.js';
 import { createPrismaNoteRepository } from './persistence/prismaNoteRepository.js';
 import { createPrismaRecoveryPlanRepository } from './persistence/prismaRecoveryPlanRepository.js';
 import { createPrismaMedicalHistoryRepository } from './persistence/prismaMedicalHistoryRepository.js';
+import { createPrismaConsentRepository } from './persistence/prismaConsentRepository.js';
+import { createPrismaFitnessStatusRepository } from './persistence/prismaFitnessStatusRepository.js';
+import { createPrismaClinicalAuditLog } from './persistence/prismaClinicalAuditLog.js';
 import {
   createNullPlayerEligibilityProvider,
   createNullPractitionerEligibilityProvider,
   createNullPlayerDirectoryProvider,
+  createNullHealthAuthorizationProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -47,16 +55,21 @@ export function buildClinicalContainer({
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
   practitionerEligibilityProvider = createNullPractitionerEligibilityProvider(),
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
+  healthAuthorizationProvider = createNullHealthAuthorizationProvider(),
+  auditLog = createPrismaClinicalAuditLog(prismaClient, clubId),
 } = {}) {
   const appointmentRepository = createPrismaAppointmentRepository(prismaClient);
   const noteRepository = createPrismaNoteRepository(prismaClient);
   const recoveryPlanRepository = createPrismaRecoveryPlanRepository(prismaClient);
   const medicalHistoryRepository = createPrismaMedicalHistoryRepository(prismaClient);
+  const consentRepository = createPrismaConsentRepository(prismaClient);
+  const fitnessStatusRepository = createPrismaFitnessStatusRepository(prismaClient);
 
   return {
     scheduleAppointment: createScheduleAppointment({
       appointmentRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
       clubId,
@@ -69,13 +82,19 @@ export function buildClinicalContainer({
     createNote: createCreateNote({
       noteRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
     }),
-    listPlayerNotes: createListPlayerNotes({ noteRepository, practitionerEligibilityProvider }),
+    listPlayerNotes: createListPlayerNotes({
+      noteRepository,
+      practitionerEligibilityProvider,
+      auditLog,
+    }),
     getMyNotes: createGetMyNotes({ noteRepository }),
     createRecoveryPlan: createCreateRecoveryPlan({
       recoveryPlanRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
     }),
@@ -89,6 +108,7 @@ export function buildClinicalContainer({
     createMedicalHistoryEntry: createCreateMedicalHistoryEntry({
       medicalHistoryRepository,
       playerEligibilityProvider,
+      healthAuthorizationProvider,
       practitionerEligibilityProvider,
       clock,
     }),
@@ -101,5 +121,25 @@ export function buildClinicalContainer({
       practitionerEligibilityProvider,
     }),
     getMyMedicalHistory: createGetMyMedicalHistory({ medicalHistoryRepository }),
+    getPhysioSummary: createGetPhysioSummary({
+      appointmentRepository,
+      recoveryPlanRepository,
+      fitnessStatusRepository,
+      consentRepository,
+      playerDirectoryProvider,
+      clock,
+    }),
+    setFitnessStatus: createSetFitnessStatus({
+      fitnessStatusRepository,
+      playerEligibilityProvider,
+      healthAuthorizationProvider,
+      practitionerEligibilityProvider,
+    }),
+    listPhysioNotesForAdmin: createListPhysioNotesForAdmin({
+      noteRepository,
+      consentRepository,
+      auditLog,
+    }),
+    ...createClinicalConsentUseCases({ consentRepository, clock }),
   };
 }

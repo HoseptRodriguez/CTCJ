@@ -37,6 +37,41 @@ const envSchema = z
 
     // Base of the links in verification/password-reset emails. The localhost
     // default only makes sense in development -- see superRefine below.
+    // Two-step verification: the key that encrypts the TOTP secrets and
+    // hashes the recovery codes (32 bytes, base64). Required in production.
+    MFA_ENCRYPTION_KEY: z.string().optional().default(''),
+    // Two-step verification is mandatory for Administración, Psicología,
+    // Neuropsicología and Fisioterapia. Only tests may turn that off
+    // (so the other suites can sign in as staff); never production.
+    MFA_ENFORCE_STAFF: z.enum(['true', 'false']).default('true'),
+
+    // "Solicitar información": who gets the notice of a new request (the
+    // club's mailbox), and after how many months discarded or unanswered
+    // requests are deleted. Both decided by the club; empty = no notice / no
+    // automatic deletion yet (docs/LEGAL_PENDIENTES.md).
+    INFO_REQUEST_TO: z.string().email().optional().or(z.literal('')).default(''),
+    INFO_REQUEST_RETENTION_MONTHS: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.coerce.number().int().min(1).max(60).optional(),
+    ),
+
+    // Notification emails, within the limits of the Resend plan (see
+    // https://resend.com/docs/knowledge-base/account-quotas-and-limits --
+    // free plan: 100/day, 3,000/month; 10 requests/second; 100 per batch).
+    // Change them when the club changes plans. Over a limit, emails wait
+    // for the next day (or month) and the console says so.
+    EMAIL_DAILY_QUOTA: z.coerce.number().int().min(1).default(100),
+    EMAIL_MONTHLY_QUOTA: z.coerce.number().int().min(1).default(3000),
+    EMAIL_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(100),
+    EMAIL_REQUESTS_PER_SECOND: z.coerce.number().int().min(1).max(100).default(10),
+    // Hour (club time, 0-23) of the daily digest email.
+    EMAIL_DIGEST_HOUR: z.coerce.number().int().min(7).max(20).default(18),
+    // Signing secret of the Resend webhook (opens); empty = no open tracking.
+    RESEND_WEBHOOK_SECRET: z.string().optional().default(''),
+    // Public URL of this API, for the one-click unsubscribe email header
+    // (RFC 8058). Empty = the header is left out; the link in the email works anyway.
+    API_PUBLIC_URL: z.string().url().optional().or(z.literal('')).default(''),
+
     APP_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   })
@@ -48,6 +83,22 @@ const envSchema = z
       BLOB_READ_WRITE_TOKEN:
         'BLOB_READ_WRITE_TOKEN is required in production (avatars are stored in Vercel Blob)',
     };
+    if (!mfaKeyBytes(env.MFA_ENCRYPTION_KEY)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MFA_ENCRYPTION_KEY'],
+        message:
+          'MFA_ENCRYPTION_KEY is required in production: 32 random bytes in base64 ' +
+          '(see .env.example for a command that generates one)',
+      });
+    }
+    if (env.MFA_ENFORCE_STAFF !== 'true') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['MFA_ENFORCE_STAFF'],
+        message: 'Two-step verification for the staff cannot be turned off in production',
+      });
+    }
     for (const [key, message] of Object.entries(requiredInProduction)) {
       if (!env[key].trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message });
@@ -66,6 +117,18 @@ const envSchema = z
       });
     }
   });
+
+/** The MFA key as 32 bytes, or null when missing or of the wrong size. */
+export function mfaKeyBytes(value) {
+  if (!value) return null;
+  const bytes = Buffer.from(value, 'base64');
+  return bytes.length === 32 ? bytes : null;
+}
+
+// Development and tests without a key get a fixed, public one: secrets
+// encrypted with it are NOT protected. Production refuses to start without
+// a real key (superRefine above).
+const INSECURE_DEV_MFA_KEY = Buffer.alloc(32, 'ctcj-dev-mfa-key-not-for-production');
 
 function isLocalUrl(url) {
   const { hostname } = new URL(url);
@@ -132,6 +195,26 @@ export function parseEnv(source) {
     }),
 
     bootstrapToken: env.BOOTSTRAP_TOKEN,
+
+    mfa: Object.freeze({
+      key: mfaKeyBytes(env.MFA_ENCRYPTION_KEY) ?? INSECURE_DEV_MFA_KEY,
+      enforceStaff: env.MFA_ENFORCE_STAFF === 'true',
+    }),
+
+    infoRequests: Object.freeze({
+      notifyTo: env.INFO_REQUEST_TO,
+      retentionMonths: env.INFO_REQUEST_RETENTION_MONTHS ?? null,
+    }),
+
+    emailLimits: Object.freeze({
+      dailyQuota: env.EMAIL_DAILY_QUOTA,
+      monthlyQuota: env.EMAIL_MONTHLY_QUOTA,
+      batchSize: env.EMAIL_BATCH_SIZE,
+      requestsPerSecond: env.EMAIL_REQUESTS_PER_SECOND,
+      digestHour: env.EMAIL_DIGEST_HOUR,
+    }),
+    resendWebhookSecret: env.RESEND_WEBHOOK_SECRET,
+    apiPublicUrl: env.API_PUBLIC_URL,
 
     appPublicUrl: env.APP_PUBLIC_URL,
     corsOrigin: env.CORS_ORIGIN,

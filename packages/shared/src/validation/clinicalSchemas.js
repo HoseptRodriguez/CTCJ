@@ -48,3 +48,16 @@ export const createMedicalHistoryEntrySchema = z.object({
     .transform((val) => new Date(val))
     .optional(),
 });
+
+// Administration's access to Physiotherapy --------------------------------
+
+export const setFitnessStatusSchema = z
+  .object({
+    status: z.enum(['FIT', 'UNFIT']),
+    // Date-only. Only for UNFIT; omitted = "until further notice".
+    unfitUntil: z.string().date().optional(),
+  })
+  .refine((d) => d.status === 'UNFIT' || d.unfitUntil === undefined, {
+    message: 'unfitUntil only applies to UNFIT.',
+    path: ['unfitUntil'],
+  });

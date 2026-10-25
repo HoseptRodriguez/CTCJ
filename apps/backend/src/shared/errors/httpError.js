@@ -19,6 +19,10 @@ export function toProblemDetail(err) {
   const message =
     err instanceof HttpError && err.expose ? err.message : 'An unexpected error occurred.';
 
+  // Optional machine-readable extras (e.g. a date the UI shows), only for
+  // errors meant to be exposed.
+  const details = err instanceof HttpError && err.expose && err.details ? err.details : undefined;
+
   return {
     status,
     body: {
@@ -26,6 +30,7 @@ export function toProblemDetail(err) {
       title: message,
       status,
       code,
+      ...(details ? { details } : {}),
     },
   };
 }

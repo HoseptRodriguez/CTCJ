@@ -9,6 +9,7 @@ import { createVoidMatch } from '../application/useCases/voidMatch.js';
 import { createListMatches } from '../application/useCases/listMatches.js';
 import { createGetStandings } from '../application/useCases/getStandings.js';
 import { createGetMyCompetitionSummary } from '../application/useCases/getMyCompetitionSummary.js';
+import { createGetPlayerCategories } from '../application/useCases/getPlayerCategories.js';
 import { createGetRecentClubMatches } from '../application/useCases/getRecentClubMatches.js';
 import { createRecordMatchForOpenSeason } from '../application/useCases/recordMatchForOpenSeason.js';
 
@@ -80,6 +81,11 @@ export function buildCompetitionContainer({
     getRecentClubMatches: createGetRecentClubMatches({
       competitionMatchRepository,
       playerDirectoryProvider,
+      seasonRepository,
+      clubId,
+    }),
+    getPlayerCategories: createGetPlayerCategories({
+      competitionMatchRepository,
       seasonRepository,
       clubId,
     }),

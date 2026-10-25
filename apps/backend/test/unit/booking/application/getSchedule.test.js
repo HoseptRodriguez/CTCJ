@@ -33,7 +33,14 @@ function buildDeps() {
 
 async function seedReservation(
   repo,
-  { id, periodStart, periodEnd, reservationType = 'PRIVATE', holderUserId = 'user-1' },
+  {
+    id,
+    periodStart,
+    periodEnd,
+    reservationType = 'PRIVATE',
+    holderUserId = 'user-1',
+    createdBy = holderUserId,
+  },
 ) {
   const reservation = new Reservation({
     id,
@@ -44,7 +51,7 @@ async function seedReservation(
     status: 'CONFIRMED',
     reservationType,
     holderUserId,
-    createdBy: holderUserId,
+    createdBy,
   });
   await repo.createHold(reservation);
 }
@@ -163,6 +170,82 @@ describe('getSchedule', () => {
 
       await getSchedule({ date: '2026-08-10', viewer: { userId: null, isStaff: false } });
       expect(called).toBe(false);
+    });
+  });
+
+  describe('names for the front desk (staff only)', () => {
+    const DAY = '2026-08-20';
+    const start = new Date('2026-08-20T13:00:00Z');
+    const end = new Date('2026-08-20T14:00:00Z');
+    const directory = {
+      async getPlayerSummaries(ids) {
+        const all = {
+          'user-1': { id: 'user-1', firstName: 'Ana', lastName: 'Gómez' },
+          'guardian-1': { id: 'guardian-1', firstName: 'Marta', lastName: 'Gómez' },
+        };
+        return new Map(ids.filter((id) => all[id]).map((id) => [id, all[id]]));
+      },
+    };
+
+    it('staff see who holds the booking and who made it on their behalf', async () => {
+      getSchedule = createGetSchedule({ ...deps, playerDirectoryProvider: directory });
+      await seedReservation(deps.reservationRepository, {
+        id: 'r1',
+        periodStart: start,
+        periodEnd: end,
+        holderUserId: 'user-1',
+        createdBy: 'guardian-1',
+      });
+
+      const { reservations } = await getSchedule({
+        date: DAY,
+        viewer: { userId: 'staff', isStaff: true },
+      });
+
+      expect(reservations[0]).toMatchObject({
+        holderName: 'Ana Gómez',
+        bookedByOther: true,
+        createdByName: 'Marta Gómez',
+      });
+    });
+
+    it('a self-made booking is not flagged as booked by someone else', async () => {
+      getSchedule = createGetSchedule({ ...deps, playerDirectoryProvider: directory });
+      await seedReservation(deps.reservationRepository, {
+        id: 'r2',
+        periodStart: start,
+        periodEnd: end,
+      });
+
+      const { reservations } = await getSchedule({
+        date: DAY,
+        viewer: { userId: 'staff', isStaff: true },
+      });
+
+      expect(reservations[0]).toMatchObject({
+        holderName: 'Ana Gómez',
+        bookedByOther: false,
+        createdByName: null,
+      });
+    });
+
+    it('players and anonymous visitors never get any names', async () => {
+      getSchedule = createGetSchedule({ ...deps, playerDirectoryProvider: directory });
+      await seedReservation(deps.reservationRepository, {
+        id: 'r3',
+        periodStart: start,
+        periodEnd: end,
+      });
+
+      for (const viewer of [
+        { userId: null, isStaff: false },
+        { userId: 'someone-else', isStaff: false },
+        { userId: 'user-1', isStaff: false },
+      ]) {
+        const { reservations } = await getSchedule({ date: DAY, viewer });
+        expect(reservations[0]).not.toHaveProperty('holderName');
+        expect(reservations[0]).not.toHaveProperty('createdByName');
+      }
     });
   });
 });

@@ -1,16 +1,20 @@
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 
+import { assertHealthAuthorization } from './assertHealthAuthorization.js';
+
 /**
  * @param {{
  *   noteRepository: import('../ports/NoteRepository.js').NoteRepository,
  *   playerEligibilityProvider: import('../ports/PlayerEligibilityProvider.js').PlayerEligibilityProvider,
+ *   healthAuthorizationProvider: import('../ports/HealthAuthorizationProvider.js').HealthAuthorizationProvider,
  *   practitionerEligibilityProvider: import('../ports/PractitionerEligibilityProvider.js').PractitionerEligibilityProvider,
  * }} deps
  */
 export function createCreateNote({
   noteRepository,
   playerEligibilityProvider,
+  healthAuthorizationProvider,
   practitionerEligibilityProvider,
 }) {
   /**
@@ -29,6 +33,7 @@ export function createCreateNote({
     if (!eligible) {
       throw new PlayerNotEligible();
     }
+    await assertHealthAuthorization(healthAuthorizationProvider, playerId);
     // Discipline is resolved server-side from the authoring practitioner's
     // real role, never client-supplied -- this is what enables the
     // discipline-siloed read side (listPlayerNotes) to work at all.

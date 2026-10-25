@@ -7,20 +7,29 @@ import { createCreateHold } from '../application/useCases/createHold.js';
 import { createConfirmReservation } from '../application/useCases/confirmReservation.js';
 import { createCancelReservation } from '../application/useCases/cancelReservation.js';
 import { createSetCourtPrice } from '../application/useCases/setCourtPrice.js';
+import { createGetCourtPriceHistory } from '../application/useCases/getCourtPriceHistory.js';
+import { createSecondHourUseCases } from '../application/useCases/secondHour.js';
+import { createSecondHourPolicyUseCases } from '../application/useCases/secondHourPolicy.js';
 import { createRecordPayment } from '../application/useCases/recordPayment.js';
 import { createListPaymentsByDateRange } from '../application/useCases/listPaymentsByDateRange.js';
 import { createGetMonthlyRevenue } from '../application/useCases/getMonthlyRevenue.js';
 import { createGetMyTrainingFrequency } from '../application/useCases/getMyTrainingFrequency.js';
+import { createGetMyReservations } from '../application/useCases/getMyReservations.js';
+import { createGetHoldDurationPolicy } from '../application/useCases/getHoldDurationPolicy.js';
 import { createGetOverdueBookingPolicy } from '../application/useCases/getOverdueBookingPolicy.js';
+import { createSetHoldDurationPolicy } from '../application/useCases/setHoldDurationPolicy.js';
 import { createSetOverdueBookingPolicy } from '../application/useCases/setOverdueBookingPolicy.js';
 
 import { createPrismaReservationRepository } from './persistence/prismaReservationRepository.js';
+import { createPrismaBookingAuditLog } from './persistence/prismaBookingAuditLog.js';
 import { createPrismaCourtRepository } from './persistence/prismaCourtRepository.js';
 import { createPrismaPaymentRepository } from './persistence/prismaPaymentRepository.js';
 import {
   createNullMembershipStatusProvider,
   createStaticBookingPolicySettings,
   createNullGuardianshipProvider,
+  createNullPlayerDirectoryProvider,
+  createNullMinorAuthorizationProvider,
 } from './adapters/nullAdapters.js';
 
 /**
@@ -39,10 +48,13 @@ export function buildBookingContainer({
   membershipStatusProvider = createNullMembershipStatusProvider(),
   bookingPolicySettings = createStaticBookingPolicySettings(false),
   guardianshipProvider = createNullGuardianshipProvider(),
+  playerDirectoryProvider = createNullPlayerDirectoryProvider(),
+  minorAuthorizationProvider = createNullMinorAuthorizationProvider(),
 } = {}) {
   const courtRepository = createPrismaCourtRepository(prismaClient);
   const reservationRepository = createPrismaReservationRepository(prismaClient);
   const paymentRepository = createPrismaPaymentRepository(prismaClient);
+  const auditLog = createPrismaBookingAuditLog(prismaClient, DEFAULT_CLUB_ID);
   const clock = systemClock;
 
   return {
@@ -52,6 +64,7 @@ export function buildBookingContainer({
       courtRepository,
       clubId: DEFAULT_CLUB_ID,
       membershipStatusProvider,
+      playerDirectoryProvider,
     }),
     createHold: createCreateHold({
       reservationRepository,
@@ -61,10 +74,37 @@ export function buildBookingContainer({
       membershipStatusProvider,
       bookingPolicySettings,
       guardianshipProvider,
+      minorAuthorizationProvider,
     }),
-    confirmReservation: createConfirmReservation({ reservationRepository, clock }),
+    confirmReservation: createConfirmReservation({
+      reservationRepository,
+      courtRepository,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    ...createSecondHourUseCases({
+      reservationRepository,
+      courtRepository,
+      bookingPolicySettings,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    ...createSecondHourPolicyUseCases({ bookingPolicySettings }),
     cancelReservation: createCancelReservation({ reservationRepository, clock }),
-    setCourtPrice: createSetCourtPrice({ courtRepository, clubId: DEFAULT_CLUB_ID }),
+    setCourtPrice: createSetCourtPrice({
+      courtRepository,
+      reservationRepository,
+      auditLog,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    getCourtPriceHistory: createGetCourtPriceHistory({
+      courtRepository,
+      reservationRepository,
+      playerDirectoryProvider,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
     recordPayment: createRecordPayment({
       reservationRepository,
       paymentRepository,
@@ -74,7 +114,15 @@ export function buildBookingContainer({
     listPaymentsByDateRange: createListPaymentsByDateRange({ paymentRepository }),
     getMonthlyRevenue: createGetMonthlyRevenue({ paymentRepository, clock }),
     getMyTrainingFrequency: createGetMyTrainingFrequency({ reservationRepository, clock }),
+    getMyReservations: createGetMyReservations({
+      reservationRepository,
+      courtRepository,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
     getOverdueBookingPolicy: createGetOverdueBookingPolicy({ bookingPolicySettings }),
     setOverdueBookingPolicy: createSetOverdueBookingPolicy({ bookingPolicySettings }),
+    getHoldDurationPolicy: createGetHoldDurationPolicy({ bookingPolicySettings }),
+    setHoldDurationPolicy: createSetHoldDurationPolicy({ bookingPolicySettings }),
   };
 }

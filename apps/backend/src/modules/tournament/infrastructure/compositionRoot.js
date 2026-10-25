@@ -9,6 +9,8 @@ import { createRecordMatchResult } from '../application/useCases/recordMatchResu
 import { createGetTournament } from '../application/useCases/getTournament.js';
 import { createListTournaments } from '../application/useCases/listTournaments.js';
 import { createCancelTournament } from '../application/useCases/cancelTournament.js';
+import { createListPlayerTournaments } from '../application/useCases/listPlayerTournaments.js';
+import { createPublicTournamentUseCases } from '../application/useCases/publicInfo.js';
 
 import { createPrismaTournamentRepository } from './persistence/prismaTournamentRepository.js';
 import {
@@ -34,6 +36,8 @@ export function buildTournamentContainer({
   playerEligibilityProvider = createNullPlayerEligibilityProvider(),
   playerDirectoryProvider = createNullPlayerDirectoryProvider(),
   standingsProvider = createNullStandingsProvider(),
+  // Without identity: public pages show no names (fail closed).
+  publicNameProvider = { displayNames: async () => new Map() },
 } = {}) {
   const tournamentRepository = createPrismaTournamentRepository(prismaClient);
 
@@ -46,5 +50,7 @@ export function buildTournamentContainer({
     getTournament: createGetTournament({ tournamentRepository, playerDirectoryProvider }),
     listTournaments: createListTournaments({ tournamentRepository, clubId }),
     cancelTournament: createCancelTournament({ tournamentRepository, clock }),
+    listPlayerTournaments: createListPlayerTournaments({ tournamentRepository, clubId }),
+    ...createPublicTournamentUseCases({ tournamentRepository, publicNameProvider, clock, clubId }),
   };
 }

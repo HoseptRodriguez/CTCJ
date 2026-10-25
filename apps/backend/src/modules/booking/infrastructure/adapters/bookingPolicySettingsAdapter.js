@@ -2,7 +2,16 @@
 // place in the codebase that knows what this SystemSetting key means. A
 // future policy (in any module) needs its own key and its own adapter like
 // this one; never widen this adapter's meaning to cover something else.
+import {
+  DEFAULT_SECOND_HOUR_ENABLED,
+  DEFAULT_HOLD_DURATION_MINUTES,
+  MAX_HOLD_DURATION_MINUTES,
+  MIN_HOLD_DURATION_MINUTES,
+} from '../../domain/policies/bookingPolicy.js';
+
 const OVERDUE_BOOKING_BLOCK_KEY = 'booking.blockOnOverdueMembership';
+const HOLD_DURATION_KEY = 'booking.holdDurationMinutes';
+const SECOND_HOUR_KEY = 'booking.secondHourEnabled';
 
 /**
  * @param {{
@@ -24,6 +33,27 @@ export function createIdentitySystemSettingBookingPolicy({ getSystemSetting, set
         value: Boolean(enabled),
         updatedByUserId,
       });
+    },
+    async getHoldDurationMinutes() {
+      const setting = await getSystemSetting({ key: HOLD_DURATION_KEY });
+      const minutes = setting?.value;
+      // Absent or out of range (e.g. hand-edited) => the default, never a broken hold.
+      return Number.isInteger(minutes) &&
+        minutes >= MIN_HOLD_DURATION_MINUTES &&
+        minutes <= MAX_HOLD_DURATION_MINUTES
+        ? minutes
+        : DEFAULT_HOLD_DURATION_MINUTES;
+    },
+    async setHoldDurationMinutes(minutes, updatedByUserId) {
+      await setSystemSetting({ key: HOLD_DURATION_KEY, value: minutes, updatedByUserId });
+    },
+    async isSecondHourEnabled() {
+      const setting = await getSystemSetting({ key: SECOND_HOUR_KEY });
+      // Absent (never changed) => on, the club's default.
+      return typeof setting?.value === 'boolean' ? setting.value : DEFAULT_SECOND_HOUR_ENABLED;
+    },
+    async setSecondHourEnabled(enabled, updatedByUserId) {
+      await setSystemSetting({ key: SECOND_HOUR_KEY, value: Boolean(enabled), updatedByUserId });
     },
   };
 }

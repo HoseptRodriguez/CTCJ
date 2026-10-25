@@ -53,7 +53,7 @@ describe('confirmReservation', () => {
       isStaff: false,
     });
 
-    expect(result).toEqual({ reservationId: 'res-1', status: 'CONFIRMED' });
+    expect(result).toMatchObject({ reservationId: 'res-1', status: 'CONFIRMED', hours: 1 });
     const stored = await deps.reservationRepository.findById('res-1');
     expect(stored.status).toBe('CONFIRMED');
   });
@@ -90,9 +90,9 @@ describe('confirmReservation', () => {
     ).rejects.toThrow(ReservationNotOwned);
   });
 
-  it('rejects confirming past the 5-minute HOLD expiry', async () => {
+  it('rejects confirming past the 15-minute HOLD expiry', async () => {
     await seedHold(deps.reservationRepository);
-    deps.clock.advanceMs(6 * 60_000);
+    deps.clock.advanceMs(16 * 60_000);
 
     await expect(
       confirmReservation({

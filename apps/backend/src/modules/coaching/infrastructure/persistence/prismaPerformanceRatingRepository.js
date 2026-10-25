@@ -1,3 +1,5 @@
+import { writeOutboxEvent } from '../../../../shared/outbox.js';
+
 function toRow(record) {
   return {
     id: record.id,
@@ -15,15 +17,18 @@ function toRow(record) {
  */
 export function createPrismaPerformanceRatingRepository(prisma) {
   return {
-    async createBatch({ playerId, coachId, ratings }) {
+    async createBatch({ playerId, coachId, ratings, events = [] }) {
       // One $transaction, not N round-trips -- Postgres's CURRENT_TIMESTAMP
       // is transaction-time-stable, so every row created here shares the
       // same recorded_at for free, with no timestamp manufactured here.
       const operations = Object.entries(ratings).map(([area, rating]) =>
         prisma.performanceRating.create({ data: { playerId, coachId, area, rating } }),
       );
-      const records = await prisma.$transaction(operations);
-      return records.map(toRow);
+      const records = await prisma.$transaction([
+        ...operations,
+        ...events.map((e) => writeOutboxEvent(prisma, e)),
+      ]);
+      return records.slice(0, operations.length).map(toRow);
     },
 
     async listByPlayer(playerId) {

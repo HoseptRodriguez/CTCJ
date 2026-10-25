@@ -17,6 +17,7 @@
 | `5dcba18` | README reescrito con los 11 módulos; se elimina `VITE_API_BASE_URL`, que nada usaba                                                     | README desactualizado / §4, punto 7                |
 | `273f061` | Parches de seguridad: nodemailer, express, body-parser, qs, react-router(-dom)                                                          | 4 de los 6 paquetes vulnerables (quedan 2, ver §6) |
 | (último)  | `APP_PUBLIC_URL` obligatoria en producción y distinta de localhost; el servidor no arranca si falta                                     | §4.3, punto 10                                     |
+| `7b69fcb` | Comunidad con fotos y videos: `post_media`, Vercel Blob con límites, protección de menores y ocultado automático                        | Nueva función (ver §7)                             |
 
 **Otros cambios:**
 
@@ -33,7 +34,7 @@
    - Integración contra `ctcj_test`: 201 de 201.
 3. **Brechas funcionales que siguen abiertas:**
    - no hay pasarela de pago en línea;
-   - no hay UI para asignar roles (existe el endpoint y el primer admin ya se crea con el script);
+   - ~~no hay UI para asignar roles~~ **resuelto (2026-10-03):** la ficha de cada persona tiene "Roles del personal" (Administración);
    - los permisos (`permissions`) no se aplican;
    - `audit_logs` y `outbox_events` no se usan.
 4. **Despliegue.**
@@ -71,16 +72,16 @@ Además hay tests fuera de los módulos: `test/unit/config/env.test.js` y `test/
 
 ### Brechas e incompletos
 
-| #   | Brecha                                                                                                                                                                       | Estado                                                                                                                                                                                                                                                                                                                                                                |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Primer ADMINISTRADOR en producción.** No había UI para `POST /api/admin/roles/grant` y `bootstrapAdmin.js` abortaba en producción.                                         | ✅ **Resuelta** (`107cf54`). En producción, `node scripts/bootstrapAdmin.js <email> --confirm --token <secreto>` con `BOOTSTRAP_TOKEN` (24+ caracteres, comparación en tiempo constante). Solo acepta cuentas existentes, verificadas y ACTIVE; el script antiguo no lo comprobaba. Sigue sin haber **UI** para asignar roles después: se hace por API.               |
-| 2   | **Pagos sin pasarela.** El pago de canchas y facturas lo registra el staff. No hay Wompi ni DIAN.                                                                            | ⏳ Abierta (fuera de alcance de estos arreglos)                                                                                                                                                                                                                                                                                                                       |
-| 3   | **Los permisos no se aplican.** `Permission` y `RolePermission` solo se llenan en el seed; la autorización es por rol (`requireRole`).                                       | ⏳ Abierta                                                                                                                                                                                                                                                                                                                                                            |
-| 4   | **`audit_logs` no se usa.** Tiene particiones `default`, `2026_07`, `2026_08` y `2026_09`; falta `scripts/createAuditPartition.js`.                                          | ⏳ Abierta, **sin riesgo de fallo**. La partición DEFAULT (`audit_logs_default`) existe desde la migración inicial, así que un insert de octubre en adelante cae en ella. No se crea otra: Postgres admite una sola DEFAULT y la migración rompería `migrate deploy`. Cuando se empiece a escribir en la tabla, convendrá crear particiones mensuales por adelantado. |
-| 5   | **`OutboxEvent` sin uso.** Es intencional (ADR-0007).                                                                                                                        | ⏳ Abierta (intencional)                                                                                                                                                                                                                                                                                                                                              |
-| 6   | **Endpoints sin UI:** ajustes de membresía, detalle de factura, estado de membresía de billing, "marcar todas leídas" y `GET /api/booking/me/training-frequency` (ver §2.4). | ⏳ Abierta                                                                                                                                                                                                                                                                                                                                                            |
-| 7   | **Registro no atómico con el correo.** Si el envío fallaba, reintentar daba "email ya existe".                                                                               | ✅ **Resuelta** (`c9293da`). Si la cuenta sigue en PENDING_VERIFICATION, se reenvía el enlace (201). No se cambian la contraseña ni el nombre del reintento, para impedir que un tercero fije la contraseña de una cuenta sin verificar. Una cuenta verificada, suspendida o desactivada sigue dando 409. Cubierto con tests unitarios y de integración.              |
-| 8   | Directorio vacío suelto `apps/backend/apps/backend/test/integration/identity/`.                                                                                              | ⏳ Abierta (cosmético; git no lo rastrea)                                                                                                                                                                                                                                                                                                                             |
+| #   | Brecha                                                                                                                                                                       | Estado                                                                                                                                                                                                                                                                                                                                                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Primer ADMINISTRADOR en producción.** No había UI para `POST /api/admin/roles/grant` y `bootstrapAdmin.js` abortaba en producción.                                         | ✅ **Resuelta** (`107cf54`). En producción, `node scripts/bootstrapAdmin.js <email> --confirm --token <secreto>` con `BOOTSTRAP_TOKEN` (24+ caracteres, comparación en tiempo constante). Solo acepta cuentas existentes, verificadas y ACTIVE; el script antiguo no lo comprobaba. Los demás roles se asignan desde la consola: Jugadores › ficha › "Roles del personal" (2026-10-03). |
+| 2   | **Pagos sin pasarela.** El pago de canchas y facturas lo registra el staff. No hay Wompi ni DIAN.                                                                            | ⏳ Abierta (fuera de alcance de estos arreglos)                                                                                                                                                                                                                                                                                                                                         |
+| 3   | **Los permisos no se aplican.** `Permission` y `RolePermission` solo se llenan en el seed; la autorización es por rol (`requireRole`).                                       | ⏳ Abierta                                                                                                                                                                                                                                                                                                                                                                              |
+| 4   | **`audit_logs` no se usa.** Tiene particiones `default`, `2026_07`, `2026_08` y `2026_09`; falta `scripts/createAuditPartition.js`.                                          | ⏳ Abierta, **sin riesgo de fallo**. La partición DEFAULT (`audit_logs_default`) existe desde la migración inicial, así que un insert de octubre en adelante cae en ella. No se crea otra: Postgres admite una sola DEFAULT y la migración rompería `migrate deploy`. Cuando se empiece a escribir en la tabla, convendrá crear particiones mensuales por adelantado.                   |
+| 5   | **`OutboxEvent` sin uso.** Es intencional (ADR-0007).                                                                                                                        | ⏳ Abierta (intencional)                                                                                                                                                                                                                                                                                                                                                                |
+| 6   | **Endpoints sin UI:** ajustes de membresía, detalle de factura, estado de membresía de billing, "marcar todas leídas" y `GET /api/booking/me/training-frequency` (ver §2.4). | ⏳ Abierta                                                                                                                                                                                                                                                                                                                                                                              |
+| 7   | **Registro no atómico con el correo.** Si el envío fallaba, reintentar daba "email ya existe".                                                                               | ✅ **Resuelta** (`c9293da`). Si la cuenta sigue en PENDING_VERIFICATION, se reenvía el enlace (201). No se cambian la contraseña ni el nombre del reintento, para impedir que un tercero fije la contraseña de una cuenta sin verificar. Una cuenta verificada, suspendida o desactivada sigue dando 409. Cubierto con tests unitarios y de integración.                                |
+| 8   | Directorio vacío suelto `apps/backend/apps/backend/test/integration/identity/`.                                                                                              | ⏳ Abierta (cosmético; git no lo rastrea)                                                                                                                                                                                                                                                                                                                                               |
 
 ### Sobre la contradicción README vs. documento interno
 
@@ -156,15 +157,15 @@ Grupo exterior: ADMINISTRADOR, RECEPCION, ENTRENADOR, PSICOLOGO, NEUROPSICOLOGO,
 
 ### 2.4 Endpoints del backend que ninguna página usa
 
-| Endpoint                                                  | ¿Hay función en un cliente?                                                                           |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `POST /api/admin/roles/grant`                             | **No**. No hay UI para asignar roles. El primer admin se crea con `bootstrapAdmin.js` (§1, brecha 1). |
-| `PUT /api/admin/billing/memberships/:id/status`           | Sí (`billingClient.setMembershipStatus`), sin uso                                                     |
-| `POST/GET /api/admin/billing/memberships/:id/adjustments` | Sí (`addAdjustment`, `listAdjustments`), sin uso                                                      |
-| `GET /api/admin/billing/invoices/:id`                     | Sí (`getInvoice`), sin uso                                                                            |
-| `POST /api/notifications/me/read-all`                     | Sí (`markAllNotificationsRead`), sin uso                                                              |
-| `GET /api/booking/me/training-frequency`                  | No (se consume por dentro, desde goals y logros)                                                      |
-| `GET /health`                                             | No (lo usa el health check de Render)                                                                 |
+| Endpoint                                                  | ¿Hay función en un cliente?                                                                                                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/admin/roles/grant`                             | Sí, en la ficha: "Roles del personal" usa `POST/DELETE /api/admin/directory/:id/roles/:rol` (con auditoría). El primer admin se crea con `bootstrapAdmin.js`. |
+| `PUT /api/admin/billing/memberships/:id/status`           | Sí (`billingClient.setMembershipStatus`), sin uso                                                                                                             |
+| `POST/GET /api/admin/billing/memberships/:id/adjustments` | Sí (`addAdjustment`, `listAdjustments`), sin uso                                                                                                              |
+| `GET /api/admin/billing/invoices/:id`                     | Sí (`getInvoice`), sin uso                                                                                                                                    |
+| `POST /api/notifications/me/read-all`                     | Sí (`markAllNotificationsRead`), sin uso                                                                                                                      |
+| `GET /api/booking/me/training-frequency`                  | No (se consume por dentro, desde goals y logros)                                                                                                              |
+| `GET /health`                                             | No (lo usa el health check de Render)                                                                                                                         |
 
 ---
 
@@ -186,7 +187,7 @@ Sin cambios de esquema: los arreglos no añadieron migraciones.
 | Goals             | `Goal` (goals)                                                                                                                                                                                                                                                                                                                                                            |
 | Notifications     | `Notification` (notifications)                                                                                                                                                                                                                                                                                                                                            |
 | Challenges        | `Challenge` (challenges), `ChallengeMatchResult` (challenge_match_results)                                                                                                                                                                                                                                                                                                |
-| Community         | `CommunityPost` (community_posts), `CommunityComment` (community_comments), `CommunityPostLike` (community_post_likes), `CommunityReport` (community_reports)                                                                                                                                                                                                             |
+| Community         | `CommunityPost` (community_posts), `PostMedia` (post_media), `CommunityComment` (community_comments), `CommunityPostLike` (community_post_likes), `CommunityReport` (community_reports)                                                                                                                                                                                   |
 | Infraestructura   | `OutboxEvent` (outbox_events)³                                                                                                                                                                                                                                                                                                                                            |
 
 ¹ Solo el seed los usa. ² Se usa con SQL crudo en `expireHoldsJob.js`. ³ Sin uso (ADR-0007).
@@ -198,7 +199,7 @@ Sin cambios de esquema: los arreglos no añadieron migraciones.
 - tabla `audit_logs` particionada por rango: `default`, `2026_07`, `2026_08` y `2026_09`;
 - `CHECK` en lugar de ENUM (ADR-0002) e índices parciales.
 
-### 3.2 Migraciones (22)
+### 3.2 Migraciones (25)
 
 | #   | Migración                                          | Líneas SQL |
 | --- | -------------------------------------------------- | ---------- |
@@ -224,8 +225,13 @@ Sin cambios de esquema: los arreglos no añadieron migraciones.
 | 20  | `20260814091500_widen_notification_type`           | 9          |
 | 21  | `20260815090000_add_community`                     | 112        |
 | 22  | `20260815091500_widen_notification_type_community` | 10         |
+| 23  | `20260926090000_add_physio_admin_access`           | 56         |
+| 24  | `20260927090000_add_community_media`               | 54         |
+| 25  | `20260928090000_plan_admin_and_price_history`      | 67         |
 
 **Verificado con `npx prisma migrate status`** (solo lectura): tanto `ctcj_dev` como `ctcj_test` dicen "22 migrations found — Database schema is up to date!". No hay migraciones pendientes ni fallidas. Las 24 filas que mencionaba el informe de la otra copia no se reflejan como problema.
+
+**Actualización (2026-09-26):** las 23 y 24 están aplicadas en `ctcj_test` y `ctcj_dev`. La 25 (`plan_admin_and_price_history`) está aplicada **solo en `ctcj_test`**; en `ctcj_dev` queda pendiente de confirmación. Antes de aplicarla hay que hacer copia con `pg_dump`, usar `npx prisma migrate deploy` (nunca `migrate dev`) y reiniciar el backend.
 
 ---
 
@@ -289,11 +295,13 @@ Con esto, todas las variables que el arranque en producción exige (`RESEND_API_
 
 ### 5.1 `npm test`: ✅ todo pasa
 
-| Suite        | Archivos | Tests   | Resultado                  |
-| ------------ | -------- | ------- | -------------------------- |
-| Backend unit | 151      | 725     | ✅ 725 / 725               |
-| Frontend     | 34       | 237     | ✅ 237 / 237               |
-| **Total**    | **185**  | **962** | **✅ 962 pasan, 0 fallan** |
+| Suite        | Archivos | Tests    | Resultado                   |
+| ------------ | -------- | -------- | --------------------------- |
+| Backend unit | 158      | 789      | ✅ 789 / 789                |
+| Frontend     | 43       | 286      | ✅ 286 / 286                |
+| **Total**    | **201**  | **1075** | **✅ 1075 pasan, 0 fallan** |
+
+Cifras del 2026-09-26 (rama `rediseno`). `npm run lint`, `depcruise` y `vite build` también pasan.
 
 **Tests unitarios nuevos respecto a la auditoría inicial (+35):**
 
@@ -305,7 +313,7 @@ Con esto, todas las variables que el arranque en producción exige (`RESEND_API_
 
 **Ruido en stderr (no son fallos):** advertencias de React Router por los _future flags_ de v7.
 
-### 5.2 Integración: ✅ 201 / 201 (24 archivos)
+### 5.2 Integración: ✅ 216 / 216 (26 archivos)
 
 Se ejecutan contra `ctcj_test` con `npm run -w apps/backend test:integration`.
 
@@ -330,3 +338,76 @@ Se ejecutan contra `ctcj_test` con `npm run -w apps/backend test:integration`.
 - **`ecosystem.config.cjs`** (sin seguimiento, pendiente de decisión): configuración de PM2 para levantar backend y frontend en **desarrollo** (`NODE_ENV=development`, `watch` en `src`). Nada del repo lo referencia. PM2 está instalado globalmente en la máquina, no como dependencia del proyecto.
 - **Riesgo de datos:** la copia `OneDrive\Escritorio\CTCJ` comparte `ctcj_dev`. Ejecutar `prisma migrate dev` desde allí podría proponer un reset. Conviene archivarla o darle su propia BD.
 - **Comentario obsoleto:** `apps/backend/prisma/seed.js:10` dice "Only identity/booking modules are built".
+
+---
+
+## 7. Comunidad con fotos y videos
+
+### 7.1 Tabla `post_media` (migración 24)
+
+- Una fila por archivo: `type` IMAGE|VIDEO, `url`, `poster_url` (solo video), `width`, `height`, `duration_seconds` (solo video, 0–60), `sort_order` 0–3.
+- `ON DELETE CASCADE` desde `community_posts`, y un índice único en (`post_id`, `sort_order`).
+- Las reglas "4 fotos **o** 1 video" y "10 por día" viven en la aplicación (`application/services/mediaPolicy.js` y `createPost`). La tabla solo garantiza que cada fila sea coherente mediante `CHECK`s.
+- `community_posts`:
+  - pierde el `CHECK` de texto obligatorio (una publicación puede ser solo multimedia; el texto queda `''`);
+  - gana `hidden_at`, `hidden_by` y `hidden_reason` (AUTO_REPORTS|STAFF).
+
+### 7.2 Límites y almacenamiento (Vercel Blob)
+
+| Tipo  | Formatos aceptados    | Límite               | Qué hace el servidor                                                                            |
+| ----- | --------------------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| Foto  | JPG, PNG, WebP, HEIC  | 10 MB c/u, máx. 4    | Re-codifica a **WebP** de máx. 1600 px con sharp; nunca guarda el original y **quita EXIF/GPS** |
+| Video | MP4, WebM (no `.mov`) | 50 MB y 60 s, máx. 1 | Guarda el archivo tal cual; póster WebP de 960 px                                               |
+
+- **Tipo real:** se lee por _magic bytes_ (`domain/services/fileSniffing.js`), nunca por la extensión ni por el tipo que declara el navegador. La duración se lee de la cabecera del video (MP4 `mvhd`, WebM `Duration`); si la cabecera no está al inicio, se usa la que midió el navegador, con el mismo límite.
+- **Con `BLOB_READ_WRITE_TOKEN`:** los videos suben directo del navegador a Blob con `handleUpload` (`POST /api/community/media/video-upload`).
+  - El token firmado solo permite la carpeta `community/<userId>/`, MP4/WebM, 50 MB y 10 minutos.
+  - Al publicar, el servidor comprueba que la URL es del autor y lee los primeros 64 KB para confirmar tipo, tamaño y duración.
+- **Sin token (desarrollo y tests):** todo pasa por el servidor (multer, tope de 50 MB) y se guarda en `uploads/community/`.
+- **Borrado:** borrar una publicación (autor o staff) borra también sus archivos de Blob, póster incluido. Si una publicación falla a medias, se borran los archivos ya subidos.
+- **Límite diario:** 10 publicaciones con multimedia por jugador y por día del club (hora de Colombia). Las de solo texto no cuentan.
+- **CSP:** `img-src` y `media-src` aceptan `blob:` y `*.public.blob.vercel-storage.com`; `connect-src` acepta `*.blob.vercel-storage.com` para la subida directa.
+- **Pendiente en Vercel:** el cuerpo de una función serverless tiene un tope de unos 4,5 MB. En producción, los videos deben ir siempre por la subida directa (ya es así con token), y las fotos grandes llegan comprimidas desde el navegador (≤1600 px). Hay que verificarlo en un _preview_.
+
+### 7.3 Protección de menores
+
+- **Quién es menor** (`identity/checkIsMinor`): quien tenga menos de 18 años según la fecha de nacimiento (hora del club), o sea el menor de una tutela APROBADA. Si el usuario no se conoce, se trata como menor (falla cerrado).
+- **Cuentas de menores:** solo pueden publicar texto. El compositor no muestra los botones, y el API responde 403 `minor_media_not_allowed` tanto al publicar como al firmar una subida.
+- **Todos los compositores** muestran el aviso: "Solo publica fotos o videos de menores de edad si tienes autorización de su acudiente".
+- **"Reportar"** ofrece primero el motivo "Aparece un menor sin autorización".
+- **Ocultado automático:** con **3 reportes pendientes**, la publicación se oculta para todos menos su autor (`hidden_reason = AUTO_REPORTS`). Si Administración descarta reportes y quedan menos de 3, vuelve a verse.
+- **Staff** (ADMIN, RECEPCION) en `/staff/comunidad`: ve las fotos o el video reportado y puede **ocultar** (`STAFF`, que no se revierte al descartar reportes), **volver a mostrar** o **borrar**. Endpoints: `POST /api/admin/community/posts/:id/hide|unhide`.
+
+---
+
+## 8. Planes y precios
+
+- **Planes** (`/staff/planes`, solo ADMINISTRADOR):
+  - se pueden editar el nombre (obligatorio y único sin distinguir mayúsculas; lo respalda un índice en la base de datos) y la descripción;
+  - un plan se puede activar o desactivar: el desactivado no se ofrece a jugadores nuevos, pero los que ya lo tienen lo conservan;
+  - el **código** se genera del nombre al crear el plan (`INICIACION_NINOS`) y nunca cambia.
+- **Precios de planes:** `membership_plan_prices` ya era un historial con fechas de vigencia en el que solo se añaden filas. La vista `plan_price_history` le suma el precio anterior, quién lo cambió y cuándo.
+  - Cada factura usa el precio **vigente al inicio de su periodo**; antes usaba el último registrado.
+  - Un cambio nunca se fecha en el pasado. El primer precio de un plan sí puede tener fecha pasada, porque aún no hay facturas que alterar.
+  - Si el plan tiene jugadores activos, el cambio empieza como pronto tras el aviso: 30 días por defecto, configurable en `billing.priceChangeNoticeDays` de 0 a 120 días.
+  - Al programar el cambio, cada jugador recibe una notificación `PLAN_PRICE_CHANGED`, y lo ve también en Mi CTCJ.
+  - Solo puede haber un cambio programado a la vez. Se puede cancelar mientras no haya empezado.
+  - Todo precio debe ser mayor que 0, en pesos sin decimales.
+- **Precios de canchas** (`/staff/precios`): cada cambio queda en `court_price_history` (precio anterior, nuevo, quién y cuándo). La reserva conserva el precio con el que se hizo (`reservations.price_cop`). El panel muestra el historial y cuántas reservas próximas mantienen su precio.
+- **`audit_logs`** registra: `PLAN_CREATED`, `PLAN_UPDATED`, `PLAN_ACTIVATED`, `PLAN_DEACTIVATED`, `PLAN_PRICE_SET`, `PLAN_PRICE_CANCELLED`, `PRICE_NOTICE_DAYS_CHANGED` y `COURT_PRICE_CHANGED`.
+- **Pagos:** siguen siendo presenciales en recepción. No hay pasarela de pago.
+
+---
+
+## 9. Reservas de 2 horas seguidas
+
+- **Flujo:** el jugador reserva 1 hora, como siempre. En el panel de confirmación aparece "+ Agregar otra hora (5:00 – 6:00)" solo si la hora siguiente de la **misma** cancha está libre y la opción está activada.
+- **Una sola reserva:** se amplía la misma fila (`reservations.period`) mientras está retenida.
+  - La retención no se reinicia; hay una confirmación, una cancelación y un cobro en recepción.
+  - Cuenta como 1 reserva en el límite de 2 activas por jugador.
+  - Máximo 2 horas. "Quitar la segunda hora" la devuelve a 1 hora.
+- **Choques:** los impide la restricción EXCLUDE `reservation_no_overlap`. Si la hora siguiente se ocupó, el API responde 409 `second_hour_unavailable` y la primera hora sigue apartada.
+- **Precio:** mientras está retenida se muestra el precio vigente de la cancha por hora multiplicado por las horas. Se **congela al confirmar** con el precio vigente en ese momento.
+- **Endpoints:** `POST` y `DELETE /api/booking/:id/second-hour`. Ajuste `booking.secondHourEnabled` (activado por defecto): `GET /api/booking/settings/second-hour` es público y `PUT` solo para ADMINISTRADOR. En el frontend el interruptor está en Precios de canchas → "Configuración de reservas".
+- **Sin migración:** la base ya admitía cualquier duración.
+- **Visualización:** Cobros, la línea de tiempo del panel y Mi CTCJ la muestran como un solo bloque: "4:00 – 6:00 p. m. · 2 horas".

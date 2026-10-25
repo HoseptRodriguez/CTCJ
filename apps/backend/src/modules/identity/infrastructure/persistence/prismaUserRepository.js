@@ -20,7 +20,12 @@ function toDomainUser(row, roleCodes) {
     phone: row.phone,
     birthDate: row.birthDate,
     bio: row.bio,
+    dominantHand: row.dominantHand,
+    backhand: row.backhand,
+    documentType: row.documentType,
+    documentNumber: row.documentNumber,
     avatarUrl: row.avatarUrl,
+    deletedAt: row.deletedAt ?? null,
   });
 }
 
@@ -37,6 +42,7 @@ function toPrismaCreateData(user) {
     lockedUntil: user.lockedUntil,
     lastLoginAt: user.lastLoginAt,
     emailVerifiedAt: user.emailVerifiedAt,
+    birthDate: user.birthDate,
   };
 }
 
@@ -111,10 +117,105 @@ export function createPrismaUserRepository(prisma) {
           phone: user.phone,
           birthDate: user.birthDate,
           bio: user.bio,
+          dominantHand: user.dominantHand,
+          backhand: user.backhand,
+          documentType: user.documentType,
+          documentNumber: user.documentNumber,
           avatarUrl: user.avatarUrl,
         },
       });
       return toDomainUser(updated, await getActiveRoleCodes(user.id));
+    },
+
+    async listForDirectory(clubId) {
+      const [rows, roles] = await Promise.all([
+        prisma.user.findMany({
+          where: { clubId },
+          orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            birthDate: true,
+            avatarUrl: true,
+            status: true,
+            membershipStatus: true,
+            dominantHand: true,
+            backhand: true,
+            lastLoginAt: true,
+            emailVerifiedAt: true,
+            createdAt: true,
+            deletedAt: true,
+            mfaEnabled: true,
+            guardianshipsAsMinor: {
+              where: { status: 'APPROVED' },
+              select: { guardianUserId: true },
+            },
+          },
+        }),
+        prisma.$queryRaw`
+          SELECT v.user_id, v.role_code FROM user_roles_view v
+          JOIN users u ON u.id = v.user_id WHERE u.club_id = ${clubId}::uuid
+        `,
+      ]);
+      const rolesByUser = new Map();
+      for (const { user_id: userId, role_code: code } of roles) {
+        if (!rolesByUser.has(userId)) rolesByUser.set(userId, []);
+        rolesByUser.get(userId).push(code);
+      }
+      return rows.map(({ guardianshipsAsMinor, ...row }) => ({
+        ...row,
+        roleCodes: rolesByUser.get(row.id) ?? [],
+        approvedGuardianIds: guardianshipsAsMinor.map((g) => g.guardianUserId),
+      }));
+    },
+
+    async revokeRoleGrant(userId, roleCode, revokedByUserId) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
+      await prisma.userRole.updateMany({
+        where: { userId, roleId: role.id, revokedAt: null },
+        data: { revokedAt: new Date(), revokedBy: revokedByUserId },
+      });
+    },
+
+    async countUsers(clubId) {
+      return prisma.user.count({ where: { clubId, deletedAt: null } });
+    },
+
+    async countDemo() {
+      return prisma.user.count({ where: { isDemo: true } });
+    },
+
+    async anonymize(userId, now) {
+      await prisma.mfaRecoveryCode.deleteMany({ where: { userId } });
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          // citext + unique per club: a unique, undeliverable address.
+          email: `eliminada-${userId}@cuenta-eliminada.invalid`,
+          passwordHash: null,
+          firstName: 'Cuenta',
+          lastName: 'eliminada',
+          documentType: null,
+          documentNumber: null,
+          phone: null,
+          birthDate: null,
+          bio: null,
+          avatarUrl: null,
+          dominantHand: null,
+          backhand: null,
+          mfaEnabled: false,
+          mfaSecret: null,
+          mfaEnabledAt: null,
+          mfaFailedCount: null,
+          mfaLockedUntil: null,
+          mfaLastStep: null,
+          status: 'DEACTIVATED',
+          deletedAt: now,
+        },
+      });
     },
 
     async addRoleGrant(userId, roleCode, grantedByUserId) {

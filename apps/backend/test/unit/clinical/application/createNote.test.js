@@ -7,6 +7,7 @@ import { PractitionerNotEligible } from '../../../../src/modules/clinical/applic
 import {
   createFakeNoteRepository,
   createFakePlayerEligibilityProvider,
+  createFakeHealthAuthorizationProvider,
   createFakePractitionerEligibilityProvider,
 } from './fakes.js';
 
@@ -19,6 +20,7 @@ describe('createNote', () => {
     createNote = createCreateNote({
       noteRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      healthAuthorizationProvider: createFakeHealthAuthorizationProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([
           ['psych-1', 'PSYCHOLOGY'],

@@ -20,6 +20,8 @@ import { createUpdateMyProfile } from '../application/useCases/updateMyProfile.j
 import { createUploadMyAvatar } from '../application/useCases/uploadMyAvatar.js';
 import { createGetPlayerCounts } from '../application/useCases/getPlayerCounts.js';
 import { createLookupUserByEmail } from '../application/useCases/lookupUserByEmail.js';
+import { createGetPlayerPlayStyle } from '../application/useCases/getPlayerPlayStyle.js';
+import { createUserDocumentUseCases } from '../application/useCases/userDocument.js';
 import { createGetSystemSetting } from '../application/useCases/getSystemSetting.js';
 import { createSetSystemSetting } from '../application/useCases/setSystemSetting.js';
 import { createRequestAffiliation } from '../application/useCases/requestAffiliation.js';
@@ -32,8 +34,21 @@ import { createListGuardianships } from '../application/useCases/listGuardianshi
 import { createListMyGuardianships } from '../application/useCases/listMyGuardianships.js';
 import { createCanBookForMinor } from '../application/useCases/canBookForMinor.js';
 import { createCheckIsJugador } from '../application/useCases/checkIsJugador.js';
+import { createCheckIsMinor } from '../application/useCases/checkIsMinor.js';
+import { createMinorAuthorizationUseCases } from '../application/useCases/minorAuthorization.js';
+import { createOptionalAuthorizationUseCases } from '../application/useCases/optionalAuthorizations.js';
+import { createNotificationDirectory } from '../application/useCases/notificationDirectory.js';
+import { createSyncLegalDocuments } from '../application/useCases/syncLegalDocuments.js';
+import { createRecordCookieConsent } from '../application/useCases/recordCookieConsent.js';
+import { createAccountRequirementsUseCases } from '../application/useCases/accountRequirements.js';
 import { createCheckHasAnyRole } from '../application/useCases/checkHasAnyRole.js';
 import { createGetUserSummaries } from '../application/useCases/getUserSummaries.js';
+import { createAnonymizeAccount } from '../application/useCases/anonymizeAccount.js';
+import { createCountDemoAccounts } from '../application/useCases/checkDemoAccounts.js';
+import { createPlayerDirectoryUseCases } from '../application/useCases/playerDirectory.js';
+import { createStaffAccountActions } from '../application/useCases/staffAccountActions.js';
+import { createMfaUseCases } from '../application/useCases/mfa.js';
+import { createMfaLoginUseCases } from '../application/useCases/mfaLogin.js';
 import { createSearchPlayers } from '../application/useCases/searchPlayers.js';
 import { createGetMyAchievements } from '../application/useCases/getMyAchievements.js';
 
@@ -42,15 +57,23 @@ import { createPrismaRoleRepository } from './persistence/prismaRoleRepository.j
 import { createPrismaRefreshTokenRepository } from './persistence/prismaRefreshTokenRepository.js';
 import { createPrismaEmailVerificationRepository } from './persistence/prismaEmailVerificationRepository.js';
 import { createPrismaPasswordResetRepository } from './persistence/prismaPasswordResetRepository.js';
+import { createPrismaConsentRepository } from './persistence/prismaConsentRepository.js';
+import { createPrismaLegalDocumentRepository } from './persistence/prismaLegalDocumentRepository.js';
 import { createPrismaSystemSettingRepository } from './persistence/prismaSystemSettingRepository.js';
 import { createPrismaAffiliationRequestRepository } from './persistence/prismaAffiliationRequestRepository.js';
 import { createPrismaGuardianshipRepository } from './persistence/prismaGuardianshipRepository.js';
+import { createPrismaIdentityAuditLog } from './persistence/prismaIdentityAuditLog.js';
+import { createPrismaMfaRepository } from './persistence/prismaMfaRepository.js';
+import { createPrismaNotificationDirectoryRepository } from './persistence/prismaNotificationDirectoryRepository.js';
+import { createAesMfaCrypto } from './security/aesMfaCrypto.js';
+import { createQrSvgRenderer } from './security/qrSvgRenderer.js';
 import { createArgon2PasswordHasher } from './security/argon2PasswordHasher.js';
 import { createJwtTokenService } from './security/jwtTokenService.js';
 import { createNodemailerEmailSender } from './email/nodemailerEmailSender.js';
 import { createResendEmailSender } from './email/resendEmailSender.js';
 import { createLocalDiskAvatarStorage } from './storage/localDiskAvatarStorage.js';
 import { createVercelBlobAvatarStorage } from './storage/vercelBlobAvatarStorage.js';
+import { createSharpAvatarImageProcessor } from './images/sharpAvatarImageProcessor.js';
 import {
   createNullCompetitionProgressProvider,
   createNullPerformanceProgressProvider,
@@ -73,6 +96,8 @@ export function buildIdentityContainer({
   competitionProgressProvider = createNullCompetitionProgressProvider(),
   performanceProgressProvider = createNullPerformanceProgressProvider(),
   trainingFrequencyProvider = createNullTrainingFrequencyProvider(),
+  // Tests of the two-step verification turn it on even where .env.test doesn't.
+  mfaEnforceStaff = config.mfa.enforceStaff,
 } = {}) {
   const userRepository = createPrismaUserRepository(prismaClient);
   const roleRepository = createPrismaRoleRepository(prismaClient);
@@ -82,6 +107,23 @@ export function buildIdentityContainer({
   const systemSettingRepository = createPrismaSystemSettingRepository(prismaClient);
   const affiliationRequestRepository = createPrismaAffiliationRequestRepository(prismaClient);
   const guardianshipRepository = createPrismaGuardianshipRepository(prismaClient);
+  const consentRepository = createPrismaConsentRepository(prismaClient);
+  const checkIsMinor = createCheckIsMinor({ userRepository, guardianshipRepository });
+  const minorAuthorization = createMinorAuthorizationUseCases({
+    consentRepository,
+    guardianshipRepository,
+    checkIsMinor,
+  });
+  // Competition is built after identity (it depends on identity), so the
+  // directory's category source is plugged in later by app.js.
+  let playerCategoryProvider = { getCategories: async () => new Map() };
+  const identityAuditLog = createPrismaIdentityAuditLog(prismaClient, DEFAULT_CLUB_ID);
+  const mfaRepository = createPrismaMfaRepository(prismaClient);
+  const optionalAuthorizations = createOptionalAuthorizationUseCases({
+    consentRepository,
+    guardianshipRepository,
+    checkIsMinor,
+  });
   const passwordHasher = createArgon2PasswordHasher();
   const tokenService = createJwtTokenService({
     accessSecret: config.jwt.accessSecret,
@@ -109,6 +151,16 @@ export function buildIdentityContainer({
   const clock = systemClock;
   const refreshTokenTtlMs = config.refreshToken.ttlDays * 24 * 60 * 60 * 1000;
 
+  const mfa = createMfaUseCases({
+    userRepository,
+    mfaRepository,
+    mfaCrypto: createAesMfaCrypto({ key: config.mfa.key }),
+    qrRenderer: createQrSvgRenderer(),
+    refreshTokenRepository,
+    auditLog: identityAuditLog,
+    clock,
+  });
+
   return {
     registerUser: createRegisterUser({
       userRepository,
@@ -116,6 +168,7 @@ export function buildIdentityContainer({
       tokenService,
       emailVerificationRepository,
       emailSender,
+      consentRepository,
       clock,
       clubId: DEFAULT_CLUB_ID,
       appPublicUrl: config.appPublicUrl,
@@ -128,6 +181,8 @@ export function buildIdentityContainer({
       clock,
       clubId: DEFAULT_CLUB_ID,
       refreshTokenTtlMs,
+      mfaRepository,
+      mfaEnforced: mfaEnforceStaff,
     }),
     refreshSession: createRefreshSession({
       refreshTokenRepository,
@@ -135,6 +190,17 @@ export function buildIdentityContainer({
       tokenService,
       clock,
       refreshTokenTtlMs,
+      mfaRepository,
+      mfaEnforced: mfaEnforceStaff,
+    }),
+    ...mfa,
+    ...createMfaLoginUseCases({
+      userRepository,
+      tokenService,
+      refreshTokenRepository,
+      clock,
+      refreshTokenTtlMs,
+      mfa,
     }),
     verifyEmail: createVerifyEmail({
       emailVerificationRepository,
@@ -169,10 +235,16 @@ export function buildIdentityContainer({
       trainingFrequencyProvider,
     }),
     updateMyProfile: createUpdateMyProfile({ userRepository }),
-    uploadMyAvatar: createUploadMyAvatar({ userRepository, avatarStorage }),
+    uploadMyAvatar: createUploadMyAvatar({
+      userRepository,
+      avatarStorage,
+      avatarImageProcessor: createSharpAvatarImageProcessor(),
+    }),
     getPlayerCounts: createGetPlayerCounts({ userRepository, clubId: DEFAULT_CLUB_ID }),
     getMembershipStatus: createGetMembershipStatus({ userRepository }),
     lookupUserByEmail: createLookupUserByEmail({ userRepository, clubId: DEFAULT_CLUB_ID }),
+    getPlayerPlayStyle: createGetPlayerPlayStyle({ userRepository }),
+    ...createUserDocumentUseCases({ userRepository }),
     getSystemSetting: createGetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
     setSystemSetting: createSetSystemSetting({ systemSettingRepository, clubId: DEFAULT_CLUB_ID }),
     requestAffiliation: createRequestAffiliation({ userRepository, affiliationRequestRepository }),
@@ -193,11 +265,60 @@ export function buildIdentityContainer({
     }),
     decideGuardianship: createDecideGuardianship({ userRepository, guardianshipRepository, clock }),
     listGuardianships: createListGuardianships({ guardianshipRepository, userRepository }),
-    listMyGuardianships: createListMyGuardianships({ guardianshipRepository, userRepository }),
+    listMyGuardianships: createListMyGuardianships({
+      guardianshipRepository,
+      userRepository,
+      minorAuthorizationFor: minorAuthorization.minorAuthorizationFor,
+      minorHealthAuthorizationFor: optionalAuthorizations.minorHealthAuthorizationFor,
+      minorPublicNameFor: optionalAuthorizations.minorPublicNameFor,
+    }),
     canBookForMinor: createCanBookForMinor({ guardianshipRepository }),
     checkIsJugador: createCheckIsJugador({ userRepository }),
+    checkIsMinor,
+    ...minorAuthorization,
+    ...optionalAuthorizations,
+    ...createNotificationDirectory({
+      notificationDirectoryRepository: createPrismaNotificationDirectoryRepository(prismaClient),
+      clock: systemClock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    recordCookieConsent: createRecordCookieConsent({ consentRepository }),
+    ...createAccountRequirementsUseCases({ userRepository, consentRepository }),
+    syncLegalDocuments: createSyncLegalDocuments({
+      legalDocumentRepository: createPrismaLegalDocumentRepository(prismaClient),
+    }),
     checkHasAnyRole: createCheckHasAnyRole({ userRepository }),
     getUserSummaries: createGetUserSummaries({ userRepository }),
+    countDemoAccounts: createCountDemoAccounts({ userRepository }),
+    ...createPlayerDirectoryUseCases({
+      userRepository,
+      guardianshipRepository,
+      consentRepository,
+      playerCategoryProvider: { getCategories: (ids) => playerCategoryProvider.getCategories(ids) },
+      isPendingGuardianAuthorization: minorAuthorization.isPendingGuardianAuthorization,
+      clock,
+      clubId: DEFAULT_CLUB_ID,
+    }),
+    /** app.js: where the directory's categories come from (competition). */
+    usePlayerCategoryProvider(provider) {
+      playerCategoryProvider = provider;
+    },
+    ...createStaffAccountActions({
+      userRepository,
+      refreshTokenRepository,
+      emailVerificationRepository,
+      emailSender,
+      tokenService,
+      auditLog: identityAuditLog,
+      clock,
+      appPublicUrl: config.appPublicUrl,
+    }),
+    anonymizeAccount: createAnonymizeAccount({
+      userRepository,
+      refreshTokenRepository,
+      avatarStorage,
+      clock,
+    }),
     searchPlayers: createSearchPlayers({ userRepository, clubId: DEFAULT_CLUB_ID }),
   };
 }

@@ -3,15 +3,33 @@ import {
   confirmSchema,
   scheduleQuerySchema,
   setCourtPriceSchema,
+  setSecondHourPolicySchema,
   recordPaymentSchema,
   listPaymentsQuerySchema,
   paymentsMonthlyQuerySchema,
+  holdDurationSchema,
 } from '@ctcj/shared';
 
 import { request } from './httpClient.js';
 
 export const bookingClient = {
   listCourts: () => request('/api/booking/courts'),
+
+  /** Public. @returns {Promise<{minutes: number}>} how long a hold waits for confirmation */
+  getHoldDuration: () => request('/api/booking/settings/hold-duration'),
+
+  /** Admin only. @param {number} minutes */
+  setHoldDuration: (minutes) => {
+    holdDurationSchema.parse({ minutes });
+    return request('/api/booking/settings/hold-duration', { method: 'PUT', body: { minutes } });
+  },
+
+  /**
+   * The caller's own upcoming reservations (HOLD/CONFIRMED), today (club
+   * time) through the next 8 days -- including ones they made for a minor.
+   * @returns {Promise<{from: string, to: string, reservations: Array}>}
+   */
+  getMyReservations: () => request('/api/booking/my-reservations'),
 
   getSchedule: (date) => {
     scheduleQuerySchema.parse({ date });
@@ -37,11 +55,41 @@ export const bookingClient = {
 
   cancel: (reservationId) => request(`/api/booking/${reservationId}/cancel`, { method: 'POST' }),
 
-  /** @param {string} courtId @param {number} priceCop */
+  /**
+   * Adds the same court's next hour to a held reservation (one reservation,
+   * same hold). @returns {Promise<{periodStart, periodEnd, hours, holdExpiresAt, priceCop}>}
+   */
+  addSecondHour: (reservationId) =>
+    request(`/api/booking/${reservationId}/second-hour`, { method: 'POST' }),
+
+  /** Back to one hour. */
+  removeSecondHour: (reservationId) =>
+    request(`/api/booking/${reservationId}/second-hour`, { method: 'DELETE' }),
+
+  /** @returns {Promise<{enabled: boolean}>} public: whether the second hour is offered */
+  getSecondHourPolicy: () => request('/api/booking/settings/second-hour'),
+
+  /** @param {boolean} enabled */
+  setSecondHourPolicy: (enabled) => {
+    setSecondHourPolicySchema.parse({ enabled });
+    return request('/api/booking/settings/second-hour', { method: 'PUT', body: { enabled } });
+  },
+
+  /**
+   * Applies to new reservations; the ones already made keep their price.
+   * @param {string} courtId @param {number} priceCop
+   * @returns {Promise<{courtId, priceCop, previousPriceCop, upcomingReservations}>}
+   */
   setCourtPrice: (courtId, priceCop) => {
     setCourtPriceSchema.parse({ priceCop });
     return request(`/api/booking/courts/${courtId}/price`, { method: 'PUT', body: { priceCop } });
   },
+
+  /**
+   * @param {string} courtId
+   * @returns {Promise<{priceCop, upcomingReservations, history: Array}>} history newest first
+   */
+  getCourtPriceHistory: (courtId) => request(`/api/booking/courts/${courtId}/price-history`),
 
   /** @param {string} reservationId @param {{method: string, notes?: string}} payload */
   recordPayment: (reservationId, payload) => {

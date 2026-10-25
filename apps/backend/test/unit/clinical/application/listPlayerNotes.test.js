@@ -3,16 +3,23 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createListPlayerNotes } from '../../../../src/modules/clinical/application/useCases/listPlayerNotes.js';
 import { PractitionerNotEligible } from '../../../../src/modules/clinical/application/errors/PractitionerNotEligible.js';
 
-import { createFakeNoteRepository, createFakePractitionerEligibilityProvider } from './fakes.js';
+import {
+  createFakeAuditLog,
+  createFakeNoteRepository,
+  createFakePractitionerEligibilityProvider,
+} from './fakes.js';
 
 describe('listPlayerNotes', () => {
   let noteRepository;
   let listPlayerNotes;
+  let auditLog;
 
   beforeEach(() => {
     noteRepository = createFakeNoteRepository();
+    auditLog = createFakeAuditLog();
     listPlayerNotes = createListPlayerNotes({
       noteRepository,
+      auditLog,
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([
           ['psych-1', 'PSYCHOLOGY'],
@@ -76,5 +83,30 @@ describe('listPlayerNotes', () => {
     await expect(
       listPlayerNotes({ playerId: 'player-1', practitionerUserId: 'not-a-practitioner' }),
     ).rejects.toThrow(PractitionerNotEligible);
+  });
+
+  it('records every read in the audit log: who, which notes, about which player', async () => {
+    const note = await noteRepository.create({
+      playerId: 'player-1',
+      practitionerId: 'physio-1',
+      discipline: 'PHYSIOTHERAPY',
+      noteType: 'SESSION_NOTE',
+      visibility: 'PRIVATE',
+      content: 'x',
+    });
+    await listPlayerNotes({
+      playerId: 'player-1',
+      practitionerUserId: 'physio-1',
+      actorRoles: ['FISIOTERAPEUTA'],
+    });
+    expect(auditLog.reads).toEqual([
+      {
+        actorUserId: 'physio-1',
+        actorRoles: ['FISIOTERAPEUTA'],
+        playerId: 'player-1',
+        noteIds: [note.id],
+        via: 'PRACTITIONER',
+      },
+    ]);
   });
 });

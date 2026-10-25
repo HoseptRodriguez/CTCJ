@@ -1,3 +1,7 @@
+import { randomUUID } from 'node:crypto';
+
+import { writeOutboxEvent } from '../../../../shared/outbox.js';
+
 function toRow(record) {
   return {
     id: record.id,
@@ -17,10 +21,18 @@ function toRow(record) {
  */
 export function createPrismaCoachNoteRepository(prisma) {
   return {
-    async create({ playerId, coachId, noteType, visibility, content, area = null }) {
-      const record = await prisma.coachNote.create({
-        data: { playerId, coachId, noteType, visibility, content, area },
-      });
+    /**
+     * `eventsFor(note)`: outbox events to write in the same transaction
+     * (a note visible to the player tells the player).
+     */
+    async create({ playerId, coachId, noteType, visibility, content, area = null, eventsFor }) {
+      const id = randomUUID();
+      const [record] = await prisma.$transaction([
+        prisma.coachNote.create({
+          data: { id, playerId, coachId, noteType, visibility, content, area },
+        }),
+        ...(eventsFor ? eventsFor({ id, playerId }) : []).map((e) => writeOutboxEvent(prisma, e)),
+      ]);
       return toRow(record);
     },
 

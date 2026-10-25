@@ -17,7 +17,8 @@ export function exportToCsv({ filename, columns, rows }) {
     ...rows.map((row) => columns.map((c) => escapeCell(c.get(row))).join(',')),
   ];
 
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  // The BOM makes Excel read accents ("Membresías") as UTF-8.
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

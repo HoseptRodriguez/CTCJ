@@ -78,4 +78,9 @@ export class TournamentRepository {
   async saveMatchResult(_input) {
     throw new Error('Not implemented');
   }
+
+  /** Tournaments where the player is (or was) a participant, newest first. */
+  async listByPlayer(_clubId, _playerId) {
+    throw new Error('Not implemented');
+  }
 }

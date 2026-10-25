@@ -31,3 +31,9 @@ coverage/
 
 # husky (generated)
 .husky/_
+
+# Original club photos (the optimized copies live in apps/frontend/public/img/club)
+apps/frontend/photos-src/
+
+# graphify (mapa de código local, no se versiona)
+graphify-out/

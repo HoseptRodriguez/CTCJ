@@ -2,12 +2,16 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
+import sharp from 'sharp';
 import { ROLE_CODES } from '@ctcj/shared';
 
 import { createApp } from '../../../src/app.js';
 import { createArgon2PasswordHasher } from '../../../src/modules/identity/infrastructure/security/argon2PasswordHasher.js';
 
 import { prisma, resetUsers, TEST_CLUB_ID } from './testDb.js';
+
+// Required at sign-up: birth date and the two authorizations, ticked.
+const SIGNUP = { birthDate: '1990-05-02', acceptPrivacy: true, acceptTerms: true };
 
 const MAILHOG_API = 'http://localhost:8025/api';
 const ADMIN_PASSWORD = 'ClaveAdminSegura1';
@@ -65,7 +69,7 @@ async function fetchPasswordResetLinkFor(toEmail, { retries = 20, delayMs = 250 
 async function registerAndVerify(app, { email, password }) {
   await request(app)
     .post('/api/auth/register')
-    .send({ email, password, firstName: 'Ana', lastName: 'Gomez' })
+    .send({ ...SIGNUP, email, password, firstName: 'Ana', lastName: 'Gomez' })
     .expect(201);
   const verificationUrl = await fetchVerificationLinkFor(email);
   const token = new URL(verificationUrl).searchParams.get('token');
@@ -99,6 +103,12 @@ async function seedVerifiedAdmin() {
   return { email, password: ADMIN_PASSWORD };
 }
 
+function realJpeg() {
+  return sharp({ create: { width: 64, height: 64, channels: 3, background: '#001A4D' } })
+    .jpeg()
+    .toBuffer();
+}
+
 describe('Identity HTTP API (real Postgres + Mailhog)', () => {
   let app;
 
@@ -120,7 +130,7 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
 
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password, firstName: 'Ana', lastName: 'Gomez' })
+      .send({ ...SIGNUP, email, password, firstName: 'Ana', lastName: 'Gomez' })
       .expect(201);
 
     const verificationUrl = await fetchVerificationLinkFor(email);
@@ -141,6 +151,7 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     expect(refreshCookie).toBeTruthy();
     expect(refreshCookie).toMatch(/HttpOnly/);
     expect(refreshCookie).toMatch(/SameSite=Strict/i);
+    expect(refreshCookie).toMatch(/Path=\/api\/auth/);
 
     const refreshRes = await request(app)
       .post('/api/auth/refresh')
@@ -174,15 +185,56 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
   it('rejects registration with a password shorter than the minimum (validation)', async () => {
     await request(app)
       .post('/api/auth/register')
-      .send({ email: 'corta@example.com', password: 'short', firstName: 'A', lastName: 'B' })
+      .send({
+        ...SIGNUP,
+        email: 'corta@example.com',
+        password: 'short',
+        firstName: 'A',
+        lastName: 'B',
+      })
       .expect(400);
+  });
+
+  it('sign-up needs the birth date and both authorizations ticked; each is stored as proof', async () => {
+    const body = {
+      email: 'nueva@example.com',
+      password: 'ClaveSegura123',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+    };
+    for (const missing of [
+      { ...SIGNUP, birthDate: undefined },
+      { ...SIGNUP, acceptPrivacy: false },
+      { ...SIGNUP, acceptTerms: undefined },
+    ]) {
+      await request(app)
+        .post('/api/auth/register')
+        .send({ ...body, ...missing })
+        .expect(400);
+    }
+    await request(app)
+      .post('/api/auth/register')
+      .set('User-Agent', 'NavegadorRegistro')
+      .send({ ...body, ...SIGNUP, marketing: { email: true, whatsapp: false } })
+      .expect(201);
+    const user = await prisma.user.findFirstOrThrow({ where: { email: 'nueva@example.com' } });
+    expect(user.birthDate.toISOString().slice(0, 10)).toBe('1990-05-02');
+    const consents = await prisma.consent.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(consents.map((c) => [c.consentType, c.action, c.userAgent])).toEqual([
+      ['PRIVACY_POLICY', 'ACCEPTED', 'NavegadorRegistro'],
+      ['TERMS', 'ACCEPTED', 'NavegadorRegistro'],
+      ['MARKETING', 'ACCEPTED', 'NavegadorRegistro'],
+    ]);
   });
 
   it('rejects duplicate registration of a verified account with 409', async () => {
     const email = `dup-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .send({ ...SIGNUP, email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
       .expect(201);
     const verificationUrl = await fetchVerificationLinkFor(email);
     const token = new URL(verificationUrl).searchParams.get('token');
@@ -190,7 +242,13 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
 
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password: 'OtraClaveSegura1', firstName: 'Otra', lastName: 'Persona' })
+      .send({
+        ...SIGNUP,
+        email,
+        password: 'OtraClaveSegura1',
+        firstName: 'Otra',
+        lastName: 'Persona',
+      })
       .expect(409);
   });
 
@@ -198,11 +256,17 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     const email = `reenvio-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .send({ ...SIGNUP, email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
       .expect(201);
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password: 'OtraClaveSegura1', firstName: 'Otra', lastName: 'Persona' })
+      .send({
+        ...SIGNUP,
+        email,
+        password: 'OtraClaveSegura1',
+        firstName: 'Otra',
+        lastName: 'Persona',
+      })
       .expect(201);
 
     const verificationUrl = await fetchVerificationLinkFor(email);
@@ -222,7 +286,7 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     const email = `perfil-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
-      .send({ email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .send({ ...SIGNUP, email, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
       .expect(201);
     const verificationUrl = await fetchVerificationLinkFor(email);
     const token = new URL(verificationUrl).searchParams.get('token');
@@ -250,7 +314,13 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     const playerEmail = `conteo-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
-      .send({ email: playerEmail, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .send({
+        ...SIGNUP,
+        email: playerEmail,
+        password: 'ClaveSegura123',
+        firstName: 'Ana',
+        lastName: 'Gomez',
+      })
       .expect(201);
     const verificationUrl = await fetchVerificationLinkFor(playerEmail);
     const token = new URL(verificationUrl).searchParams.get('token');
@@ -295,7 +365,13 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
     const playerEmail = `jugador-rbac-${randomUUID()}@example.com`;
     await request(app)
       .post('/api/auth/register')
-      .send({ email: playerEmail, password: 'ClaveSegura123', firstName: 'Ana', lastName: 'Gomez' })
+      .send({
+        ...SIGNUP,
+        email: playerEmail,
+        password: 'ClaveSegura123',
+        firstName: 'Ana',
+        lastName: 'Gomez',
+      })
       .expect(201);
     const verificationUrl = await fetchVerificationLinkFor(playerEmail);
     const token = new URL(verificationUrl).searchParams.get('token');
@@ -526,12 +602,12 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
       const uploadRes = await request(app)
         .post('/api/identity/me/avatar')
         .set('Authorization', `Bearer ${token}`)
-        .attach('avatar', Buffer.from([0xff, 0xd8, 0xff]), {
+        .attach('avatar', await realJpeg(), {
           filename: 'foto.jpg',
           contentType: 'image/jpeg',
         })
         .expect(200);
-      expect(uploadRes.body.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.jpg$/);
+      expect(uploadRes.body.avatarUrl).toMatch(/^\/uploads\/avatars\/.+\.webp$/);
 
       await request(app).get(uploadRes.body.avatarUrl).expect(200);
 
@@ -552,6 +628,23 @@ describe('Identity HTTP API (real Postgres + Mailhog)', () => {
           filename: 'archivo.pdf',
           contentType: 'application/pdf',
         })
+        .expect(400);
+      expect(res.body.code).toBe('invalid_avatar_file');
+    });
+
+    it('rejects a file with an image type but broken content (a truncated JPEG) with 400', async () => {
+      const token = await loginNewPlayer();
+      const res = await request(app)
+        .post('/api/identity/me/avatar')
+        .set('Authorization', `Bearer ${token}`)
+        .attach(
+          'avatar',
+          Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]),
+          {
+            filename: 'roto.jpg',
+            contentType: 'image/jpeg',
+          },
+        )
         .expect(400);
       expect(res.body.code).toBe('invalid_avatar_file');
     });

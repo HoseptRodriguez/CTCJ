@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
+import {
+  CONSENT_ACTION,
+  CONSENT_TYPE,
+  MARKETING_AUTHORIZATION,
+  PRIVACY_POLICY,
+  TERMS,
+} from '@ctcj/shared';
+
 import { User, UserStatus } from '../../domain/entities/User.js';
+import { isMinorByBirthDate } from '../../domain/policies/age.js';
 import { EmailAlreadyRegistered } from '../errors/EmailAlreadyRegistered.js';
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -12,6 +21,7 @@ const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
  *   tokenService: import('../ports/TokenService.js').TokenService,
  *   emailVerificationRepository: import('../ports/EmailVerificationRepository.js').EmailVerificationRepository,
  *   emailSender: import('../ports/EmailSender.js').EmailSender,
+ *   consentRepository: import('../ports/ConsentRepository.js').ConsentRepository,
  *   clock: import('../ports/Clock.js').Clock,
  *   clubId: string,
  *   appPublicUrl: string,
@@ -23,11 +33,27 @@ export function createRegisterUser({
   tokenService,
   emailVerificationRepository,
   emailSender,
+  consentRepository,
   clock,
   clubId,
   appPublicUrl,
 }) {
-  return async function registerUser({ email, password, firstName, lastName }) {
+  /**
+   * The person must have ticked the privacy authorization and the terms
+   * (the schema refuses otherwise); each is stored as proof with the version
+   * in force, IP and browser. Promotions only by the channels chosen, and
+   * never for a minor.
+   */
+  return async function registerUser({
+    email,
+    password,
+    firstName,
+    lastName,
+    birthDate,
+    marketing = { email: false, whatsapp: false },
+    ipAddress = null,
+    userAgent = null,
+  }) {
     const normalizedEmail = User.normalizeEmail(email);
 
     const existingUser = await userRepository.findByEmail(clubId, normalizedEmail);
@@ -58,7 +84,28 @@ export function createRegisterUser({
       lastName,
     });
 
+    if (birthDate) user.updateProfile({ birthDate: new Date(`${birthDate}T00:00:00Z`) });
+
     const savedUser = await userRepository.create(user);
+    const origin = { ipAddress, userAgent };
+    const accept = (consentType, documentVersion, details = null) =>
+      consentRepository.append({
+        userId: savedUser.id,
+        consentType,
+        documentVersion,
+        action: CONSENT_ACTION.ACCEPTED,
+        details,
+        ...origin,
+      });
+    await accept(CONSENT_TYPE.PRIVACY_POLICY, PRIVACY_POLICY.version);
+    await accept(CONSENT_TYPE.TERMS, TERMS.version);
+    const minor = savedUser.birthDate ? isMinorByBirthDate(savedUser.birthDate, clock.now()) : true; // unknown age: never promotions
+    const channels = minor
+      ? []
+      : ['email', 'whatsapp'].filter((channel) => marketing?.[channel] === true);
+    if (channels.length) {
+      await accept(CONSENT_TYPE.MARKETING, MARKETING_AUTHORIZATION.version, { channels });
+    }
     await sendVerification(savedUser);
 
     return { userId: savedUser.id };

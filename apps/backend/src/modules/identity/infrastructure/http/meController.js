@@ -19,6 +19,8 @@ export function createMeController(container) {
       phone: req.body.phone,
       birthDate: req.body.birthDate,
       bio: req.body.bio,
+      dominantHand: req.body.dominantHand,
+      backhand: req.body.backhand,
     });
     res.status(200).json(result);
   });
@@ -70,7 +72,135 @@ export function createMeController(container) {
     res.status(200).json({ guardianships: result });
   });
 
+  // Proof of the authorization: who, when, from where (Ley 1581 de 2012).
+  const origin = (req) => ({
+    ipAddress: req.ip ?? null,
+    userAgent: req.get('user-agent')?.slice(0, 500) ?? null,
+  });
+
+  const authorizeMinor = asyncHandler(async (req, res) => {
+    const result = await container.authorizeMinor({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const withdrawMinorAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.withdrawMinorAuthorization({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const recordCookieConsent = asyncHandler(async (req, res) => {
+    const result = await container.recordCookieConsent({
+      userId: req.user.id,
+      preferences: req.body.preferences,
+      analytics: req.body.analytics,
+      policyVersion: req.body.policyVersion,
+      ...origin(req),
+    });
+    res.status(201).json(result);
+  });
+
+  const getAccountRequirements = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getAccountRequirements({ userId: req.user.id }));
+  });
+
+  const completeAccount = asyncHandler(async (req, res) => {
+    const result = await container.completeAccount({
+      userId: req.user.id,
+      birthDate: req.body.birthDate,
+      acceptPrivacy: req.body.acceptPrivacy,
+      acceptTerms: req.body.acceptTerms,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const getMyAuthorizations = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyAuthorizations({ userId: req.user.id }));
+  });
+
+  const setMyAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.setMyAuthorization({
+      userId: req.user.id,
+      type: req.params.type,
+      accept: req.body.accept,
+      channels: req.body.channels,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const setMinorHealthAuthorization = asyncHandler(async (req, res) => {
+    const result = await container.setMinorHealthAuthorization({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      accept: req.body.accept,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const setMinorPublicName = asyncHandler(async (req, res) => {
+    const result = await container.setMinorPublicName({
+      guardianUserId: req.user.id,
+      guardianshipId: req.params.id,
+      accept: req.body.accept,
+      ...origin(req),
+    });
+    res.status(200).json(result);
+  });
+
+  const getMfaStatus = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMfaStatus({ userId: req.user.id }));
+  });
+
+  const startMfaSetup = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.startMfaSetup({ userId: req.user.id }));
+  });
+
+  const confirmMfaSetup = asyncHandler(async (req, res) => {
+    res
+      .status(200)
+      .json(await container.confirmMfaSetup({ userId: req.user.id, code: req.body.code }));
+  });
+
+  const disableMfa = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.disableMfa({ userId: req.user.id, code: req.body.code }));
+  });
+
+  const regenerateRecoveryCodes = asyncHandler(async (req, res) => {
+    res
+      .status(200)
+      .json(await container.regenerateRecoveryCodes({ userId: req.user.id, code: req.body.code }));
+  });
+
+  const getAccountRestrictions = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getAccountRestrictions({ userId: req.user.id }));
+  });
+
   return {
+    authorizeMinor,
+    withdrawMinorAuthorization,
+    getAccountRestrictions,
+    getMfaStatus,
+    startMfaSetup,
+    confirmMfaSetup,
+    disableMfa,
+    regenerateRecoveryCodes,
+    getMyAuthorizations,
+    setMyAuthorization,
+    setMinorHealthAuthorization,
+    setMinorPublicName,
+    recordCookieConsent,
+    getAccountRequirements,
+    completeAccount,
     getMyProfile,
     updateMyProfile,
     uploadMyAvatar,

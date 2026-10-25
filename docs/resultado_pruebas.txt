@@ -1,0 +1,1793 @@
+Resultado de pruebas unitarias con cobertura - CTCJ Platform
+Fecha: 2026-10-06 22:32:09  |  Node v24.16.0  |  Vitest 2.1.9  |  commit 53a8e2a
+
+================================================================
+ BACKEND (apps/backend) - npx vitest run --coverage
+================================================================
+
+ RUN  v2.1.9 C:/Users/KTFUS/ctcj-platform/apps/backend
+      Coverage enabled with v8
+
+ ✓ test/unit/tournament/application/recordMatchResult.test.js (8 tests) 9ms
+ ✓ test/unit/goals/application/getMyGoals.test.js (9 tests) 14ms
+ ✓ test/unit/challenges/application/submitMatchScore.test.js (8 tests) 22ms
+ ✓ test/unit/booking/application/getSchedule.test.js (9 tests) 20ms
+ ✓ test/unit/clinical/application/physioAdminAccess.test.js (9 tests) 27ms
+ ✓ test/unit/booking/application/createHold.test.js (23 tests) 29ms
+ ✓ test/unit/competition/application/getMyCompetitionSummary.test.js (7 tests) 42ms
+ ✓ test/unit/community/application/mediaPosts.test.js (24 tests) 33ms
+ ✓ test/unit/booking/application/secondHour.test.js (10 tests) 24ms
+ ✓ test/unit/billing/application/setPlanPrice.test.js (12 tests) 33ms
+ ✓ test/unit/identity/application/playerDirectory.test.js (7 tests) 23ms
+ ✓ test/unit/privacy/dataRequests.test.js (5 tests) 20ms
+ ✓ test/unit/tournament/domain/generateBracket.test.js (7 tests) 15ms
+ ✓ test/unit/identity/application/loginUser.test.js (9 tests) 17ms
+ ✓ test/unit/identity/application/optionalAuthorizations.test.js (7 tests) 15ms
+ ✓ test/unit/inquiries/infoRequests.test.js (6 tests) 25ms
+ ✓ test/unit/identity/application/registerUser.test.js (7 tests) 21ms
+ ✓ test/unit/challenges/application/getMyChallenges.test.js (5 tests) 18ms
+ ✓ test/unit/billing/application/createPlan.test.js (8 tests) 22ms
+ ✓ test/unit/identity/application/staffAccountActions.test.js (5 tests) 16ms
+ ✓ test/unit/competition/domain/computeStandings.test.js (7 tests) 33ms
+ ✓ test/unit/notifications/application/notifications.test.js (8 tests) 17ms
+ ✓ test/unit/booking/domain/Regla_PrivacidadDeReservaPorTipoDeVisitante.test.js (11 tests) 11ms
+ ✓ test/unit/identity/application/minorAuthorization.test.js (6 tests) 13ms
+ ✓ test/unit/identity/application/refreshSession.test.js (6 tests) 14ms
+ ✓ test/unit/tournament/application/generateDraw.test.js (5 tests) 15ms
+ ✓ test/unit/identity/application/mfa.test.js (8 tests) 98ms
+ ✓ test/unit/billing/application/generateInvoice.test.js (5 tests) 20ms
+ ✓ test/unit/billing/domain/Regla_LineasDeFacturaSegunAjustes.test.js (10 tests) 15ms
+ ✓ test/unit/tournament/application/addParticipant.test.js (9 tests) 12ms
+ ✓ test/unit/booking/application/getMonthlyRevenue.test.js (4 tests) 10ms
+ ✓ test/unit/identity/application/consentsAtSignUp.test.js (4 tests) 22ms
+ ✓ test/unit/challenges/domain/Regla_MaquinaDeEstadosDeResultado.test.js (11 tests) 15ms
+ ✓ test/unit/billing/application/listInvoices.test.js (7 tests) 18ms
+ ✓ test/unit/booking/domain/Regla_MaquinaDeEstadosDeReserva.test.js (9 tests) 14ms
+ ✓ test/unit/notifications/notificationPolicy.test.js (17 tests) 24ms
+ ✓ test/unit/booking/application/recordPayment.test.js (6 tests) 14ms
+ ✓ test/unit/config/env.test.js (17 tests) 33ms
+ ✓ test/unit/billing/application/listPlans.test.js (5 tests) 17ms
+ ✓ test/unit/billing/application/listPlayerMemberships.test.js (5 tests) 20ms
+ ✓ test/unit/identity/application/confirmPasswordReset.test.js (5 tests) 15ms
+ ✓ test/unit/billing/application/invoiceQueries.test.js (6 tests) 16ms
+ ✓ test/unit/identity/application/getMyAchievements.test.js (5 tests) 12ms
+ ✓ test/unit/clinical/application/createNote.test.js (10 tests) 14ms
+ ✓ test/unit/competition/application/recordMatch.test.js (6 tests) 14ms
+ ✓ test/unit/clinical/application/healthAuthorization.test.js (6 tests) 18ms
+ ✓ test/unit/tournament/domain/Regla_TransicionesDeEstadoDeTorneo.test.js (13 tests) 12ms
+ ✓ test/unit/competition/application/getStandings.test.js (5 tests) 15ms
+ ✓ test/unit/booking/application/setCourtPrice.test.js (4 tests) 18ms
+ ✓ test/unit/community/application/reportContent.test.js (6 tests) 16ms
+ ✓ test/unit/competition/application/getRecentClubMatches.test.js (4 tests) 33ms
+ ✓ test/unit/clinical/application/listPlayerNotes.test.js (5 tests) 13ms
+ ✓ test/unit/booking/application/confirmReservation.test.js (6 tests) 15ms
+ ✓ test/unit/competition/application/listMatches.test.js (4 tests) 16ms
+ ✓ test/unit/booking/application/getMyReservations.test.js (3 tests) 17ms
+ ✓ test/unit/booking/application/cancelReservation.test.js (6 tests) 13ms
+ ✓ test/unit/clinical/application/scheduleAppointment.test.js (6 tests) 12ms
+ ✓ test/unit/identity/application/uploadMyAvatar.test.js (6 tests) 17ms
+ ✓ test/unit/billing/application/getMonthlyRevenue.test.js (3 tests) 10ms
+ ✓ test/unit/identity/application/decideAffiliationRequest.test.js (4 tests) 12ms
+ ✓ test/unit/coaching/application/getRecentActivity.test.js (3 tests) 11ms
+ ✓ test/unit/community/application/autoHide.test.js (2 tests) 12ms
+ ✓ test/unit/identity/application/requestGuardianship.test.js (4 tests) 10ms
+ ✓ test/unit/identity/application/decideGuardianship.test.js (4 tests) 10ms
+ ✓ test/unit/challenges/application/createChallenge.test.js (5 tests) 14ms
+ ✓ test/unit/clinical/domain/Regla_TransicionesDeEstadoDeCita.test.js (9 tests) 9ms
+ ✓ test/unit/notifications/notificationDelivery.test.js (20 tests) 46ms
+ ✓ test/unit/legal/legalDocuments.test.js (14 tests) 20ms
+ ✓ test/unit/challenges/application/acceptChallenge.test.js (4 tests) 17ms
+ ✓ test/unit/booking/application/getMyTrainingFrequency.test.js (4 tests) 9ms
+ ✓ test/unit/scripts/bootstrapAdminPolicy.test.js (11 tests) 10ms
+ ✓ test/unit/legal/colombianCalendar.test.js (6 tests) 14ms
+ ✓ test/unit/clinical/application/createMedicalHistoryEntry.test.js (4 tests) 9ms
+ ✓ test/unit/identity/application/verifyEmail.test.js (4 tests) 13ms
+ ✓ test/unit/billing/application/cancelInvoice.test.js (4 tests) 11ms
+ ✓ test/unit/clinical/application/createRecoveryPlan.test.js (4 tests) 10ms
+ ✓ test/unit/competition/application/recordMatchForOpenSeason.test.js (3 tests) 13ms
+ ✓ test/unit/billing/application/enrollPlayer.test.js (4 tests) 13ms
+ ✓ test/unit/identity/domain/userDocumentAndPlayStyle.test.js (4 tests) 14ms
+ ✓ test/unit/coaching/application/createNote.test.js (10 tests) 13ms
+ ✓ test/unit/community/application/createComment.test.js (4 tests) 14ms
+ ✓ test/unit/community/application/listPosts.test.js (4 tests) 11ms
+ ✓ test/unit/booking/application/listPaymentsByDateRange.test.js (2 tests) 16ms
+ ✓ test/unit/identity/application/setMembershipStatus.test.js (3 tests) 11ms
+ ✓ test/unit/identity/application/grantRoleToUser.test.js (3 tests) 12ms
+ ✓ test/unit/challenges/domain/Regla_MaquinaDeEstadosDeReto.test.js (13 tests) 11ms
+ ✓ test/unit/identity/application/requestAffiliation.test.js (4 tests) 11ms
+ ✓ test/unit/community/application/listReportedContent.test.js (3 tests) 8ms
+ ✓ test/unit/billing/domain/Regla_CalendarioYCodigoDePlan.test.js (11 tests) 13ms
+ ✓ test/unit/coaching/application/derivePerformanceSummary.test.js (7 tests) 29ms
+ ✓ test/unit/goals/domain/Regla_ObjetivoDeMetaValido.test.js (12 tests) 13ms
+ ✓ test/unit/billing/domain/Regla_TransicionesDeEstadoDeMembresia.test.js (7 tests) 8ms
+ ✓ test/unit/billing/domain/Regla_TransicionesDeEstadoDeFactura.test.js (5 tests) 8ms
+ ✓ test/unit/billing/application/recordInvoicePayment.test.js (3 tests) 9ms
+ ✓ test/unit/identity/application/searchPlayers.test.js (4 tests) 13ms
+ ✓ test/unit/identity/domain/Regla_BloqueoCuentaTrasCincoIntentos.test.js (6 tests) 8ms
+ ✓ test/unit/community/application/likePost.test.js (5 tests) 9ms
+ ✓ test/unit/clinical/domain/Regla_TransicionesDeEstadoDePlanDeRecuperacion.test.js (6 tests) 8ms
+ ✓ test/unit/competition/application/createSeason.test.js (3 tests) 9ms
+ ✓ test/unit/community/application/pendingMinor.test.js (2 tests) 16ms
+ ✓ test/unit/identity/application/requestPasswordReset.test.js (2 tests) 13ms
+ ✓ test/unit/identity/application/updateMyProfile.test.js (4 tests) 11ms
+ ✓ test/unit/billing/application/addAdjustment.test.js (7 tests) 11ms
+ ✓ test/unit/clinical/application/resolveMedicalHistoryEntry.test.js (3 tests) 9ms
+ ✓ test/unit/identity/domain/totp.test.js (9 tests) 17ms
+ ✓ test/unit/clinical/application/discontinueRecoveryPlan.test.js (3 tests) 12ms
+ ✓ test/unit/booking/domain/Regla_CobroAsistido.test.js (4 tests) 11ms
+ ✓ test/unit/identity/application/checkHasAnyRole.test.js (4 tests) 13ms
+ ✓ test/unit/tournament/application/removeParticipant.test.js (3 tests) 12ms
+ ✓ test/unit/identity/application/listGuardianships.test.js (2 tests) 12ms
+ ✓ test/unit/identity/application/listAffiliationRequests.test.js (2 tests) 11ms
+ ✓ test/unit/identity/application/getPlayerCounts.test.js (1 test) 7ms
+ ✓ test/unit/booking/domain/Regla_CancelacionSinPenalidadDoceHoras.test.js (5 tests) 8ms
+ ✓ test/unit/clinical/application/listMedicalHistory.test.js (3 tests) 10ms
+ ✓ test/unit/challenges/application/cancelChallenge.test.js (2 tests) 11ms
+ ✓ test/unit/clinical/application/cancelAppointment.test.js (3 tests) 9ms
+ ✓ test/unit/goals/application/abandonGoal.test.js (4 tests) 12ms
+ ✓ test/unit/challenges/application/rejectChallenge.test.js (2 tests) 12ms
+ ✓ test/unit/clinical/application/listRecoveryPlans.test.js (3 tests) 11ms
+ ✓ test/unit/community/application/deleteContentAsStaff.test.js (4 tests) 9ms
+ ✓ test/unit/competition/application/voidMatch.test.js (3 tests) 11ms
+ ✓ test/unit/identity/application/canBookForMinor.test.js (4 tests) 8ms
+ ✓ test/unit/community/application/dismissReport.test.js (3 tests) 10ms
+ ✓ test/unit/identity/application/listMyGuardianships.test.js (2 tests) 13ms
+ ✓ test/unit/clinical/application/completeRecoveryPlan.test.js (3 tests) 8ms
+ ✓ test/unit/coaching/application/getMyNotes.test.js (3 tests) 11ms
+ ✓ test/unit/goals/application/createGoal.test.js (4 tests) 11ms
+ ✓ test/unit/challenges/infrastructure/matchRecorderAdapter.test.js (4 tests) 9ms
+ ✓ test/unit/coaching/application/recordPerformanceSnapshot.test.js (3 tests) 13ms
+ ✓ test/unit/identity/infrastructure/resendEmailSender.test.js (3 tests) 12ms
+ ✓ test/unit/clinical/application/listAppointments.test.js (2 tests) 9ms
+ ✓ test/unit/tournament/application/cancelTournament.test.js (3 tests) 9ms
+ ✓ test/unit/identity/domain/Regla_SoloUsuarioEsAutoAsignable.test.js (19 tests) 16ms
+ ✓ test/unit/billing/domain/Regla_UnaSoloPrecioVigentePorPlan.test.js (5 tests) 8ms
+ ✓ test/unit/goals/domain/Regla_MaquinaDeEstadosDeMeta.test.js (6 tests) 8ms
+ ✓ test/unit/clinical/application/markCompleted.test.js (3 tests) 9ms
+ ✓ test/unit/billing/application/setPlayerMembershipStatus.test.js (3 tests) 9ms
+ ✓ test/unit/community/domain/fileSniffing.test.js (13 tests) 10ms
+ ✓ test/unit/competition/application/closeSeason.test.js (3 tests) 10ms
+ ✓ test/unit/shared/utf8Body.test.js (3 tests) 178ms
+ ✓ test/unit/clinical/application/markNoShow.test.js (3 tests) 8ms
+ ✓ test/unit/identity/domain/Regla_EstadoDeMembresiaSoloParaJugador.test.js (4 tests) 15ms
+ ✓ test/unit/competition/domain/Regla_TemporadaAbiertaUnicaVez.test.js (5 tests) 11ms
+ ✓ test/unit/legal/legalCheck.test.js (2 tests) 9ms
+ ✓ test/unit/identity/application/getUserSummaries.test.js (3 tests) 10ms
+ ✓ test/unit/competition/domain/Regla_ConteoDeParticipantesPorModalidad.test.js (4 tests) 8ms
+ ✓ test/unit/community/application/listComments.test.js (2 tests) 9ms
+ ✓ test/unit/identity/application/getMembershipStatus.test.js (3 tests) 9ms
+ ✓ test/unit/coaching/application/listPlayerPerformance.test.js (3 tests) 10ms
+ ✓ test/unit/community/application/deleteMyComment.test.js (3 tests) 8ms
+ ✓ test/unit/identity/application/systemSetting.test.js (3 tests) 7ms
+ ✓ test/unit/identity/infrastructure/sharpAvatarImageProcessor.test.js (4 tests) 162ms
+ ✓ test/unit/competition/domain/Regla_CoherenciaDeGanador.test.js (5 tests) 8ms
+ ✓ test/unit/identity/infrastructure/requireRole.test.js (5 tests) 14ms
+ ✓ test/unit/community/application/deleteMyPost.test.js (3 tests) 8ms
+ ✓ test/unit/clinical/application/getMyAppointments.test.js (1 test) 8ms
+ ✓ test/unit/booking/domain/Regla_MaximoSieteDiasDeAnticipacion.test.js (5 tests) 9ms
+ ✓ test/unit/identity/application/recordCookieConsent.test.js (2 tests) 10ms
+ ✓ test/unit/legal/backupDb.test.js (4 tests) 10ms
+ ✓ test/unit/identity/application/checkIsMinor.test.js (3 tests) 5ms
+ ✓ test/unit/coaching/application/listPlayerNotes.test.js (2 tests) 10ms
+ ✓ test/unit/clinical/application/getMyMedicalHistory.test.js (1 test) 7ms
+ ✓ test/unit/identity/application/lookupUserByEmail.test.js (2 tests) 10ms
+ ✓ test/unit/competition/domain/Regla_SinJugadorDuplicado.test.js (3 tests) 7ms
+ ✓ test/unit/clinical/application/getMyRecoveryPlans.test.js (1 test) 7ms
+ ✓ test/unit/clinical/domain/Regla_TransicionesDeEstadoDeHistorialMedico.test.js (3 tests) 7ms
+ ✓ test/unit/identity/application/checkIsJugador.test.js (3 tests) 8ms
+ ✓ test/unit/community/application/createPost.test.js (2 tests) 12ms
+ ✓ test/unit/identity/domain/Regla_ActualizacionDePerfil.test.js (4 tests) 7ms
+ ✓ test/unit/identity/application/logoutUser.test.js (3 tests) 12ms
+ ✓ test/unit/competition/domain/Regla_AnulacionDeUnaSolaVia.test.js (2 tests) 9ms
+ ✓ test/unit/identity/domain/Regla_VerificacionDeCorreo.test.js (3 tests) 8ms
+ ✓ test/unit/identity/application/getMyProfile.test.js (2 tests) 9ms
+ ✓ test/unit/identity/infrastructure/directoryCsv.test.js (2 tests) 11ms
+ ✓ test/unit/shared/httpLogging.test.js (1 test) 84ms
+ ✓ test/unit/coaching/application/getMyPerformance.test.js (2 tests) 9ms
+ ✓ test/unit/booking/domain/Regla_DuracionDeReservaEsUnaHora.test.js (4 tests) 8ms
+ ✓ test/unit/clinical/application/getMyNotes.test.js (1 test) 8ms
+ ✓ test/unit/identity/domain/Regla_ClaveDebeTenerEntre10y100Caracteres.test.js (5 tests) 7ms
+ ✓ test/unit/tournament/application/createTournament.test.js (1 test) 5ms
+ ✓ test/unit/shared/errorForLog.test.js (2 tests) 16ms
+ ✓ test/unit/identity/domain/Regla_ClaveDebeTenerLetraYNumero.test.js (5 tests) 6ms
+ ✓ test/unit/encoding/sourceEncoding.test.js (3 tests) 14890ms
+   ✓ text encoding of seeds, migrations and the UI > has no file outside UTF-8, no BOM, no "\uFFFD" and no double-encoded accents 14816ms
+ ✓ test/unit/identity/infrastructure/vercelBlobAvatarStorage.test.js (2 tests) 5ms
+
+ Test Files  184 passed (184)
+      Tests  976 passed (976)
+   Start at  22:32:12
+   Duration  32.06s (transform 14.64s, setup 0ms, collect 77.21s, tests 17.80s, environment 92ms, prepare 60.46s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   44.86 |    80.36 |   65.92 |   44.86 |                   
+ backend           |       0 |        0 |       0 |       0 |                   
+  ...ion.config.js |       0 |        0 |       0 |       0 | 1-15              
+ backend/prisma    |       0 |        0 |       0 |       0 |                   
+  seed.js          |       0 |        0 |       0 |       0 | 1-202             
+  seedTestUsers.js |       0 |        0 |       0 |       0 | 1-99              
+  testUsers.js     |       0 |        0 |       0 |       0 | 1-34              
+ backend/scripts   |   49.43 |    93.54 |      80 |   49.43 |                   
+  ...strapAdmin.js |       0 |        0 |       0 |       0 | 1-94              
+  ...dminPolicy.js |     100 |    96.66 |     100 |     100 | 27                
+ backend/src       |       0 |        0 |       0 |       0 |                   
+  app.js           |       0 |        0 |       0 |       0 | 1-609             
+  server.js        |       0 |        0 |       0 |       0 | 1-87              
+ ...end/src/config |   97.02 |    93.54 |      75 |   97.02 |                   
+  club.js          |       0 |        0 |       0 |       0 | 1-6               
+  env.js           |     100 |    96.66 |     100 |     100 | 54                
+ ...ication/errors |    93.8 |     92.3 |    92.3 |    93.8 |                   
+  ...eadyExists.js |     100 |      100 |     100 |     100 |                   
+  ...ceNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...pNotActive.js |     100 |      100 |     100 |     100 |                   
+  ...ipNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...duledPrice.js |     100 |      100 |     100 |     100 |                   
+  ...eadyExists.js |       0 |        0 |       0 |       0 | 1-8               
+  ...eadyExists.js |     100 |      100 |     100 |     100 |                   
+  PlanNotActive.js |     100 |      100 |     100 |     100 |                   
+  PlanNotFound.js  |     100 |      100 |     100 |     100 |                   
+  ...riceNotSet.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...ngePending.js |     100 |      100 |     100 |     100 |                   
+  ...rtTooEarly.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |    2.95 |       10 |    9.09 |    2.95 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-15              
+  ...ngAuditLog.js |       0 |        0 |       0 |       0 | 1-13              
+  ...ngSettings.js |       0 |        0 |       0 |       0 | 1-15              
+  Clock.js         |   77.77 |      100 |      50 |   77.77 | 6-7               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-52              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-30              
+  ...tionSender.js |       0 |        0 |       0 |       0 | 1-14              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-85              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-19              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-12              
+ ...ation/useCases |   98.47 |    89.63 |   97.95 |   98.47 |                   
+  addAdjustment.js |     100 |      100 |     100 |     100 |                   
+  cancelInvoice.js |     100 |      100 |     100 |     100 |                   
+  ...dPlanPrice.js |   95.45 |    55.55 |     100 |   95.45 | 21-22             
+  createPlan.js    |     100 |    85.71 |     100 |     100 | 26                
+  enrollPlayer.js  |     100 |      100 |     100 |     100 |                   
+  ...ateInvoice.js |     100 |     90.9 |     100 |     100 | 49                
+  getInvoice.js    |     100 |      100 |     100 |     100 |                   
+  ...hlyRevenue.js |     100 |      100 |     100 |     100 |                   
+  getMyInvoices.js |     100 |      100 |     100 |     100 |                   
+  ...emberships.js |     100 |      100 |     100 |     100 |                   
+  ...NoticeDays.js |       0 |        0 |       0 |       0 | 1-6               
+  ...djustments.js |     100 |      100 |     100 |     100 |                   
+  listInvoices.js  |     100 |      100 |     100 |     100 |                   
+  ...Membership.js |     100 |      100 |     100 |     100 |                   
+  ...PlanPrices.js |     100 |      100 |     100 |     100 |                   
+  listPlans.js     |     100 |      100 |     100 |     100 |                   
+  ...emberships.js |     100 |    45.45 |     100 |     100 | 29-36,38-39       
+  ...icePayment.js |     100 |      100 |     100 |     100 |                   
+  setPlanActive.js |   87.87 |    66.66 |     100 |   87.87 | 17-18,20-21       
+  setPlanPrice.js  |     100 |      100 |     100 |     100 |                   
+  ...shipStatus.js |   95.65 |    83.33 |     100 |   95.65 | 21                
+  ...NoticeDays.js |     100 |      100 |     100 |     100 |                   
+  updatePlan.js    |     100 |     92.3 |     100 |     100 | 31                
+ ...omain/entities |     100 |      100 |     100 |     100 |                   
+  Invoice.js       |     100 |      100 |     100 |     100 |                   
+  ...Membership.js |     100 |      100 |     100 |     100 |                   
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...voiceState.js |     100 |      100 |     100 |     100 |                   
+  ...Transition.js |     100 |      100 |     100 |     100 |                   
+  ...eValidFrom.js |     100 |      100 |     100 |     100 |                   
+  ...otPositive.js |     100 |      100 |     100 |     100 |                   
+ ...omain/services |   98.83 |    90.38 |     100 |   98.83 |                   
+  ...voiceLines.js |   98.76 |    85.18 |     100 |   98.76 | 39                
+  planCode.js      |   96.29 |     87.5 |     100 |   96.29 | 27                
+  priceSchedule.js |     100 |      100 |     100 |     100 |                   
+  ...rsedePrice.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-124             
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...ngsAdapter.js |       0 |        0 |       0 |       0 | 1-30              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-15              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-52              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-17              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-199             
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-160             
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-34              
+  meController.js  |       0 |        0 |       0 |       0 | 1-22              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-13              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-35              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-44              
+  ...ngAuditLog.js |       0 |        0 |       0 |       0 | 1-25              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-132             
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-60              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-144             
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  CourtNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...nsExceeded.js |     100 |      100 |     100 |     100 |                   
+  ...ingBlocked.js |     100 |      100 |     100 |     100 |                   
+  ...horization.js |     100 |      100 |     100 |     100 |                   
+  ...ookForUser.js |     100 |      100 |     100 |     100 |                   
+  ...ntConflict.js |     100 |      100 |     100 |     100 |                   
+  ...onNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...urDisabled.js |     100 |      100 |     100 |     100 |                   
+  ...navailable.js |     100 |      100 |     100 |     100 |                   
+  ...tAvailable.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...ngAuditLog.js |       0 |        0 |       0 |       0 | 1-13              
+  ...cySettings.js |       0 |        0 |       0 |       0 | 1-41              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-35              
+  ...ipProvider.js |       0 |        0 |       0 |       0 | 1-12              
+  ...usProvider.js |       0 |        0 |       0 |       0 | 1-12              
+  ...onProvider.js |       0 |        0 |       0 |       0 | 1-10              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-27              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-10              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-88              
+ ...ation/useCases |   87.81 |    85.84 |   82.85 |   87.81 |                   
+  ...eservation.js |    87.5 |    85.71 |     100 |    87.5 | 33-36             
+  ...eservation.js |   91.22 |    91.66 |     100 |   91.22 | 53-57             
+  createHold.js    |     100 |      100 |     100 |     100 |                   
+  ...iceHistory.js |     100 |    85.71 |     100 |     100 | 42                
+  ...tionPolicy.js |       0 |        0 |       0 |       0 | 1-8               
+  ...hlyRevenue.js |     100 |      100 |     100 |     100 |                   
+  ...servations.js |     100 |       80 |     100 |     100 | 44                
+  ...gFrequency.js |     100 |      100 |     100 |     100 |                   
+  ...kingPolicy.js |       0 |        0 |       0 |       0 | 1-8               
+  getSchedule.js   |     100 |      100 |     100 |     100 |                   
+  listCourts.js    |       0 |        0 |       0 |       0 | 1-8               
+  ...yDateRange.js |     100 |      100 |     100 |     100 |                   
+  recordPayment.js |   95.91 |    83.33 |     100 |   95.91 | 55-56             
+  secondHour.js    |    92.4 |    73.33 |     100 |    92.4 | 35-36,51-52,77-78 
+  ...HourPolicy.js |       0 |        0 |       0 |       0 | 1-16              
+  setCourtPrice.js |     100 |    85.71 |     100 |     100 | 38                
+  ...tionPolicy.js |       0 |        0 |       0 |       0 | 1-14              
+  ...kingPolicy.js |       0 |        0 |       0 |       0 | 1-12              
+ ...omain/entities |   98.87 |    97.56 |     100 |   98.87 |                   
+  Reservation.js   |   98.87 |    97.56 |     100 |   98.87 | 106-107           
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  HoldExpired.js   |     100 |      100 |     100 |     100 |                   
+  ...ationState.js |     100 |      100 |     100 |     100 |                   
+  ...idTimeSlot.js |     100 |      100 |     100 |     100 |                   
+  ...lreadyPaid.js |     100 |      100 |     100 |     100 |                   
+  ...HasNoPrice.js |     100 |      100 |     100 |     100 |                   
+  ...onNotOwned.js |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |   96.36 |       90 |     100 |   96.36 |                   
+  bookingPolicy.js |   95.83 |    88.88 |     100 |   95.83 | 33-34             
+  ...tionPolicy.js |     100 |      100 |     100 |     100 |                   
+  ...duleWindow.js |   95.65 |       90 |     100 |   95.65 | 16-17             
+ ...omain/services |     100 |      100 |     100 |     100 |                   
+  ...ionPrivacy.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-128             
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...ngsAdapter.js |       0 |        0 |       0 |       0 | 1-59              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-20              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-17              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-14              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-73              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-9               
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-190             
+  bookingRoutes.js |       0 |        0 |       0 |       0 | 1-115             
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-31              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-35              
+ ...structure/jobs |       0 |        0 |       0 |       0 |                   
+  ...reHoldsJob.js |       0 |        0 |       0 |       0 | 1-75              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...ngAuditLog.js |       0 |        0 |       0 |       0 | 1-25              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-68              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-56              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-159             
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  ...adyPending.js |     100 |      100 |     100 |     100 |                   
+  ...otAccepted.js |     100 |      100 |     100 |     100 |                   
+  ...geNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...navailable.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...eForbidden.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-26              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-32              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  MatchRecorder.js |       0 |        0 |       0 |       0 | 1-21              
+  ...tionSender.js |       0 |        0 |       0 |       0 | 1-16              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-15              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-11              
+ ...ation/useCases |     100 |    92.78 |     100 |     100 |                   
+  ...tChallenge.js |     100 |     87.5 |     100 |     100 | 33                
+  ...lChallenge.js |     100 |    83.33 |     100 |     100 | 32                
+  ...eChallenge.js |     100 |      100 |     100 |     100 |                   
+  ...Challenges.js |     100 |    94.11 |     100 |     100 | 51,59             
+  ...tChallenge.js |     100 |    83.33 |     100 |     100 | 32                
+  ...MatchScore.js |     100 |    93.54 |     100 |     100 | 78,89             
+ ...omain/entities |   98.83 |    94.59 |     100 |   98.83 |                   
+  Challenge.js     |     100 |      100 |     100 |     100 |                   
+  ...atchResult.js |   97.95 |    91.66 |     100 |   97.95 | 94-95             
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...lengeState.js |     100 |      100 |     100 |     100 |                   
+  ...esultState.js |     100 |      100 |     100 |     100 |                   
+  ...Submission.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-102             
+ ...cture/adapters |      29 |       60 |   33.33 |      29 |                   
+  ...derAdapter.js |     100 |      100 |     100 |     100 |                   
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-41              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-22              
+  meController.js  |       0 |        0 |       0 |       0 | 1-69              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-25              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-92              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-73              
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  ...ntNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...ntRequired.js |     100 |      100 |     100 |     100 |                   
+  ...neMismatch.js |     100 |      100 |     100 |     100 |                   
+  ...onRequired.js |     100 |      100 |     100 |     100 |                   
+  ...ryNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...anNotFound.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-29              
+  ...alAuditLog.js |       0 |        0 |       0 |       0 | 1-14              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-10              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-26              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-12              
+  ...onProvider.js |       0 |        0 |       0 |       0 | 1-11              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-29              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-25              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-11              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-15              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-29              
+ ...ation/useCases |    98.5 |    94.81 |   94.33 |    98.5 |                   
+  ...horization.js |     100 |      100 |     100 |     100 |                   
+  ...ppointment.js |     100 |      100 |     100 |     100 |                   
+  ...calConsent.js |     100 |      100 |     100 |     100 |                   
+  ...coveryPlan.js |     100 |      100 |     100 |     100 |                   
+  ...storyEntry.js |     100 |      100 |     100 |     100 |                   
+  createNote.js    |     100 |      100 |     100 |     100 |                   
+  ...coveryPlan.js |     100 |      100 |     100 |     100 |                   
+  ...coveryPlan.js |     100 |      100 |     100 |     100 |                   
+  ...pointments.js |     100 |       80 |     100 |     100 | 24                
+  ...calHistory.js |     100 |      100 |     100 |     100 |                   
+  getMyNotes.js    |     100 |      100 |     100 |     100 |                   
+  ...overyPlans.js |     100 |      100 |     100 |     100 |                   
+  ...sioSummary.js |    92.3 |    63.63 |   57.14 |    92.3 | 47-48,51-55       
+  ...pointments.js |     100 |      100 |     100 |     100 |                   
+  ...calHistory.js |     100 |      100 |     100 |     100 |                   
+  ...esForAdmin.js |     100 |      100 |     100 |     100 |                   
+  ...layerNotes.js |     100 |      100 |     100 |     100 |                   
+  ...overyPlans.js |     100 |      100 |     100 |     100 |                   
+  markCompleted.js |     100 |      100 |     100 |     100 |                   
+  markNoShow.js    |     100 |      100 |     100 |     100 |                   
+  ...storyEntry.js |     100 |      100 |     100 |     100 |                   
+  ...ppointment.js |     100 |      100 |     100 |     100 |                   
+  ...nessStatus.js |   91.83 |     87.5 |     100 |   91.83 | 32-33,38-39       
+ ...omain/entities |     100 |      100 |     100 |     100 |                   
+  ...ppointment.js |     100 |      100 |     100 |     100 |                   
+  ...storyEntry.js |     100 |      100 |     100 |     100 |                   
+  RecoveryPlan.js  |     100 |      100 |     100 |     100 |                   
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...tmentState.js |     100 |      100 |     100 |     100 |                   
+  ...EntryState.js |     100 |      100 |     100 |     100 |                   
+  ...yPlanState.js |     100 |      100 |     100 |     100 |                   
+  ...meConflict.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-145             
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-51              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-17              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-33              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-181             
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-173             
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-25              
+  meController.js  |       0 |        0 |       0 |       0 | 1-52              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-21              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-96              
+  ...alAuditLog.js |       0 |        0 |       0 |       0 | 1-26              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-39              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-25              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-74              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-60              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-74              
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  CoachingError.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+ ...ication/events |   76.47 |      100 |      50 |   76.47 |                   
+  ...hingEvents.js |   76.47 |      100 |      50 |   76.47 | 8-11              
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-28              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-29              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-16              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-13              
+ ...ation/useCases |     100 |      100 |   94.11 |     100 |                   
+  createNote.js    |     100 |      100 |   66.66 |     100 |                   
+  ...nceSummary.js |     100 |      100 |     100 |     100 |                   
+  getMyNotes.js    |     100 |      100 |     100 |     100 |                   
+  ...erformance.js |     100 |      100 |     100 |     100 |                   
+  ...ntActivity.js |     100 |      100 |     100 |     100 |                   
+  ...layerNotes.js |     100 |      100 |     100 |     100 |                   
+  ...erformance.js |     100 |      100 |     100 |     100 |                   
+  ...ceSnapshot.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-51              
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-21              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-55              
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-51              
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-14              
+  meController.js  |       0 |        0 |       0 |       0 | 1-22              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-13              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-63              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-50              
+ ...ication/errors |   96.03 |      100 |    92.3 |   96.03 |                   
+  ...ntNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...unityError.js |     100 |      100 |     100 |     100 |                   
+  ...otAccepted.js |      50 |      100 |       0 |      50 | 6-10              
+  ...ntNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...mitReached.js |     100 |      100 |     100 |     100 |                   
+  InvalidMedia.js  |     100 |      100 |     100 |     100 |                   
+  ...edForMinor.js |     100 |      100 |     100 |     100 |                   
+  ...horization.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  PostNotFound.js  |     100 |      100 |     100 |     100 |                   
+  ...adyPending.js |     100 |      100 |     100 |     100 |                   
+  ...rtNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...navailable.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-23              
+  ...esProvider.js |       0 |        0 |       0 |       0 | 1-11              
+  ...eProcessor.js |       0 |        0 |       0 |       0 | 1-14              
+  MediaStorage.js  |       0 |        0 |       0 |       0 | 1-36              
+  ...usProvider.js |       0 |        0 |       0 |       0 | 1-16              
+  ...tionSender.js |       0 |        0 |       0 |       0 | 1-15              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-12              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-20              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-55              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-40              
+ ...ation/services |     100 |      100 |     100 |     100 |                   
+  clubDay.js       |     100 |      100 |     100 |     100 |                   
+  mediaPolicy.js   |     100 |      100 |     100 |     100 |                   
+ ...ation/useCases |   95.92 |    90.15 |   97.14 |   95.92 |                   
+  ...ideoUpload.js |   91.17 |    80.95 |     100 |   91.17 | 51-52,57-58,64-65 
+  createComment.js |   96.87 |    83.33 |     100 |   96.87 | 42-43             
+  createPost.js    |   97.66 |    94.23 |     100 |   97.66 | 77-78,182-183     
+  ...entAsStaff.js |     100 |    91.66 |     100 |     100 | 31                
+  ...eMyComment.js |     100 |      100 |     100 |     100 |                   
+  deleteMyPost.js  |     100 |     87.5 |     100 |     100 | 20                
+  dismissReport.js |     100 |      100 |     100 |     100 |                   
+  ...berContent.js |       0 |        0 |       0 |       0 | 1-18              
+  ...pabilities.js |     100 |    66.66 |     100 |     100 | 32                
+  likePost.js      |     100 |      100 |     100 |     100 |                   
+  listComments.js  |     100 |    83.33 |     100 |     100 | 24                
+  listPosts.js     |     100 |      100 |     100 |     100 |                   
+  ...tedContent.js |     100 |    91.66 |     100 |     100 | 53,74             
+  reportContent.js |     100 |      100 |     100 |     100 |                   
+  ...Visibility.js |     100 |       60 |     100 |     100 | 19,30             
+  unlikePost.js    |     100 |      100 |     100 |     100 |                   
+ ...omain/services |   73.14 |    88.09 |      80 |   73.14 |                   
+  fileSniffing.js  |   73.14 |    88.09 |      80 |   73.14 | ...5,80-81,85-105 
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-125             
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-24              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-52              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-53              
+  adminRoutes.js   |       0 |        0 |       0 |       0 | 1-34              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-180             
+  ...nityRoutes.js |       0 |        0 |       0 |       0 | 1-70              
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-25              
+  mediaUpload.js   |       0 |        0 |       0 |       0 | 1-40              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-35              
+ ...ructure/images |       0 |        0 |       0 |       0 |                   
+  ...eProcessor.js |       0 |        0 |       0 |       0 | 1-26              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-53              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-32              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-157             
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-67              
+ ...ucture/storage |       0 |        0 |       0 |       0 |                   
+  ...diaStorage.js |       0 |        0 |       0 |       0 | 1-68              
+  ...diaStorage.js |       0 |        0 |       0 |       0 | 1-73              
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  MatchNotFound.js |     100 |      100 |     100 |     100 |                   
+  NoOpenSeason.js  |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...lreadyOpen.js |     100 |      100 |     100 |     100 |                   
+  ...onNotFound.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  Clock.js         |       0 |        0 |       0 |       0 | 1-11              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-51              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-17              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-14              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-30              
+ ...ation/useCases |   89.62 |    79.31 |   91.66 |   89.62 |                   
+  closeSeason.js   |     100 |      100 |     100 |     100 |                   
+  createSeason.js  |     100 |      100 |     100 |     100 |                   
+  ...ionSummary.js |     100 |    67.85 |     100 |     100 | 38,58,66-73,85-86 
+  ...Categories.js |       0 |        0 |       0 |       0 | 1-33              
+  ...lubMatches.js |     100 |    72.72 |     100 |     100 | 38-39             
+  getStandings.js  |     100 |      100 |     100 |     100 |                   
+  listMatches.js   |     100 |    69.23 |     100 |     100 | 23,41-45          
+  listSeasons.js   |       0 |        0 |       0 |       0 | 1-11              
+  recordMatch.js   |     100 |      100 |     100 |     100 |                   
+  ...OpenSeason.js |     100 |      100 |     100 |     100 |                   
+  voidMatch.js     |     100 |      100 |     100 |     100 |                   
+ ...omain/entities |     100 |      100 |     100 |     100 |                   
+  ...itionMatch.js |     100 |      100 |     100 |     100 |                   
+  ...tionSeason.js |     100 |      100 |     100 |     100 |                   
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...articipant.js |     100 |      100 |     100 |     100 |                   
+  ...MatchState.js |     100 |      100 |     100 |     100 |                   
+  ...ipantCount.js |     100 |      100 |     100 |     100 |                   
+  ...easonState.js |     100 |      100 |     100 |     100 |                   
+  ...WinnerSide.js |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |     100 |      100 |     100 |     100 |                   
+  ...ingsPolicy.js |     100 |      100 |     100 |     100 |                   
+ ...omain/services |     100 |      100 |     100 |     100 |                   
+  ...eStandings.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-93              
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-22              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-116             
+  ...tionRoutes.js |       0 |        0 |       0 |       0 | 1-81              
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-23              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-35              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-123             
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-74              
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  GoalNotFound.js  |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...ssProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-25              
+  ...ssProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...cyProvider.js |       0 |        0 |       0 |       0 | 1-11              
+ ...ation/useCases |   99.46 |    92.98 |     100 |   99.46 |                   
+  abandonGoal.js   |     100 |      100 |     100 |     100 |                   
+  createGoal.js    |     100 |      100 |     100 |     100 |                   
+  getMyGoals.js    |   99.24 |     91.3 |     100 |   99.24 | 48                
+ ...omain/entities |     100 |      100 |     100 |     100 |                   
+  Goal.js          |     100 |      100 |     100 |     100 |                   
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...dGoalState.js |     100 |      100 |     100 |     100 |                   
+  ...GoalTarget.js |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |     100 |      100 |     100 |     100 |                   
+  ...rgetPolicy.js |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-46              
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-29              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-16              
+  meController.js  |       0 |        0 |       0 |       0 | 1-38              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-17              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-68              
+ ...ication/errors |   93.28 |      100 |      80 |   93.28 |                   
+  ...Anonymized.js |     100 |      100 |     100 |     100 |                   
+  ...adyPending.js |     100 |      100 |     100 |     100 |                   
+  ...stNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...NotPending.js |     100 |      100 |     100 |     100 |                   
+  ...adyJugador.js |     100 |      100 |     100 |     100 |                   
+  ...OwnAccount.js |     100 |      100 |     100 |     100 |                   
+  ...Registered.js |     100 |      100 |     100 |     100 |                   
+  ...dyVerified.js |     100 |      100 |     100 |     100 |                   
+  ...eadyExists.js |     100 |      100 |     100 |     100 |                   
+  ...otApproved.js |     100 |      100 |     100 |     100 |                   
+  ...ipNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...NotPending.js |     100 |      100 |     100 |     100 |                   
+  ...kForbidden.js |     100 |      100 |     100 |     100 |                   
+  ...AvatarFile.js |     100 |      100 |     100 |     100 |                   
+  ...idMfaToken.js |     100 |      100 |     100 |     100 |                   
+  ...ResetToken.js |     100 |      100 |     100 |     100 |                   
+  ...freshToken.js |     100 |      100 |     100 |     100 |                   
+  ...ationToken.js |     100 |      100 |     100 |     100 |                   
+  ...NewVersion.js |     100 |      100 |     100 |     100 |                   
+  ...elRequired.js |     100 |      100 |     100 |     100 |                   
+  ...adyEnabled.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...odeInvalid.js |     100 |      100 |     100 |     100 |                   
+  MfaLocked.js     |     100 |      100 |     100 |     100 |                   
+  MfaNotEnabled.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...redForRole.js |     100 |      100 |     100 |     100 |                   
+  ...NotStarted.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...upRequired.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...dsGuardian.js |     100 |      100 |     100 |     100 |                   
+  ...icyVersion.js |     100 |      100 |     100 |     100 |                   
+  ...dyAssigned.js |     100 |      100 |     100 |     100 |                   
+  ...otAssigned.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...NotAllowed.js |   56.25 |      100 |       0 |   56.25 | 6-7,13-17         
+  ...horization.js |     100 |      100 |     100 |     100 |                   
+  UserNotFound.js  |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-44              
+  ...eProcessor.js |       0 |        0 |       0 |       0 | 1-15              
+  AvatarStorage.js |       0 |        0 |       0 |       0 | 1-14              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...ssProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-28              
+  EmailSender.js   |       0 |        0 |       0 |       0 | 1-9               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-15              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-61              
+  ...tyAuditLog.js |       0 |        0 |       0 |       0 | 1-13              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-18              
+  MfaCrypto.js     |       0 |        0 |       0 |       0 | 1-17              
+  MfaRepository.js |       0 |        0 |       0 |       0 | 1-48              
+  ...wordHasher.js |       0 |        0 |       0 |       0 | 1-11              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-16              
+  ...ssProvider.js |       0 |        0 |       0 |       0 | 1-13              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-10              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-37              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-7               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-18              
+  TokenService.js  |       0 |        0 |       0 |       0 | 1-43              
+  ...cyProvider.js |       0 |        0 |       0 |       0 | 1-11              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-112             
+ ...ation/useCases |   90.28 |    89.29 |   90.78 |   90.28 |                   
+  ...quirements.js |     100 |    93.33 |     100 |     100 | 38                
+  ...izeAccount.js |       0 |        0 |       0 |       0 | 1-37              
+  ...okForMinor.js |     100 |      100 |     100 |     100 |                   
+  ...moAccounts.js |       0 |        0 |       0 |       0 | 1-12              
+  ...HasAnyRole.js |     100 |      100 |     100 |     100 |                   
+  ...kIsJugador.js |     100 |      100 |     100 |     100 |                   
+  checkIsMinor.js  |     100 |      100 |   66.66 |     100 |                   
+  ...swordReset.js |   95.45 |    85.71 |     100 |   95.45 | 38-39             
+  ...ionRequest.js |   95.12 |       90 |     100 |   95.12 | 35-36             
+  ...ardianship.js |   94.59 |    88.88 |     100 |   94.59 | 31-32             
+  ...shipStatus.js |     100 |      100 |     100 |     100 |                   
+  ...hievements.js |     100 |    88.88 |     100 |     100 | 37                
+  ...onRequests.js |       0 |        0 |       0 |       0 | 1-11              
+  getMyProfile.js  |     100 |      100 |     100 |     100 |                   
+  ...ayerCounts.js |     100 |      100 |     100 |     100 |                   
+  ...rPlayStyle.js |   88.23 |    66.66 |     100 |   88.23 | 14-15             
+  ...temSetting.js |     100 |      100 |     100 |     100 |                   
+  ...rSummaries.js |     100 |      100 |     100 |     100 |                   
+  ...RoleToUser.js |   85.71 |    85.71 |     100 |   85.71 | 29-33             
+  issueSession.js  |     100 |      100 |     100 |     100 |                   
+  ...onRequests.js |     100 |    57.14 |     100 |     100 | 25-27             
+  ...rdianships.js |     100 |    66.66 |     100 |     100 | 26-27             
+  ...rdianships.js |     100 |    72.72 |     100 |     100 | 40,45-49          
+  loginUser.js     |     100 |      100 |     100 |     100 |                   
+  logoutUser.js    |     100 |      100 |     100 |     100 |                   
+  ...serByEmail.js |     100 |      100 |     100 |     100 |                   
+  mfa.js           |   96.92 |    76.36 |   91.66 |   96.92 | 206-211           
+  mfaLogin.js      |     100 |       90 |     100 |     100 | 38                
+  ...horization.js |     100 |      100 |     100 |     100 |                   
+  ...nDirectory.js |       0 |        0 |       0 |       0 | 1-41              
+  ...orizations.js |   70.03 |       85 |   56.25 |   70.03 | ...08-314,320-331 
+  ...rDirectory.js |     100 |    92.77 |     100 |     100 | ...91,225,250-251 
+  ...kieConsent.js |     100 |      100 |     100 |     100 |                   
+  ...eshSession.js |   89.74 |    76.47 |     100 |   89.74 | 47-48,58-63       
+  registerUser.js  |     100 |      100 |     100 |     100 |                   
+  ...ffiliation.js |     100 |      100 |     100 |     100 |                   
+  ...ardianship.js |     100 |      100 |     100 |     100 |                   
+  ...swordReset.js |     100 |      100 |     100 |     100 |                   
+  searchPlayers.js |     100 |      100 |     100 |     100 |                   
+  ...shipStatus.js |     100 |      100 |     100 |     100 |                   
+  ...temSetting.js |     100 |      100 |     100 |     100 |                   
+  ...untActions.js |   86.03 |    94.44 |    87.5 |   86.03 | 108-132           
+  ...lDocuments.js |     100 |      100 |     100 |     100 |                   
+  ...eMyProfile.js |     100 |      100 |     100 |     100 |                   
+  ...adMyAvatar.js |     100 |      100 |     100 |     100 |                   
+  userDocument.js  |   94.11 |    83.33 |     100 |   94.11 | 14-15             
+  verifyEmail.js   |   93.75 |     87.5 |     100 |   93.75 | 28-29             
+ ...omain/entities |   98.97 |    93.47 |     100 |   98.97 |                   
+  Role.js          |    87.5 |       75 |     100 |    87.5 | 8-9               
+  User.js          |     100 |    95.23 |     100 |     100 | 140-141           
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  ...ockedError.js |     100 |      100 |     100 |     100 |                   
+  ...tNotActive.js |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...otVerified.js |     100 |      100 |     100 |     100 |                   
+  ...redentials.js |     100 |      100 |     100 |     100 |                   
+  ...Applicable.js |     100 |      100 |     100 |     100 |                   
+  ...tForbidden.js |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |   93.93 |     87.5 |     100 |   93.93 |                   
+  age.js           |     100 |      100 |     100 |     100 |                   
+  avatarPolicy.js  |     100 |      100 |     100 |     100 |                   
+  lockoutPolicy.js |   85.71 |       60 |     100 |   85.71 | 17-18,28-29       
+  ...wordPolicy.js |     100 |      100 |     100 |     100 |                   
+ ...omain/services |     100 |    89.28 |     100 |     100 |                   
+  grantRole.js     |     100 |      100 |     100 |     100 |                   
+  totp.js          |     100 |    88.88 |     100 |     100 | 38,79,115         
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-324             
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-29              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-16              
+ ...tructure/email |   67.12 |    88.88 |   85.71 |   67.12 |                   
+  ...lTemplates.js |     100 |      100 |     100 |     100 |                   
+  ...mailSender.js |       0 |        0 |       0 |       0 | 1-29              
+  ...mailSender.js |     100 |      100 |     100 |     100 |                   
+ ...structure/http |    10.7 |    57.14 |    38.7 |    10.7 |                   
+  adminRoutes.js   |       0 |        0 |       0 |       0 | 1-21              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-27              
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-22              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-147             
+  authRoutes.js    |       0 |        0 |       0 |       0 | 1-58              
+  errorMapping.js  |   89.09 |      100 |       0 |   89.09 | 53-58             
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-27              
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-22              
+  meController.js  |       0 |        0 |       0 |       0 | 1-214             
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-133             
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-21              
+  playersRoutes.js |       0 |        0 |       0 |       0 | 1-21              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-31              
+  ...Controller.js |   35.66 |    84.84 |   85.71 |   35.66 | 3-7,63-159        
+  ...toryRoutes.js |       0 |        0 |       0 |       0 | 1-41              
+  ...Middleware.js |       0 |        0 |       0 |       0 | 1-17              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-44              
+  ...dminRoutes.js |       0 |        0 |       0 |       0 | 1-59              
+ ...ttp/middleware |   36.66 |    81.81 |   33.33 |   36.66 |                   
+  optionalAuth.js  |       0 |        0 |       0 |       0 | 1-26              
+  requireAuth.js   |       0 |        0 |       0 |       0 | 1-21              
+  requireRole.js   |     100 |      100 |     100 |     100 |                   
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-35              
+ ...ructure/images |     100 |      100 |     100 |     100 |                   
+  ...eProcessor.js |     100 |      100 |     100 |     100 |                   
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-61              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-63              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-32              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-89              
+  ...tyAuditLog.js |       0 |        0 |       0 |       0 | 1-25              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-28              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-110             
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-55              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-32              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-76              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-18              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-23              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-258             
+ ...cture/security |   68.06 |    77.77 |   73.33 |   68.06 |                   
+  aesMfaCrypto.js  |     100 |    71.42 |     100 |     100 | 12,26             
+  ...wordHasher.js |       0 |        0 |       0 |       0 | 1-31              
+  ...kenService.js |   95.83 |      100 |      75 |   95.83 | 51,55             
+  qrSvgRenderer.js |       0 |        0 |       0 |       0 | 1-8               
+ ...ucture/storage |    72.3 |      100 |      50 |    72.3 |                   
+  ...tarStorage.js |   55.55 |      100 |       0 |   55.55 | 25-41             
+  ...tarStorage.js |    93.1 |      100 |   66.66 |    93.1 | 31-32             
+ ...ication/errors |    87.5 |      100 |      50 |    87.5 |                   
+  ...kenInvalid.js |     100 |      100 |     100 |     100 |                   
+  ...stNotFound.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...kenService.js |       0 |        0 |       0 |       0 | 1-12              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-33              
+  InquiryMailer.js |       0 |        0 |       0 |       0 | 1-10              
+ ...ation/useCases |   84.55 |     92.3 |      50 |   84.55 |                   
+  infoRequests.js  |   84.55 |     92.3 |      50 |   84.55 | ...21-126,131-137 
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-36              
+ ...tructure/email |   57.89 |    57.14 |   83.33 |   57.89 |                   
+  inquiryEmails.js |     100 |    61.53 |     100 |     100 | 5,14,18,47-48     
+  inquiryMailer.js |       0 |        0 |       0 |       0 | 1-47              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-14              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-44              
+  ...riesRoutes.js |       0 |        0 |       0 |       0 | 1-33              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-31              
+ ...structure/jobs |       0 |        0 |       0 |       0 |                   
+  ...equestsJob.js |       0 |        0 |       0 |       0 | 1-31              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-85              
+ ...cture/security |     100 |    66.66 |     100 |     100 |                   
+  ...FormTokens.js |     100 |    66.66 |     100 |     100 | 21-22,28          
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  ...onNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...tionsError.js |     100 |      100 |     100 |     100 |                   
+ ...ation/policies |     100 |    88.88 |     100 |     100 |                   
+  deliveryPlan.js  |     100 |    88.88 |     100 |     100 | 27,67             
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-37              
+  ...eDirectory.js |       0 |        0 |       0 |       0 | 1-17              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...tDirectory.js |       0 |        0 |       0 |       0 | 1-12              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-67              
+  ...lTransport.js |       0 |        0 |       0 |       0 | 1-7               
+  ImageStorage.js  |       0 |        0 |       0 |       0 | 1-7               
+  ...ingGateway.js |       0 |        0 |       0 |       0 | 1-17              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-32              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-31              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-17              
+ ...ation/useCases |   37.64 |    85.88 |   78.57 |   37.64 |                   
+  announcements.js |       0 |        0 |       0 |       0 | 1-249             
+  ...tification.js |     100 |      100 |     100 |     100 |                   
+  eventHandlers.js |       0 |        0 |       0 |       0 | 1-182             
+  ...ifications.js |     100 |      100 |     100 |     100 |                   
+  ...ationsRead.js |     100 |      100 |     100 |     100 |                   
+  ...cationRead.js |     100 |      100 |     100 |     100 |                   
+  notify.js        |       0 |        0 |       0 |       0 | 1-137             
+  preferences.js   |   98.18 |       92 |     100 |   98.18 | 114-115           
+  processOutbox.js |    85.1 |    42.85 |     100 |    85.1 | 24-28,31-32       
+  sendEmails.js    |   74.03 |    91.42 |   66.66 |   74.03 | 16-20,147-188     
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-175             
+ ...tructure/email |   63.96 |    72.72 |      75 |   63.96 |                   
+  digestEmail.js   |       0 |        0 |       0 |       0 | 1-54              
+  ...lTransport.js |   47.14 |      100 |      75 |   47.14 | 15-51             
+  ...ationEmail.js |     100 |    69.23 |     100 |     100 | ...,64-71,124-126 
+ ...structure/http |   21.81 |       60 |    12.5 |   21.81 |                   
+  ...mentRoutes.js |       0 |        0 |       0 |       0 | 1-90              
+  errorMapping.js  |   52.63 |      100 |       0 |   52.63 | 14-22             
+  meController.js  |       0 |        0 |       0 |       0 | 1-57              
+  meRoutes.js      |       0 |        0 |       0 |       0 | 1-25              
+  publicRoutes.js  |      50 |    85.71 |      25 |      50 | 9-13,23-36,73-96  
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...structure/jobs |       0 |        0 |       0 |       0 |                   
+  ...cationJobs.js |       0 |        0 |       0 |       0 | 1-65              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-98              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-123             
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-61              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-60              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-26              
+ ...cture/security |     100 |       75 |     100 |     100 |                   
+  ...ribeTokens.js |     100 |       75 |     100 |     100 | 28,35             
+ ...ucture/storage |       0 |        0 |       0 |       0 |                   
+  ...mentImages.js |       0 |        0 |       0 |       0 | 1-61              
+ ...ication/errors |   93.33 |      100 |      75 |   93.33 |                   
+  ...dyAnswered.js |     100 |      100 |     100 |     100 |                   
+  ...stNotFound.js |   66.66 |      100 |       0 |   66.66 | 5-6               
+  ...lreadyOpen.js |     100 |      100 |     100 |     100 |                   
+  ...ionRequest.js |     100 |      100 |     100 |     100 |                   
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  AccountEraser.js |       0 |        0 |       0 |       0 | 1-10              
+  Clock.js         |       0 |        0 |       0 |       0 | 1-9               
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-35              
+  ...nDirectory.js |       0 |        0 |       0 |       0 | 1-7               
+  ...taExporter.js |       0 |        0 |       0 |       0 | 1-10              
+ ...ation/useCases |   81.35 |       90 |   71.42 |   81.35 |                   
+  dataRequests.js  |   97.95 |     93.1 |   83.33 |   97.95 | 72-73             
+  exportMyData.js  |       0 |        0 |       0 |       0 | 1-20              
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |     100 |      100 |     100 |     100 |                   
+  deadline.js      |     100 |      100 |     100 |     100 |                   
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-37              
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  ...serAdapter.js |       0 |        0 |       0 |       0 | 1-19              
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-21              
+  ...oryAdapter.js |       0 |        0 |       0 |       0 | 1-17              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-17              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-50              
+  privacyRoutes.js |       0 |        0 |       0 |       0 | 1-35              
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-92              
+  ...taExporter.js |       0 |        0 |       0 |       0 | 1-204             
+ ...ication/errors |     100 |      100 |     100 |     100 |                   
+  ...dyRecorded.js |     100 |      100 |     100 |     100 |                   
+  MatchNotFound.js |     100 |      100 |     100 |     100 |                   
+  MatchNotReady.js |     100 |      100 |     100 |     100 |                   
+  ...ntMismatch.js |     100 |      100 |     100 |     100 |                   
+  ...ntNotFound.js |     100 |      100 |     100 |     100 |                   
+  ...Registered.js |     100 |      100 |     100 |     100 |                   
+  ...otEligible.js |     100 |      100 |     100 |     100 |                   
+  ...ntNotFound.js |     100 |      100 |     100 |     100 |                   
+ ...ication/events |   89.13 |    85.71 |   71.42 |   89.13 |                   
+  ...mentEvents.js |   89.13 |    85.71 |   71.42 |   89.13 | 22-24,33-34       
+ ...lication/ports |       0 |        0 |       0 |       0 |                   
+  Clock.js         |       0 |        0 |       0 |       0 | 1-10              
+  ...ryProvider.js |       0 |        0 |       0 |       0 | 1-14              
+  ...tyProvider.js |       0 |        0 |       0 |       0 | 1-11              
+  ...gsProvider.js |       0 |        0 |       0 |       0 | 1-19              
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-86              
+ ...ation/useCases |   49.01 |    89.28 |   76.47 |   49.01 |                   
+  ...articipant.js |     100 |      100 |     100 |     100 |                   
+  ...Tournament.js |     100 |    85.71 |     100 |     100 | 22                
+  ...Tournament.js |     100 |      100 |     100 |     100 |                   
+  generateDraw.js  |   96.22 |     92.3 |     100 |   96.22 | 25-26             
+  getTournament.js |       0 |        0 |       0 |       0 | 1-43              
+  ...ournaments.js |       0 |        0 |       0 |       0 | 1-19              
+  ...ournaments.js |       0 |        0 |       0 |       0 | 1-12              
+  publicInfo.js    |       0 |        0 |       0 |       0 | 1-195             
+  ...atchResult.js |   96.07 |    94.73 |     100 |   96.07 | 10-11,47-48       
+  ...articipant.js |   89.47 |    83.33 |     100 |   89.47 | 12-13             
+ ...omain/entities |    87.4 |      100 |   77.77 |    87.4 |                   
+  Tournament.js    |    87.4 |      100 |   77.77 |    87.4 | 59-69,73-77       
+ .../domain/errors |     100 |      100 |     100 |     100 |                   
+  DomainError.js   |     100 |      100 |     100 |     100 |                   
+  ...amentState.js |     100 |      100 |     100 |     100 |                   
+  ...articipant.js |     100 |      100 |     100 |     100 |                   
+  ...rticipants.js |     100 |      100 |     100 |     100 |                   
+ ...omain/policies |     100 |      100 |     100 |     100 |                   
+  ...PlayerName.js |     100 |      100 |     100 |     100 |                   
+ ...omain/services |     100 |    96.29 |     100 |     100 |                   
+  ...ateBracket.js |     100 |    96.29 |     100 |     100 | 70                
+ ...infrastructure |       0 |        0 |       0 |       0 |                   
+  ...sitionRoot.js |       0 |        0 |       0 |       0 | 1-56              
+ ...cture/adapters |       0 |        0 |       0 |       0 |                   
+  nullAdapters.js  |       0 |        0 |       0 |       0 | 1-32              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-17              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-18              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-22              
+  ...derAdapter.js |       0 |        0 |       0 |       0 | 1-21              
+ ...structure/http |       0 |        0 |       0 |       0 |                   
+  errorMapping.js  |       0 |        0 |       0 |       0 | 1-24              
+  ...Controller.js |       0 |        0 |       0 |       0 | 1-121             
+  ...mentRoutes.js |       0 |        0 |       0 |       0 | 1-101             
+ ...ttp/validators |       0 |        0 |       0 |       0 |                   
+  ...Validators.js |       0 |        0 |       0 |       0 | 1-18              
+ ...re/persistence |       0 |        0 |       0 |       0 |                   
+  ...Repository.js |       0 |        0 |       0 |       0 | 1-254             
+ ...end/src/shared |      48 |    47.61 |   55.55 |      48 |                   
+  bigintJson.js    |       0 |        0 |       0 |       0 | 1-10              
+  logger.js        |     100 |       40 |     100 |     100 | 6-8,28,52,58      
+  outbox.js        |       0 |        0 |       0 |       0 | 1-13              
+  prismaClient.js  |       0 |        0 |       0 |       0 | 1-7               
+  rateLimiters.js  |       0 |        0 |       0 |       0 | 1-71              
+  utf8Body.js      |    93.1 |    85.71 |     100 |    93.1 | 29-30             
+ .../shared/errors |     100 |    28.57 |     100 |     100 |                   
+  httpError.js     |     100 |    28.57 |     100 |     100 | 17-33             
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 44.86% ( 11894/26510 )
+Branches     : 80.36% ( 2300/2862 )
+Functions    : 65.92% ( 768/1165 )
+Lines        : 44.86% ( 11894/26510 )
+================================================================================
+[exit code backend: 0]
+
+================================================================
+ FRONTEND (apps/frontend) - npx vitest run --coverage --coverage.reportOnFailure
+================================================================
+
+ RUN  v2.1.9 C:/Users/KTFUS/ctcj-platform/apps/frontend
+      Coverage enabled with v8
+
+stderr | src/pages/staff/MembershipStatusPage.test.jsx > MembershipStatusPage (Membresías) > before searching, lists the invoices to collect with "Registrar pago"
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/CommunityPage.test.jsx > CommunityPage > shows an empty state when there are no posts
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/staff/ClinicalPage.test.jsx > ClinicalPage (Salud y bienestar) > Recepción: agenda only, one tab per discipline, and never note content
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/ReservationPage.test.jsx > ReservationPage — booking flow > shows the 3 steps and 8 day buttons (today + 7)
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/notifications.ui.test.jsx > Mi CTCJ > Notificaciones > service on, promotional off, push hidden; a switch saves right away
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/staff/AdminDashboard.test.jsx > AdminDashboard (panel de Admin/Recepción) > greets the person by name
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/components/motion/motion.test.jsx (17 tests) 1713ms
+   ✓ modal focus with exit animations (regression) > SlidePanel gives focus back to its opener at once, while still animating out 352ms
+   ✓ AnimatedList keeps the correct order > renders, reorders and removes items in the given order (with animation) 312ms
+stderr | src/pages/mictcj/HomeTab.test.jsx > Mi CTCJ — Inicio > greets the person by first name and shows the tabs with icon and text
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/mictcj/MyCtcjTabs.test.jsx > Mi CTCJ — Reservas > lists upcoming reservations, including one booked for a minor, and cancels after confirming
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/staff/AdminDashboard.test.jsx (10 tests) 2226ms
+   ✓ AdminDashboard (panel de Admin/Recepción) > greets the person by name 621ms
+   ✓ accesibilidad (axe) > panel del administrador 440ms
+ ✓ src/pages/staff/PlansPage.test.jsx (8 tests) 5064ms
+   ✓ PlansPage (Planes de membresía) > creates a plan with only a name: the code is generated by the server 1303ms
+   ✓ PlansPage (Planes de membresía) > edits name and description; the code is shown but not editable 910ms
+   ✓ PlansPage (Planes de membresía) > warns how many players will be told and starts the price after the notice 885ms
+   ✓ PlansPage (Planes de membresía) > a waiting change can be cancelled 502ms
+   ✓ PlansPage (Planes de membresía) > deactivating asks first and says the current players keep the plan 477ms
+   ✓ PlansPage (Planes de membresía) > shows a clear message when the name is already used 529ms
+ ✓ src/pages/staff/TournamentsPage.test.jsx (7 tests) 4924ms
+   ✓ TournamentsPage (Torneos) > lists tournaments as big rows; an admin can create one 1695ms
+   ✓ TournamentsPage (Torneos) > inscribes a player chosen by name 1002ms
+   ✓ TournamentsPage (Torneos) > removing an inscription asks first 544ms
+   ✓ TournamentsPage (Torneos) > "Generar sorteo" needs 2+ inscribed and a confirmation 791ms
+   ✓ TournamentsPage (Torneos) > bracket: byes resolve on their own, ready matches get "Registrar resultado" 708ms
+ ✓ src/pages/CommunityPage.test.jsx (16 tests) 5091ms
+   ✓ CommunityPage > publishes a text post and refetches the feed 1190ms
+   ✓ CommunityPage > expands comments and posts a new one 646ms
+   ✓ CommunityPage > deleting my post asks first, then removes it from the feed 436ms
+   ✓ Community: photos and videos > previews the chosen photos, "Quitar" removes one, and publishing sends them with progress 383ms
+   ✓ Community: photos and videos > a video of up to 60 s goes with its measurements and cover 350ms
+   ✓ Community: photos and videos > reporting offers "Aparece un menor sin autorización" 406ms
+   ✓ Community: photos and videos > first use: the rules must be accepted (with the declaration) before the composer shows 397ms
+ ✓ src/pages/notifications.ui.test.jsx (10 tests) 5771ms
+   ✓ Mi CTCJ > Notificaciones > service on, promotional off, push hidden; a switch saves right away 1605ms
+   ✓ /staff/comunicados > preview with counts and the next allowed time; confirm before sending 2234ms
+   ✓ /staff/comunicados > an image needs its description 898ms
+ ✓ src/pages/staff/ClinicalPage.test.jsx (13 tests) 7088ms
+   ✓ ClinicalPage (Salud y bienestar) > Recepción: agenda only, one tab per discipline, and never note content 717ms
+   ✓ ClinicalPage (Salud y bienestar) > Psicólogo writes a note choosing who can see it 1275ms
+   ✓ ClinicalPage (Salud y bienestar) > cancelling asks for a reason first 1009ms
+   ✓ ClinicalPage (Salud y bienestar) > Recepción schedules by resolving the practitioner e-mail 991ms
+   ✓ ClinicalPage (Salud y bienestar) > Fisioterapeuta creates a recovery plan 754ms
+   ✓ ClinicalPage (Salud y bienestar) > Administrador, fisioterapia: operational summary, and notes locked without the player authorization 315ms
+   ✓ ClinicalPage (Salud y bienestar) > Administrador, fisioterapia: with the authorization, opens the notes on request 320ms
+   ✓ ClinicalPage (Salud y bienestar) > Fisioterapeuta marks the player "No apto" until a date, after confirming 567ms
+   ✓ accesibilidad (axe) > salud y bienestar 311ms
+ ✓ src/pages/staff/MembershipStatusPage.test.jsx (10 tests) 7485ms
+   ✓ MembershipStatusPage (Membresías) > before searching, lists the invoices to collect with "Registrar pago" 360ms
+   ✓ MembershipStatusPage (Membresías) > admin: finds a player and changes the status after confirming 1826ms
+   ✓ MembershipStatusPage (Membresías) > shows a clear error when the e-mail is not found 574ms
+   ✓ MembershipStatusPage (Membresías) > admin: toggles the overdue booking policy after confirming 378ms
+   ✓ MembershipStatusPage (Membresías) > Recepción: can record payments, but cannot change status, invoices or the policy 676ms
+   ✓ MembershipStatusPage (Membresías) > records an invoice payment with the chosen method 1017ms
+   ✓ MembershipStatusPage (Membresías) > admin: cancelling an invoice needs a reason 1338ms
+   ✓ MembershipStatusPage (Membresías) > admin: generates an invoice for the membership 883ms
+   ✓ accesibilidad (axe) > membresías 305ms
+stderr | src/pages/staff/PlayerFilePage.test.jsx > Ficha del jugador > Administración: every tab, the identity document and the actions
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/mictcj/HomeTab.test.jsx (21 tests) 5337ms
+   ✓ Mi CTCJ — Inicio > greets the person by first name and shows the tabs with icon and text 648ms
+   ✓ Mi CTCJ — Inicio > a plain USUARIO sees the 3 steps and can ask to become a player 876ms
+   ✓ Mi CTCJ — Inicio > cancelling the next reservation asks first, then frees it 474ms
+   ✓ Mi CTCJ — Inicio > a received challenge can be accepted from Inicio 330ms
+ ✓ src/pages/ReservationPage.test.jsx (14 tests) 8441ms
+   ✓ ReservationPage — booking flow > shows the 3 steps and 8 day buttons (today + 7) 551ms
+   ✓ ReservationPage — booking flow > without a session, tapping a free hour goes to login and remembers that hour 630ms
+   ✓ ReservationPage — booking flow > occupied and class hours are shown as text, never as buttons 354ms
+   ✓ ReservationPage — booking flow > holds the hour, shows the real countdown and COP price, and confirms 792ms
+   ✓ ReservationPage — booking flow > "Elegir otra hora" releases the hold on the server 565ms
+   ✓ ReservationPage — booking flow > when the hold runs out, says so and offers to try again 1549ms
+   ✓ ReservationPage — booking flow > explains a server rejection in plain words 473ms
+   ✓ ReservationPage — optional second hour > offers the next free hour; adding it shows 2 hours and both prices, and it can be removed 694ms
+   ✓ ReservationPage — optional second hour > no button when the next hour of the same court is taken (a class at 9:00 on Cancha 2) 453ms
+   ✓ ReservationPage — optional second hour > no button when the club turned the option off 454ms
+   ✓ ReservationPage — optional second hour > if someone took the next hour meanwhile: clear message, the first hour stays held 729ms
+   ✓ ReservationPage — optional second hour > confirming a 2-hour reservation shows the price frozen by the server 728ms
+stderr | src/pages/auth/Mfa.test.jsx > Verificación en dos pasos al entrar > the password alone does not sign in: it asks for the 6-digit code
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/layout/StaffLayout.test.jsx > StaffLayout > Administrador: grouped sidebar with Inicio and amber pending counters
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/staff/PlayerFilePage.test.jsx (9 tests) 2721ms
+   ✓ Ficha del jugador > Administración: every tab, the identity document and the actions 504ms
+   ✓ Ficha del jugador > deactivating asks first, then calls the server 422ms
+   ✓ Ficha del jugador > Administración: "Roles del personal" gives a coach role after confirming 357ms
+   ✓ Ficha del jugador > no serious accessibility violations 627ms
+stderr | src/pages/mictcj/PrivacyTab.test.jsx > Mis datos y privacidad > shows every optional authorization unticked, and the cookie settings button
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/staff/CoachNotesPage.test.jsx > CoachNotesPage (Notas y rendimiento) > asks to choose a player, then finds one by name and opens the blue card
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/staff/PaymentsQueuePage.test.jsx (6 tests) 2563ms
+   ✓ PaymentsQueuePage (Cobros) > splits CONFIRMED reservations into "Sin pagar" and "Pagadas", ignoring holds and classes 355ms
+   ✓ PaymentsQueuePage (Cobros) > charges with a frozen value and a chosen method, then offers print and "Siguiente cobro" 764ms
+   ✓ PaymentsQueuePage (Cobros) > "Imprimir recibo" prints a receipt with the payment details 416ms
+   ✓ PaymentsQueuePage (Cobros) > shows a clear message when the payment fails 495ms
+   ✓ accesibilidad (axe) > cobros 396ms
+ ✓ src/layout/StaffLayout.test.jsx (7 tests) 4385ms
+   ✓ StaffLayout > Administrador: grouped sidebar with Inicio and amber pending counters 1273ms
+   ✓ StaffLayout > Recepción: no admin-only links and no admin-only counter requests 373ms
+   ✓ StaffLayout > phone bar: 4 destinations plus "Más", which opens the rest 488ms
+   ✓ StaffLayout > search by name links to the pages this role may open 730ms
+   ✓ accesibilidad (axe) > Administrador: skip link, named navigation, and no serious violations 1150ms
+ ✓ src/pages/mictcj/PrivacyTab.test.jsx (7 tests) 3649ms
+   ✓ Mis datos y privacidad > shows every optional authorization unticked, and the cookie settings button 634ms
+   ✓ Mis datos y privacidad > promotions need a channel; then they are saved with it 629ms
+   ✓ Mis datos y privacidad > health data asks for confirmation before authorizing 568ms
+   ✓ Mis datos y privacidad > a consulta gets its radicado and the date it will be answered by 992ms
+   ✓ Mis datos y privacidad > a too-short message is refused before sending, with focus on it 396ms
+stderr | src/pages/staff/PlayersDirectoryPage.test.jsx > Jugadores (directorio del personal) > shows both totals as tabs and big rows with "Ver ficha"
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/auth/Mfa.test.jsx (6 tests) 6952ms
+   ✓ Verificación en dos pasos al entrar > the password alone does not sign in: it asks for the 6-digit code 1617ms
+   ✓ Verificación en dos pasos al entrar > "Usar un código de recuperación" and a clear error for a wrong code 1475ms
+   ✓ Verificación en dos pasos al entrar > a lock after too many attempts says to wait 15 minutes 1150ms
+   ✓ Verificación en dos pasos al entrar > a mandatory role without it goes through the 4 steps and only then enters 1682ms
+   ✓ Verificación en dos pasos al entrar > no serious accessibility violations on the code step 996ms
+ ✓ src/pages/staff/CourtPricingPage.test.jsx (5 tests) 2699ms
+   ✓ CourtPricingPage (Precios de canchas) > shows each court with its price per hour, or that it has none 337ms
+   ✓ CourtPricingPage (Precios de canchas) > changes a price from the side panel after confirming 896ms
+   ✓ CourtPricingPage (Precios de canchas) > rejects an empty price without calling the server 359ms
+   ✓ CourtPricingPage (Precios de canchas) > the admin changes how long a held hour waits, after confirming 735ms
+   ✓ CourtPricingPage (Precios de canchas) > the admin turns off two-hour reservations in "Configuración de reservas", after confirming 369ms
+ ✓ src/lib/a11yContrast.test.js (44 tests) 17ms
+ ✓ src/pages/staff/CommunityModerationPage.test.jsx (6 tests) 2092ms
+   ✓ CommunityModerationPage (Moderar comunidad) > dismissing keeps the content and removes the report from the queue 605ms
+   ✓ CommunityModerationPage (Moderar comunidad) > deleting a post asks for confirmation first, then calls deletePost 436ms
+   ✓ CommunityModerationPage (Moderar comunidad) > a reported comment is deleted with deleteComment 464ms
+   ✓ CommunityModerationPage (Moderar comunidad) > a photo post hidden by 3 reports: shows its photos and can be shown again 333ms
+ ✓ src/pages/staff/CoachNotesPage.test.jsx (6 tests) 4842ms
+   ✓ CoachNotesPage (Notas y rendimiento) > asks to choose a player, then finds one by name and opens the blue card 1070ms
+   ✓ CoachNotesPage (Notas y rendimiento) > an e-mail that is not a player says so 841ms
+   ✓ CoachNotesPage (Notas y rendimiento) > new note: 4 type buttons, visibility choice, the no-edit warning, and saves 1351ms
+   ✓ CoachNotesPage (Notas y rendimiento) > Rendimiento: 10 skills × 10 numbered buttons; saves only what was rated 1157ms
+   ✓ CoachNotesPage (Notas y rendimiento) > Rendimiento: shows the last rating of each skill and the radar when there is history 305ms
+ ✓ src/pages/staff/CompetitionPage.test.jsx (7 tests) 4745ms
+   ✓ CompetitionPage (Ranking y partidos) > without seasons, an admin is told to create one 341ms
+   ✓ CompetitionPage (Ranking y partidos) > records a singles result choosing players by name and sets by buttons 2285ms
+   ✓ CompetitionPage (Ranking y partidos) > voiding a match asks for a reason 1027ms
+   ✓ CompetitionPage (Ranking y partidos) > admin closes the season after confirming 449ms
+ ✓ src/pages/staff/PlayersDirectoryPage.test.jsx (7 tests) 2864ms
+   ✓ Jugadores (directorio del personal) > shows both totals as tabs and big rows with "Ver ficha" 437ms
+   ✓ Jugadores (directorio del personal) > filters go to the server (and the URL): membership, minors, all users 608ms
+   ✓ Jugadores (directorio del personal) > searches as the person types (name, email or phone) 688ms
+   ✓ Jugadores (directorio del personal) > no serious accessibility violations 563ms
+ ✓ src/pages/mictcj/MyCtcjTabs.test.jsx (32 tests) 15669ms
+   ✓ Mi CTCJ — Reservas > lists upcoming reservations, including one booked for a minor, and cancels after confirming 881ms
+   ✓ Mi CTCJ — Mi progreso > creates a goal with the same payload as before 1297ms
+   ✓ Mi CTCJ — Mi progreso > a goal without a name is explained, not sent 306ms
+   ✓ Mi CTCJ — Mi progreso > abandoning a goal asks first 516ms
+   ✓ Mi CTCJ — Ranking > searches a player and sends a challenge 1043ms
+   ✓ Mi CTCJ — Ranking > an ACCEPTED challenge appears under "Partidos por confirmar" even for the opponent, and sends the score 970ms
+   ✓ Mi CTCJ — Ranking > cancelling a sent challenge asks first 445ms
+   ✓ Mi CTCJ — Mi perfil > shows the initial when there is no photo, prefills and saves the personal data 1407ms
+   ✓ Mi CTCJ — Mi perfil > the guardian reads and gives the authorization for the linked minor's data and image 668ms
+   ✓ Mi CTCJ — Mi perfil > the player authorizes, and later withdraws, admin access to their physio notes 768ms
+   ✓ Mi CTCJ — Mi perfil > requests a guardianship link with the chosen permissions and lists it 955ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj 787ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/reservas 372ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/perfil 743ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/privacidad 716ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/progreso 628ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/ranking 466ms
+   ✓ Mi CTCJ — accesibilidad (axe) > /mi-ctcj/comunidad 392ms
+ ✓ src/api/bookingClient.test.js (11 tests) 35ms
+ ✓ src/components/ui/FontSizeToggle.test.jsx (9 tests) 745ms
+ ✓ src/pages/staff/FinancePage.test.jsx (6 tests) 4219ms
+   ✓ FinancePage (Finanzas) > shows the big total of the period and each source 311ms
+   ✓ FinancePage (Finanzas) > "Cartera" shows who owes, with a "Vencida" badge 1716ms
+   ✓ FinancePage (Finanzas) > every section has "Descargar CSV" 753ms
+   ✓ FinancePage (Finanzas) > range presets and custom dates refetch the payments 713ms
+   ✓ FinancePage (Finanzas) > cash flow: 6 months by default, 3/6/12 selector, and CSV per month 565ms
+stderr | src/components/legal/CookieConsent.test.jsx > cookie banner > first visit: three choices with the same size and visual weight; nothing optional is allowed yet
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/staff/RequestsPage.test.jsx (5 tests) 2274ms
+   ✓ RequestsPage (Solicitudes) > approving an affiliation asks first, then removes it from the list 704ms
+   ✓ RequestsPage (Solicitudes) > rejecting a guardianship sends the optional note 1091ms
+stderr | src/components/forms/InfoRequestForm.test.jsx > InfoRequestForm > has no serious accessibility violations
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/dev/UiShowcase.test.jsx > UiShowcase (/dev/ui) > renders every design-system section without crashing
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/Login.test.jsx > Login > returns to the booking page with the chosen hour after signing in
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/ResetPassword.test.jsx > ResetPassword > shows an invalid-link message when there is no token in the URL
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/components/legal/CookieConsent.test.jsx (6 tests) 1185ms
+   ✓ cookie banner > first visit: three choices with the same size and visual weight; nothing optional is allowed yet 317ms
+   ✓ cookie banner > "Aceptar todas" and "Solo necesarias" save the decision with date and policy version 450ms
+stderr | src/pages/staff/DataRequestsPage.test.jsx > Datos personales (bandeja) > warns about the late ones and lists who asked
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/ProgramPage.test.jsx > Program pages > 'adultos': same structure, program preselected, links to the other two
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/context/AuthContext.test.jsx (4 tests) 248ms
+ ✓ src/pages/staff/DataRequestsPage.test.jsx (4 tests) 2731ms
+   ✓ Datos personales (bandeja) > answering needs a text; a deletion can delete the account, confirmed as irreversible 2037ms
+   ✓ accesibilidad (axe) > datos personales 422ms
+ ✓ src/pages/dev/UiShowcase.test.jsx (7 tests) 6529ms
+   ✓ UiShowcase (/dev/ui) > renders every design-system section without crashing 1079ms
+   ✓ UiShowcase (/dev/ui) > renders the club photos lazily except the first, with Spanish alt text 540ms
+   ✓ UiShowcase (/dev/ui) > confirm dialog: focuses the safe button, closes on Escape and returns focus 876ms
+   ✓ UiShowcase (/dev/ui) > tabs and segmented control move with the arrow keys 840ms
+   ✓ UiShowcase (/dev/ui) > error toasts stay until closed with the visible "Cerrar" button 1342ms
+   ✓ UiShowcase (/dev/ui) > animations section: every demo has a "Repetir" button 887ms
+   ✓ UiShowcase (/dev/ui) > animated list demo: "Marcar como pagada" moves the item to "Pagadas" 962ms
+stderr | src/pages/staff/CoachDashboard.test.jsx > CoachDashboard (Clases de hoy) > lists today's classes by court and time (only classes)
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/ResetPassword.test.jsx (6 tests) 4558ms
+   ✓ ResetPassword > submits the new password with the token and shows a success message 1560ms
+   ✓ ResetPassword > rejects mismatched passwords without calling the API 1020ms
+   ✓ ResetPassword > rejects a password that fails the letter+digit policy without calling the API 909ms
+   ✓ ResetPassword > shows the API error message on failure (e.g. expired token) 777ms
+ ✓ src/pages/ProgramPage.test.jsx (8 tests) 4128ms
+   ✓ Program pages > 'adultos': same structure, program preselected, links to the other two 1609ms
+   ✓ Program pages > 'escuela-infantil': same structure, program preselected, links to the other two 1232ms
+   ✓ Program pages > 'competencia': same structure, program preselected, links to the other two 871ms
+stderr | src/pages/Register.test.jsx > Register (Crear cuenta) > the authorizations start unticked, each with its link
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/components/forms/InfoRequestForm.test.jsx (4 tests) 6067ms
+   ✓ InfoRequestForm > has no serious accessibility violations 909ms
+   ✓ InfoRequestForm > the privacy authorization starts unticked; sending without it shows the error and sends nothing 1761ms
+   ✓ InfoRequestForm > for a child asks only the age, and sends the normalized request 2195ms
+   ✓ InfoRequestForm > a too-fast form tells the person to wait and try again 1200ms
+ ✓ src/pages/Login.test.jsx (7 tests) 5908ms
+   ✓ Login > returns to the booking page with the chosen hour after signing in 1359ms
+   ✓ Login > without a return address, goes to the area for the role 1338ms
+   ✓ Login > never returns to an address that could be another site (//otro-sitio.com) 1281ms
+   ✓ Login > never returns to an address that could be another site (/\otro-sitio.com) 937ms
+   ✓ Login > explains wrong credentials in plain words 807ms
+ ✓ src/pages/staff/CoachDashboard.test.jsx (4 tests) 956ms
+   ✓ CoachDashboard (Clases de hoy) > lists today's classes by court and time (only classes) 345ms
+   ✓ CoachDashboard (Clases de hoy) > "Ver semana" loads the next 8 days and groups the classes by day 444ms
+stderr | src/a11y.public.test.jsx > accessibility (axe) — public pages > /: one h1, a skip link, and no serious violations
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/layout/NotificationBell.test.jsx > NotificationBell > shows no unread badge when there are no unread notifications
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/pages/staff/InfoRequestsPage.test.jsx > Solicitudes de información (consola) > starts on "Nueva", filters by program, and has no serious a11y violations
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/layout/NotificationBell.test.jsx (4 tests) 571ms
+stderr | src/pages/legal/LegalPage.test.jsx > legal pages > show the title, the version and the last update, with a table of contents
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/staff/InfoRequestsPage.test.jsx (3 tests) 1729ms
+   ✓ Solicitudes de información (consola) > starts on "Nueva", filters by program, and has no serious a11y violations 1022ms
+   ✓ Solicitudes de información (consola) > changes the status and saves a note; shows who handled it 698ms
+ ✓ src/lib/staffNav.test.js (6 tests) 12ms
+ ✓ src/pages/legal/LegalPage.test.jsx (4 tests) 1088ms
+   ✓ legal pages > show the title, the version and the last update, with a table of contents 419ms
+stderr | src/components/legal/AccountRequirementsGate.test.jsx > AccountRequirementsGate > lets a complete account through
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/layout/Footer.test.jsx > Footer > only shows social networks whose link is a valid https URL
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/components/legal/AccountRequirementsGate.test.jsx (3 tests) 1196ms
+   ✓ AccountRequirementsGate > an old account completes birth date and acceptances before continuing 1072ms
+ ✓ src/layout/Footer.test.jsx (4 tests) 1246ms
+   ✓ Footer > has no serious accessibility violations 511ms
+ ✓ src/api/httpClient.test.js (6 tests) 22ms
+ ✓ src/pages/Register.test.jsx (4 tests) 5979ms
+   ✓ Register (Crear cuenta) > the authorizations start unticked, each with its link 318ms
+   ✓ Register (Crear cuenta) > without ticking the required boxes it says why, focuses the first problem and sends nothing 1881ms
+   ✓ Register (Crear cuenta) > sends the birth date, both acceptances and only the promotion channels chosen 2306ms
+   ✓ Register (Crear cuenta) > a minor sees why the guardian must authorize, and is never offered promotions 1472ms
+stderr | src/pages/HomePage.test.jsx > HomePage > sections in order: hero, ¿Qué quieres hacer hoy?, programs, El club, form + contact
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ❯ src/pages/HomePage.test.jsx (4 tests | 1 failed) 2067ms
+   × HomePage > sections in order: hero, ¿Qué quieres hacer hoy?, programs, El club, form + contact 717ms
+     → expected [ 'Libre mañana', …(5) ] to deeply equal [ 'Libre hoy', …(5) ]
+   ✓ HomePage > three program cards link to their pages 428ms
+   ✓ HomePage > the phone "Reservar cancha" bar appears after the hero and hides over the footer 664ms
+stderr | src/pages/ClubPage.test.jsx > ClubPage (/el-club) > has every brochure section, in order
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/pages/ClubPage.test.jsx (6 tests) 1184ms
+   ✓ ClubPage (/el-club) > has every brochure section, in order 440ms
+ ✓ src/a11y.public.test.jsx (8 tests) 6185ms
+   ✓ accessibility (axe) — public pages > /: one h1, a skip link, and no serious violations 2241ms
+   ✓ accessibility (axe) — public pages > /el-club: one h1, a skip link, and no serious violations 898ms
+   ✓ accessibility (axe) — public pages > /login: one h1, a skip link, and no serious violations 437ms
+   ✓ accessibility (axe) — public pages > /register: one h1, a skip link, and no serious violations 640ms
+   ✓ accessibility (axe) — public pages > /forgot-password: one h1, a skip link, and no serious violations 386ms
+   ✓ accessibility (axe) — public pages > /canchas: one h1, a skip link, and no serious violations 733ms
+   ✓ accessibility (axe) — public pages > /privacidad: one h1, a skip link, and no serious violations 843ms
+ ✓ src/components/ui/StatusBadge.test.jsx (12 tests) 230ms
+stderr | src/routes/RequireRole.test.jsx > RequireRole > shows a loading state without redirecting while status is loading
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/routes/RequireRole.test.jsx (4 tests) 135ms
+ ✓ src/pages/reservation/CourtGrid.test.jsx (1 test) 603ms
+   ✓ CourtGrid — keyboard > arrow keys move between free hours and courts, skipping the taken ones 601ms
+ ✓ src/pages/mictcj/TwoStepSection.test.jsx (3 tests) 890ms
+   ✓ Mi perfil — Verificación en dos pasos > off and optional: "Activar" starts the steps 367ms
+   ✓ Mi perfil — Verificación en dos pasos > an optional role turns it off with a current code 488ms
+ ✓ src/lib/performance.test.js (4 tests) 9ms
+ ✓ src/lib/photo-rights.test.js (4 tests) 11ms
+stderr | src/pages/ForgotPassword.test.jsx > ForgotPassword > submits the email and shows a generic confirmation message
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/components/ui/Avatar.test.jsx (4 tests) 172ms
+stderr | src/layout/Header.test.jsx > Header > shows no notification bell for an anonymous visitor
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | src/routes/RequireAuth.test.jsx > RequireAuth > shows a loading state without redirecting while status is loading
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ src/routes/RequireAuth.test.jsx (3 tests) 93ms
+ ✓ src/layout/Header.test.jsx (2 tests) 283ms
+ ✓ src/lib/postLoginRoute.test.js (10 tests) 7ms
+ ✓ src/pages/ForgotPassword.test.jsx (2 tests) 1064ms
+   ✓ ForgotPassword > submits the email and shows a generic confirmation message 719ms
+   ✓ ForgotPassword > shows a field error for an invalid email without calling the API 342ms
+ ✓ src/components/charts/SkillRadar.test.jsx (2 tests) 208ms
+ ✓ src/lib/useAsync.test.js (3 tests) 186ms
+ ✓ src/lib/format.test.js (3 tests) 6ms
+ ✓ src/lib/booking.charge.test.js (4 tests) 3ms
+ ✓ src/hooks/useDocumentTitle.test.jsx (2 tests) 22ms
+ ✓ src/components/ui/PerformanceCharts.test.jsx (2 tests) 169ms
+ ✓ src/components/ui/CashFlowChart.test.jsx (2 tests) 167ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/HomePage.test.jsx > HomePage > sections in order: hero, ¿Qué quieres hacer hoy?, programs, El club, form + contact
+AssertionError: expected [ 'Libre mañana', …(5) ] to deeply equal [ 'Libre hoy', …(5) ]
+
+- Expected
++ Received
+
+  Array [
+-   "Libre hoy",
++   "Libre mañana",
+    "¿Qué quieres hacer hoy?",
+    "Clases y academia",
+    "El club",
+    "Solicitar información",
+    "¿Prefieres escribirnos?",
+  ]
+
+ ❯ src/pages/HomePage.test.jsx:71:16
+     69|     const h2 = screen.getAllByRole('heading', { level: 2 }).map((h) =>…
+     70|     // "Libre hoy" is the hero's side card.
+     71|     expect(h2).toEqual([
+       |                ^
+     72|       'Libre hoy',
+     73|       '¿Qué quieres hacer hoy?',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 63 passed (64)
+      Tests  1 failed | 467 passed (468)
+   Start at  22:34:27
+   Duration  48.85s (transform 9.43s, setup 33.03s, collect 116.24s, tests 171.46s, environment 113.09s, prepare 17.44s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   85.78 |    82.69 |   75.65 |   85.78 |                   
+ frontend          |   97.78 |        0 |       0 |   97.78 |                   
+  ...css.config.js |       0 |        0 |       0 |       0 | 1-6               
+  ...ind.config.js |     100 |      100 |     100 |     100 |                   
+ frontend/scripts  |       0 |        0 |       0 |       0 |                   
+  ...to-rights.mjs |       0 |        0 |       0 |       0 | 1-53              
+  ...ze-photos.mjs |       0 |        0 |       0 |       0 | 1-74              
+ frontend/src      |       0 |        0 |       0 |       0 |                   
+  App.jsx          |       0 |        0 |       0 |       0 | 1-270             
+  main.jsx         |       0 |        0 |       0 |       0 | 1-26              
+ frontend/src/api  |   23.81 |    57.14 |   18.05 |   23.81 |                   
+  ...tionClient.js |       0 |        0 |       0 |       0 | 1-27              
+  authClient.js    |     100 |      100 |       0 |     100 |                   
+  billingClient.js |       0 |        0 |       0 |       0 | 1-174             
+  bookingClient.js |   87.77 |      100 |   41.17 |   87.77 | ...02-103,113-117 
+  ...ngesClient.js |       0 |        0 |       0 |       0 | 1-33              
+  ...icalClient.js |       0 |        0 |       0 |       0 | 1-141             
+  ...hingClient.js |       0 |        0 |       0 |       0 | 1-40              
+  ...dminClient.js |       0 |        0 |       0 |       0 | 1-26              
+  ...nityClient.js |       0 |        0 |       0 |       0 | 1-93              
+  ...tionClient.js |       0 |        0 |       0 |       0 | 1-82              
+  consentClient.js |   77.14 |      100 |   14.28 |   77.14 | 18-19,34-36,39-41 
+  ...toryClient.js |       0 |        0 |       0 |       0 | 1-41              
+  goalsClient.js   |       0 |        0 |       0 |       0 | 1-17              
+  ...shipClient.js |   69.44 |      100 |       0 |   69.44 | ...21,26-27,39-43 
+  httpClient.js    |   47.36 |    82.35 |   42.85 |   47.36 | ...32-133,140-169 
+  ...uestClient.js |       0 |        0 |       0 |       0 | 1-18              
+  ...shipClient.js |       0 |        0 |       0 |       0 | 1-79              
+  mfaClient.js     |     100 |      100 |      20 |     100 |                   
+  ...ionsClient.js |       0 |        0 |       0 |       0 | 1-39              
+  privacyClient.js |   78.94 |       50 |      20 |   78.94 | 13-14,23-24       
+  ...mentClient.js |       0 |        0 |       0 |       0 | 1-75              
+ ...nents/brochure |     100 |      100 |     100 |     100 |                   
+  Brochure.jsx     |     100 |      100 |     100 |     100 |                   
+  ...mLinkCard.jsx |     100 |      100 |     100 |     100 |                   
+ ...ponents/charts |     100 |      100 |     100 |     100 |                   
+  SkillRadar.jsx   |     100 |      100 |     100 |     100 |                   
+ ...mponents/forms |   95.11 |       86 |     100 |   95.11 |                   
+  BasicFormat.jsx  |   77.08 |    73.33 |     100 |   77.08 | 10-21             
+  ...lLinkMark.jsx |     100 |      100 |     100 |     100 |                   
+  ...questForm.jsx |    98.4 |    91.17 |     100 |    98.4 | 105-107,254       
+ ...mponents/icons |    92.7 |    95.12 |   88.63 |    92.7 |                   
+  ...angleIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ...wLeftIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ...RightIcon.jsx |       0 |        0 |       0 |       0 | 1-19              
+  BanIcon.jsx      |     100 |      100 |     100 |     100 |                   
+  BarChartIcon.jsx |     100 |      100 |     100 |     100 |                   
+  BellIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  CalendarIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ...ircleIcon.jsx |     100 |      100 |     100 |     100 |                   
+  CheckIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  ChevronIcon.jsx  |     100 |      100 |     100 |     100 |                   
+  ...nLeftIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ...RightIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ...boardIcon.jsx |     100 |      100 |     100 |     100 |                   
+  ClockIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  CloseIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  DownloadIcon.jsx |     100 |      100 |     100 |     100 |                   
+  FacebookIcon.jsx |   16.66 |      100 |       0 |   16.66 | 2-7               
+  HeartIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  HomeIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  ImageIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  InboxIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  InfoIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  ...agramIcon.jsx |   16.66 |      100 |       0 |   16.66 | 2-7               
+  LockIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  LogOutIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  MapPinIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  MenuIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  MessageIcon.jsx  |     100 |      100 |     100 |     100 |                   
+  MoreIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  NoteIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  PlusIcon.jsx     |     100 |      100 |     100 |     100 |                   
+  PrinterIcon.jsx  |     100 |      100 |     100 |     100 |                   
+  RefreshIcon.jsx  |     100 |      100 |     100 |     100 |                   
+  SearchIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  ShieldIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  TagIcon.jsx      |     100 |      100 |     100 |     100 |                   
+  TikTokIcon.jsx   |   16.66 |      100 |       0 |   16.66 | 2-7               
+  ...ingUpIcon.jsx |     100 |      100 |     100 |     100 |                   
+  TrophyIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  UserIcon.jsx     |       0 |        0 |       0 |       0 | 1-19              
+  UsersIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  VideoIcon.jsx    |     100 |      100 |     100 |     100 |                   
+  WalletIcon.jsx   |     100 |      100 |     100 |     100 |                   
+  WhatsAppIcon.jsx |     100 |      100 |     100 |     100 |                   
+ ...mponents/legal |   97.44 |    92.68 |   88.46 |   97.44 |                   
+  ...mentsGate.jsx |   94.11 |    84.84 |     100 |   94.11 | 50,65-70          
+  ...ieConsent.jsx |     100 |    97.22 |   91.66 |     100 | 143               
+  ...orization.jsx |      97 |    94.44 |   77.77 |      97 | 124-128           
+ ...components/mfa |   88.52 |    80.55 |      75 |   88.52 |                   
+  MfaCodeField.jsx |   93.47 |    83.33 |     100 |   93.47 | 43-45             
+  ...etupSteps.jsx |   92.56 |    77.77 |    87.5 |   92.56 | ...,73-74,101-103 
+  ...veryCodes.jsx |   79.22 |    83.33 |      50 |   79.22 | 22-28,31-39       
+ ...ponents/motion |   95.46 |    97.18 |   89.47 |   95.46 |                   
+  ...atedCheck.jsx |     100 |      100 |     100 |     100 |                   
+  AnimatedList.jsx |     100 |      100 |     100 |     100 |                   
+  CountUp.jsx      |     100 |      100 |     100 |     100 |                   
+  ...rajectory.jsx |    80.2 |    71.42 |      50 |    80.2 | 50-70             
+  ...llaxPhoto.jsx |     100 |      100 |     100 |     100 |                   
+  Reveal.jsx       |     100 |      100 |     100 |     100 |                   
+  SlidePanel.jsx   |     100 |      100 |     100 |     100 |                   
+  ...tHeadline.jsx |     100 |      100 |     100 |     100 |                   
+  ...ransition.jsx |     100 |      100 |     100 |     100 |                   
+ .../components/ui |   99.17 |    93.46 |   97.05 |   99.17 |                   
+  Accordion.jsx    |     100 |      100 |     100 |     100 |                   
+  Avatar.jsx       |     100 |      100 |     100 |     100 |                   
+  Button.jsx       |     100 |      100 |     100 |     100 |                   
+  Card.jsx         |     100 |      100 |     100 |     100 |                   
+  ...FlowChart.jsx |     100 |      100 |      75 |     100 |                   
+  ClubLogo.jsx     |   83.33 |    33.33 |     100 |   83.33 | 39-44             
+  ClubMark.jsx     |     100 |       75 |     100 |     100 | 28                
+  ClubPhoto.jsx    |    93.1 |     90.9 |     100 |    93.1 | 61-64             
+  ...irmDialog.jsx |     100 |      100 |     100 |     100 |                   
+  EmptyState.jsx   |     100 |      100 |     100 |     100 |                   
+  ErrorState.jsx   |     100 |      100 |     100 |     100 |                   
+  Field.jsx        |     100 |    93.22 |     100 |     100 | 213-218,263-264   
+  ...izeToggle.jsx |     100 |      100 |     100 |     100 |                   
+  PageHeader.jsx   |     100 |      100 |     100 |     100 |                   
+  ...LineChart.jsx |     100 |    88.88 |      75 |     100 | 79                
+  ...edControl.jsx |     100 |    72.72 |     100 |     100 | 31-38,65          
+  Skeleton.jsx     |     100 |      100 |     100 |     100 |                   
+  StatCard.jsx     |     100 |      100 |     100 |     100 |                   
+  StatusBadge.jsx  |     100 |      100 |     100 |     100 |                   
+  Switch.jsx       |     100 |      100 |     100 |     100 |                   
+  Tabs.jsx         |     100 |    84.21 |     100 |     100 | 32-37             
+  Toast.jsx        |    97.8 |       92 |     100 |    97.8 | 136-137           
+  cn.js            |     100 |      100 |     100 |     100 |                   
+ ...nd/src/context |    80.3 |    71.42 |      80 |    80.3 |                   
+  AuthContext.jsx  |    80.3 |    71.42 |      80 |    80.3 | 56-58,76-85,97-98 
+ ...tend/src/hooks |     100 |      100 |     100 |     100 |                   
+  ...umentTitle.js |     100 |      100 |     100 |     100 |                   
+ ...end/src/layout |   88.07 |     83.5 |   76.19 |   88.07 |                   
+  Footer.jsx       |   87.59 |    88.88 |     100 |   87.59 | 84-101            
+  Header.jsx       |   92.85 |    77.77 |      50 |   92.85 | 36,130-135        
+  LegalLinks.jsx   |     100 |      100 |     100 |     100 |                   
+  MobileMenu.jsx   |    4.16 |      100 |       0 |    4.16 | 15-68             
+  MyCtcjLayout.jsx |     100 |      100 |     100 |     100 |                   
+  ...ationBell.jsx |    87.5 |    85.29 |   66.66 |    87.5 | ...26,151,162-164 
+  PublicLayout.jsx |   96.42 |    33.33 |     100 |   96.42 | 19                
+  RouteLoading.jsx |   16.66 |      100 |       0 |   16.66 | 6-17              
+  StaffLayout.jsx  |     100 |     90.9 |      80 |     100 | ...17,192,216-249 
+  StaffSearch.jsx  |   83.08 |    70.45 |    87.5 |   83.08 | ...48-150,158-160 
+ frontend/src/lib  |   90.25 |    81.98 |   83.95 |   90.25 |                   
+  age.js           |   86.66 |       70 |     100 |   86.66 | 8-9               
+  ...orMessages.js |      90 |    14.28 |      50 |      90 | 36-37,39-40       
+  booking.js       |   89.36 |    88.46 |     100 |   89.36 | 28-37             
+  ...orMessages.js |     100 |    66.66 |     100 |     100 | 32                
+  ...orMessages.js |    87.5 |      100 |       0 |    87.5 | 16-17             
+  ...orMessages.js |    91.3 |      100 |       0 |    91.3 | 23-24             
+  clubInfo.js      |     100 |      100 |     100 |     100 |                   
+  clubTexts.js     |     100 |      100 |     100 |     100 |                   
+  clubTime.js      |     100 |    93.75 |     100 |     100 | 23                
+  ...orMessages.js |   71.42 |      100 |       0 |   71.42 | 7-8               
+  ...orMessages.js |   93.33 |      100 |       0 |   93.33 | 30-31             
+  ...orMessages.js |   86.66 |      100 |       0 |   86.66 | 15-16             
+  cookieConsent.js |    94.2 |    86.95 |     100 |    94.2 | 42-43,73-74       
+  ...tingsEvent.js |     100 |      100 |     100 |     100 |                   
+  csvExport.js     |       0 |        0 |       0 |       0 | 1-28              
+  ...JwtPayload.js |   88.23 |       50 |     100 |   88.23 | 15-16             
+  fontScale.js     |    90.9 |    84.61 |     100 |    90.9 | 20-21,42-43,54-55 
+  format.js        |     100 |    86.66 |     100 |     100 | 17,89             
+  ...orMessages.js |   77.77 |      100 |       0 |   77.77 | 9-10              
+  gsap.js          |     100 |      100 |     100 |     100 |                   
+  ...orMessages.js |   93.54 |    42.85 |     100 |   93.54 | 57-58,60-61       
+  media.js         |   38.77 |    35.71 |      50 |   38.77 | ...,61-85,103-104 
+  motion.js        |     100 |    72.72 |     100 |     100 | 35,41,46          
+  performance.js   |     100 |      100 |     100 |     100 |                   
+  ...tingLabels.js |     100 |       60 |     100 |     100 | 17,35             
+  photo-rights.js  |     100 |      100 |     100 |     100 |                   
+  ...atusLabels.js |     100 |       50 |     100 |     100 | 11                
+  ...LoginRoute.js |     100 |      100 |     100 |     100 |                   
+  ...orMessages.js |   83.33 |      100 |       0 |   83.33 | 12-13             
+  programs.js      |     100 |      100 |     100 |     100 |                   
+  staffNav.js      |     100 |      100 |     100 |     100 |                   
+  ...orMessages.js |   88.23 |      100 |       0 |   88.23 | 17-18             
+  useAsync.js      |     100 |      100 |     100 |     100 |                   
+  useMediaQuery.js |     100 |    66.66 |     100 |     100 | 12,17             
+  useModal.js      |   80.76 |       75 |     100 |   80.76 | 46-49,51-56       
+ ...tend/src/pages |   90.27 |    80.59 |   78.81 |   90.27 |                   
+  ClubPage.jsx     |     100 |      100 |     100 |     100 |                   
+  ...unityPage.jsx |   84.65 |    76.66 |   77.41 |   84.65 | ...40-442,475-482 
+  ...tPassword.jsx |   98.43 |     87.5 |     100 |   98.43 | 36                
+  HomePage.jsx     |     100 |      100 |     100 |     100 |                   
+  Login.jsx        |   91.86 |    92.59 |      80 |   91.86 | 61-67,104-106     
+  ...ofilePage.jsx |    86.3 |    59.37 |      60 |    86.3 | ...77,490,573-576 
+  ProgramPage.jsx  |     100 |      100 |     100 |     100 |                   
+  Register.jsx     |   98.83 |     92.1 |     100 |   98.83 | 133-134,145       
+  ...ationPage.jsx |    90.5 |    83.76 |   77.77 |    90.5 | ...23-427,450-455 
+  ...tPassword.jsx |     100 |    93.33 |     100 |     100 | 37                
+  ...cribePage.jsx |     100 |    71.42 |     100 |     100 | 18,24,29,60       
+  VerifyEmail.jsx  |       0 |        0 |       0 |       0 | 1-80              
+ ...src/pages/auth |   98.02 |    89.18 |     100 |   98.02 |                   
+  AuthSplit.jsx    |     100 |      100 |     100 |     100 |                   
+  MfaChallenge.jsx |      96 |    95.23 |     100 |      96 | 29-31             
+  MfaSetupPage.jsx |     100 |       70 |     100 |     100 | 29-31             
+ ...ages/community |   93.48 |    82.47 |   70.83 |   93.48 |                   
+  ...aComposer.jsx |   91.66 |    84.74 |   76.92 |   91.66 | ...27,142-155,181 
+  ...MediaView.jsx |   96.15 |    78.94 |   63.63 |   96.15 | 18-22,176         
+ .../src/pages/dev |   95.07 |    93.61 |   68.75 |   95.07 |                   
+  ...sShowcase.jsx |   94.94 |    90.32 |   65.51 |   94.94 | ...90,305,327-329 
+  UiShowcase.jsx   |   95.18 |      100 |   73.68 |   95.18 | ...80,348-357,388 
+ ...src/pages/home |   91.66 |    78.26 |     100 |   91.66 |                   
+  ...TodayCard.jsx |   89.04 |    71.42 |     100 |   89.04 | 63-68,77-79       
+  ...rveButton.jsx |     100 |    88.88 |     100 |     100 | 19                
+ ...rc/pages/legal |   98.26 |    94.73 |     100 |   98.26 |                   
+  LegalPage.jsx    |   98.26 |    94.73 |     100 |   98.26 | 73-74             
+ ...c/pages/mictcj |   91.43 |     80.5 |      85 |   91.43 |                   
+  ...taSection.jsx |   83.33 |      100 |   66.66 |   83.33 | 30-33             
+  HomeTab.jsx      |     100 |       80 |     100 |     100 | 35                
+  ...cjContext.jsx |     100 |    88.23 |     100 |     100 | 18,47             
+  NewsTab.jsx      |   97.72 |    85.71 |     100 |   97.72 | 36                
+  ...ationsTab.jsx |   95.19 |    88.23 |      80 |   95.19 | 31,113-116        
+  ...ntSection.jsx |   94.04 |    95.83 |   85.71 |   94.04 | 45-49             
+  PrivacyTab.jsx   |   85.71 |    86.04 |      80 |   85.71 | ...67-271,325-328 
+  ProgressTab.jsx  |   89.59 |    77.27 |   84.37 |   89.59 | ...04,242,303-315 
+  RankingTab.jsx   |   89.22 |    78.29 |   90.32 |   89.22 | ...22,528,598-610 
+  ...reJugador.jsx |     100 |      100 |     100 |     100 |                   
+  ...ationsTab.jsx |     100 |       70 |     100 |     100 | 25-27,80          
+  ...epSection.jsx |   77.34 |     86.2 |   46.66 |   77.34 | ...,93-96,138-147 
+  homeSections.jsx |   94.37 |    75.22 |   92.68 |   94.37 | ...23-627,679-687 
+  shared.jsx       |     100 |    80.76 |     100 |     100 | 76-77,87,96,146   
+  testUtils.jsx    |   96.72 |      100 |   66.66 |   96.72 | 136-139           
+ ...es/reservation |   90.87 |    91.89 |   94.73 |   90.87 |                   
+  BookingPanel.jsx |   86.66 |    78.78 |     100 |   86.66 | ...49-154,179-181 
+  CourtGrid.jsx    |   98.36 |    95.65 |     100 |   98.36 | 195-197           
+  DayPicker.jsx    |    79.1 |      100 |      80 |    79.1 | 33-46             
+  ...Indicator.jsx |     100 |      100 |     100 |     100 |                   
+ ...rc/pages/staff |   86.36 |    80.05 |   72.72 |   86.36 |                   
+  ...Dashboard.jsx |   75.15 |    88.88 |   72.72 |   75.15 | ...23-440,500-503 
+  ...mentsPage.jsx |   80.33 |       75 |   66.66 |   80.33 | ...72-513,528-539 
+  ClinicalPage.jsx |    91.8 |    83.16 |   68.57 |    91.8 | ...12-317,378-380 
+  ...yerRecord.jsx |   58.87 |    67.34 |   70.37 |   58.87 | ...70-374,383-532 
+  ...Dashboard.jsx |     100 |       75 |     100 |     100 | 29,32             
+  ...NotesPage.jsx |     100 |      100 |     100 |     100 |                   
+  ...Workspace.jsx |   96.25 |    85.84 |      90 |   96.25 | ...18-423,453-454 
+  ...ationPage.jsx |   97.53 |    79.45 |   90.47 |   97.53 | 57,97-98,158,228  
+  ...itionPage.jsx |   92.68 |    81.73 |   62.16 |   92.68 | ...59-363,472-474 
+  ...icingPage.jsx |    96.5 |    87.85 |      84 |    96.5 | ...95,259,264-268 
+  ...uestsPage.jsx |   96.85 |    80.82 |      80 |   96.85 | ...10,148,155,162 
+  FinancePage.jsx  |   98.66 |    89.85 |   63.41 |   98.66 | 213-215,354-355   
+  ...uestsPage.jsx |   97.15 |    78.37 |   91.66 |   97.15 | 47,69-72          
+  ...tatusPage.jsx |   85.43 |    81.08 |    62.5 |   85.43 | ...39-743,866-868 
+  ...QueuePage.jsx |   98.65 |    85.14 |    91.3 |   98.65 | 43,99-101,232-234 
+  PhysioAccess.jsx |   86.09 |    65.11 |   91.66 |   86.09 | ...49,164,228,237 
+  PlansPage.jsx    |   96.61 |    65.25 |   81.57 |   96.61 | ...50-453,466,550 
+  ...rFilePage.jsx |   51.02 |    73.33 |   45.16 |   51.02 | ...95,547,571-573 
+  PlayerPicker.jsx |   92.94 |       75 |     100 |   92.94 | 26-28,37,75,82    
+  ...ctoryPage.jsx |   96.56 |    76.36 |      75 |   96.56 | 41,45,58,118-122  
+  RequestsPage.jsx |   98.87 |    92.53 |   90.32 |   98.87 | 72-73             
+  ...RolesCard.jsx |   91.96 |    71.42 |      75 |   91.96 | ...79,118,126,129 
+  ...mentsPage.jsx |   85.73 |    75.82 |   65.57 |   85.73 | ...91,711,718,725 
+  matchInputs.jsx  |     100 |      100 |      75 |     100 |                   
+  staffShared.jsx  |    91.6 |    77.77 |   61.11 |    91.6 | ...85,162,176-179 
+ ...es/tournaments |   87.66 |    76.62 |     100 |   87.66 |                   
+  ...ublicPage.jsx |   85.18 |    77.96 |     100 |   85.18 | ...86-190,226-228 
+  ...ublicPage.jsx |   92.94 |    73.33 |     100 |   92.94 | 60,62-66          
+  ...mentLabels.js |   88.23 |    66.66 |     100 |   88.23 | 34-37             
+ ...end/src/routes |     100 |      100 |     100 |     100 |                   
+  RequireAuth.jsx  |     100 |      100 |     100 |     100 |                   
+  RequireRole.jsx  |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 85.78% ( 19568/22811 )
+Branches     : 82.69% ( 3613/4369 )
+Functions    : 75.65% ( 1069/1413 )
+Lines        : 85.78% ( 19568/22811 )
+================================================================================
+[exit code frontend: 1]

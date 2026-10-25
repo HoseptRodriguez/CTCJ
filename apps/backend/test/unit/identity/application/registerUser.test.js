@@ -10,6 +10,7 @@ import {
   createFakeTokenService,
   createFakeEmailSender,
   createFakeClock,
+  createFakeConsentRepository,
 } from './fakes.js';
 
 const CLUB_ID = 'club-1';
@@ -24,6 +25,7 @@ function buildDeps() {
     clock: createFakeClock(new Date('2026-08-01T10:00:00Z')),
     clubId: CLUB_ID,
     appPublicUrl: 'http://localhost:5173',
+    consentRepository: createFakeConsentRepository(),
   };
 }
 

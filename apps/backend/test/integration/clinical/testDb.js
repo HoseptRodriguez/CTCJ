@@ -19,4 +19,7 @@ export async function resetClinical() {
   await prisma.clinicalAppointment.deleteMany({});
   await prisma.recoveryPlan.deleteMany({});
   await prisma.medicalHistoryEntry.deleteMany({});
+  // Also RESTRICT on users (Administration's access to Physiotherapy).
+  await prisma.physioFitnessStatus.deleteMany({});
+  await prisma.clinicalAccessConsent.deleteMany({});
 }

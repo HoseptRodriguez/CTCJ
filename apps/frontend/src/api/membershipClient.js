@@ -52,6 +52,16 @@ export const membershipClient = {
    * includes email. @param {string} q @returns {Promise<{players: {id, firstName, lastName}[]}>} */
   searchPlayers: (q) => request('/api/players/search', { params: { q } }),
 
+  /** Coaches/administration: @returns {Promise<{id, dominantHand, backhand}>} */
+  getPlayerPlayStyle: (playerId) => request(`/api/players/${playerId}/play-style`),
+
+  /** Reception/administration: @returns {Promise<{userId, documentType, documentNumber}>} */
+  getUserDocument: (userId) => request(`/api/admin/users/${userId}/document`),
+
+  /** @param {string} userId @param {{documentType: string|null, documentNumber: string|null}} payload */
+  setUserDocument: (userId, payload) =>
+    request(`/api/admin/users/${userId}/document`, { method: 'PUT', body: payload }),
+
   /** @returns {Promise<{enabled: boolean}>} */
   getOverduePolicy: () => request('/api/booking/settings/overdue-policy'),
 

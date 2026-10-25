@@ -5,6 +5,8 @@ import { DisciplineMismatch } from '../errors/DisciplineMismatch.js';
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 
+import { assertHealthAuthorization } from './assertHealthAuthorization.js';
+
 /**
  * Recovery plans are a Physiotherapy-only concept -- a Psicologo/
  * Neuropsicologo is a legitimate clinical practitioner but is not eligible
@@ -13,6 +15,7 @@ import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
  * @param {{
  *   recoveryPlanRepository: import('../ports/RecoveryPlanRepository.js').RecoveryPlanRepository,
  *   playerEligibilityProvider: import('../ports/PlayerEligibilityProvider.js').PlayerEligibilityProvider,
+ *   healthAuthorizationProvider: import('../ports/HealthAuthorizationProvider.js').HealthAuthorizationProvider,
  *   practitionerEligibilityProvider: import('../ports/PractitionerEligibilityProvider.js').PractitionerEligibilityProvider,
  *   clock: import('../ports/Clock.js').Clock,
  * }} deps
@@ -20,6 +23,7 @@ import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 export function createCreateRecoveryPlan({
   recoveryPlanRepository,
   playerEligibilityProvider,
+  healthAuthorizationProvider,
   practitionerEligibilityProvider,
   clock,
 }) {
@@ -38,6 +42,7 @@ export function createCreateRecoveryPlan({
     if (!isPlayerEligible) {
       throw new PlayerNotEligible();
     }
+    await assertHealthAuthorization(healthAuthorizationProvider, playerId);
     const { eligible, discipline } =
       await practitionerEligibilityProvider.getPractitionerEligibility(practitionerUserId);
     if (!eligible) {

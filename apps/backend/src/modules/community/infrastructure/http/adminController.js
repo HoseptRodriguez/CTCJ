@@ -39,5 +39,15 @@ export function createAdminController(container) {
     res.status(204).send();
   });
 
-  return { listReports, dismissReport, deletePost, deleteComment };
+  const hidePost = asyncHandler(async (req, res) => {
+    await container.hidePost({ postId: req.params.id, staffUserId: req.user.id });
+    res.status(204).send();
+  });
+
+  const unhidePost = asyncHandler(async (req, res) => {
+    await container.unhidePost({ postId: req.params.id });
+    res.status(204).send();
+  });
+
+  return { listReports, dismissReport, deletePost, deleteComment, hidePost, unhidePost };
 }

@@ -30,7 +30,7 @@ export function resolvePostLoginRoute(roles = []) {
     return '/staff/clinico';
   }
   // JUGADOR and plain USUARIO (not yet affiliated) both land here --
-  // MyCtcjPage already handles both cases (affiliation request vs. full
+  // Mi CTCJ (pages/mictcj/HomeTab.jsx) handles both cases (affiliation request vs. full
   // player dashboard).
   return '/mi-ctcj';
 }

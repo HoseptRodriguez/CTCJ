@@ -25,3 +25,11 @@ export const OCCUPYING_STATUSES = Object.freeze([
   RESERVATION_STATUS.HOLD,
   RESERVATION_STATUS.CONFIRMED,
 ]);
+
+/**
+ * Minutes a HOLD waits for the player to confirm. The club admin can change
+ * it (SystemSetting 'booking.holdDurationMinutes') within this range.
+ */
+export const DEFAULT_HOLD_DURATION_MINUTES = 15;
+export const MIN_HOLD_DURATION_MINUTES = 5;
+export const MAX_HOLD_DURATION_MINUTES = 60;

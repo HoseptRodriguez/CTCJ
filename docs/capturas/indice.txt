@@ -1,0 +1,82 @@
+Capturas de pantalla de la plataforma CTCJ para el manual de usuario
+Generadas: 2026-10-06  |  Viewport: 1366x768  |  http://localhost:5173
+Cuentas de prueba (isDemo) creadas con apps/backend/prisma/seedTestUsers.js.
+Nota: el rol Administrador se capturó en una segunda corrida (node scripts/screenshots.js admin), al final de esta lista.
+
+01_landing.png                                   Página de inicio pública (landing) tal como se ve la primera vez, con el aviso de cookies abajo.
+02_landing_completa.png                          Página de inicio pública completa (todas las secciones, desplazamiento completo).
+03_login.png                                     Formulario de inicio de sesión vacío.
+04_registro.png                                  Formulario de registro de cuenta nueva, vacío.
+05_registro_error_validacion.png                 Registro con datos inválidos: mensajes de validación (apellido vacío, correo mal escrito, contraseña corta, aceptaciones sin marcar). Página completa.
+06_registro_formulario_lleno.png                 Formulario de registro completamente diligenciado, antes de enviarlo. Página completa.
+07_reserva_canchas_publica.png                   Disponibilidad y reserva de canchas (vista pública).
+08_el_club.png                                   Página pública «El club».
+09_torneos_publicos.png                          Listado público de torneos.
+10_login_formulario_lleno.png                    Formulario de inicio de sesión diligenciado (correo y contraseña).
+11_login_error_contrasena.png                    Inicio de sesión con contraseña incorrecta: mensaje de error.
+12_usuario_dashboard.png                         Usuario (sin afiliación): pantalla principal tras iniciar sesión.
+13_usuario_reservas.png                          Usuario (sin afiliación): módulo «Reservas».
+14_usuario_novedades.png                         Usuario (sin afiliación): módulo «Novedades».
+15_usuario_perfil.png                            Usuario (sin afiliación): perfil personal (/mi-ctcj/perfil).
+16_usuario_notificaciones.png                    Usuario (sin afiliación): preferencias de notificaciones.
+17_usuario_privacidad.png                        Usuario (sin afiliación): privacidad y datos personales.
+18_jugador_dashboard.png                         Jugador: pantalla principal tras iniciar sesión.
+19_jugador_reservas.png                          Jugador: módulo «Reservas».
+20_jugador_novedades.png                         Jugador: módulo «Novedades».
+21_jugador_mi_progreso.png                       Jugador: módulo «Mi progreso».
+22_jugador_ranking.png                           Jugador: módulo «Ranking».
+23_jugador_comunidad.png                         Jugador: módulo «Comunidad».
+24_jugador_perfil.png                            Jugador: perfil personal (/mi-ctcj/perfil).
+25_jugador_notificaciones.png                    Jugador: preferencias de notificaciones.
+26_jugador_privacidad.png                        Jugador: privacidad y datos personales.
+27_padre_dashboard.png                           Padre/Tutor: pantalla principal tras iniciar sesión.
+28_padre_reservas.png                            Padre/Tutor: módulo «Reservas».
+29_padre_novedades.png                           Padre/Tutor: módulo «Novedades».
+30_padre_perfil.png                              Padre/Tutor: perfil personal (/mi-ctcj/perfil).
+31_padre_notificaciones.png                      Padre/Tutor: preferencias de notificaciones.
+32_padre_privacidad.png                          Padre/Tutor: privacidad y datos personales.
+33_entrenador_dashboard.png                      Entrenador: pantalla principal tras iniciar sesión.
+34_entrenador_jugadores.png                      Entrenador: directorio de jugadores.
+35_entrenador_ficha_jugador.png                  Entrenador: ficha de un jugador.
+36_entrenador_notas_y_rendimiento.png            Entrenador: módulo «Notas y rendimiento».
+37_entrenador_ranking_y_partidos.png             Entrenador: módulo «Ranking y partidos».
+38_entrenador_torneos.png                        Entrenador: módulo «Torneos».
+39_entrenador_perfil.png                         Entrenador: perfil personal (/mi-ctcj/perfil).
+40_recepcion_dashboard.png                       Recepción: pantalla principal tras iniciar sesión.
+41_recepcion_cobros.png                          Recepción: módulo «Cobros» (pagos pendientes).
+42_recepcion_salud_y_bienestar.png               Recepción: módulo «Salud y bienestar».
+43_recepcion_jugadores.png                       Recepción: directorio de jugadores.
+44_recepcion_ficha_jugador.png                   Recepción: ficha de un jugador.
+45_recepcion_membresias.png                      Recepción: módulo «Membresías».
+46_recepcion_solicitudes_de_informacion.png      Recepción: módulo «Solicitudes de información».
+47_recepcion_ranking_y_partidos.png              Recepción: módulo «Ranking y partidos».
+48_recepcion_torneos.png                         Recepción: módulo «Torneos».
+49_recepcion_moderar_comunidad.png               Recepción: módulo «Moderar comunidad».
+50_recepcion_perfil.png                          Recepción: perfil personal (/mi-ctcj/perfil).
+51_psicologo_dashboard.png                       Psicólogo: pantalla principal tras iniciar sesión.
+52_psicologo_ranking_y_partidos.png              Psicólogo: módulo «Ranking y partidos».
+53_psicologo_torneos.png                         Psicólogo: módulo «Torneos».
+54_psicologo_perfil.png                          Psicólogo: perfil personal (/mi-ctcj/perfil).
+55_fisioterapeuta_dashboard.png                  Fisioterapeuta: pantalla principal tras iniciar sesión.
+56_fisioterapeuta_ranking_y_partidos.png         Fisioterapeuta: módulo «Ranking y partidos».
+57_fisioterapeuta_torneos.png                    Fisioterapeuta: módulo «Torneos».
+58_fisioterapeuta_perfil.png                     Fisioterapeuta: perfil personal (/mi-ctcj/perfil).
+59_admin_dashboard.png                           Administrador: pantalla principal tras iniciar sesión (/staff/panel).
+60_admin_cobros.png                              Administrador: módulo «Cobros» (/staff/pagos).
+61_admin_clases_de_hoy.png                       Administrador: módulo «Clases de hoy» (/staff/panel-entrenador).
+62_admin_salud_y_bienestar.png                   Administrador: módulo «Salud y bienestar» (/staff/clinico).
+63_admin_jugadores.png                           Administrador: módulo «Jugadores» (/staff/jugadores).
+64_admin_ficha_jugador.png                       Administrador: ficha de un jugador (/staff/jugadores/4f918058-0461-47ae-a8e9-5ee0a5b99831).
+65_admin_membresias.png                          Administrador: módulo «Membresías» (/staff/membresias).
+66_admin_solicitudes.png                         Administrador: módulo «Solicitudes» (/staff/solicitudes).
+67_admin_comunicados.png                         Administrador: módulo «Comunicados» (/staff/comunicados).
+68_admin_solicitudes_de_informacion.png          Administrador: módulo «Solicitudes de información» (/staff/solicitudes-informacion).
+69_admin_datos_personales.png                    Administrador: módulo «Datos personales» (/staff/datos-personales).
+70_admin_notas_y_rendimiento.png                 Administrador: módulo «Notas y rendimiento» (/staff/notas).
+71_admin_ranking_y_partidos.png                  Administrador: módulo «Ranking y partidos» (/staff/competicion).
+72_admin_torneos.png                             Administrador: módulo «Torneos» (/staff/torneos).
+73_admin_finanzas.png                            Administrador: módulo «Finanzas» (/staff/finanzas).
+74_admin_planes.png                              Administrador: módulo «Planes» (/staff/planes).
+75_admin_precios_de_canchas.png                  Administrador: módulo «Precios de canchas» (/staff/precios).
+76_admin_moderar_comunidad.png                   Administrador: módulo «Moderar comunidad» (/staff/comunidad).
+77_admin_perfil.png                              Administrador: perfil personal (/mi-ctcj/perfil).

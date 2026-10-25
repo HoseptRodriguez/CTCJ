@@ -59,6 +59,9 @@ export function createListReportedContent({
         // (e.g. its author deleted it after the report was filed) -- the
         // report itself still shows up until staff dismiss it.
         targetContent: target?.content ?? null,
+        targetMedia: target?.media ?? [],
+        targetHidden: Boolean(target?.hiddenAt),
+        targetHiddenReason: target?.hiddenReason ?? null,
         targetAuthor: targetAuthor
           ? {
               id: target.authorId,

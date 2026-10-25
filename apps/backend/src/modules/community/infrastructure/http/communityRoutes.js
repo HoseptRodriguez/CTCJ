@@ -10,6 +10,7 @@ import { requireAuth } from '../../../identity/infrastructure/http/middleware/re
 import { requireRole } from '../../../identity/infrastructure/http/middleware/requireRole.js';
 
 import { validateBody } from './validators/communityValidators.js';
+import { isMultipart, parseMediaUpload } from './mediaUpload.js';
 
 /**
  * Every route here is JUGADOR-gated, both reads and writes -- a materially
@@ -23,7 +24,20 @@ export function createCommunityRoutes(controller) {
   const router = Router();
   const jugadorOnly = [requireAuth, requireRole(ROLE_CODES.JUGADOR)];
 
-  router.post('/posts', ...jugadorOnly, validateBody(createPostSchema), controller.createPost);
+  // Text only: JSON (as before). With photos/video: multipart/form-data.
+  router.post('/posts', ...jugadorOnly, (req, res, next) =>
+    isMultipart(req)
+      ? parseMediaUpload(req, res, (err) =>
+          err ? next(err) : controller.createMediaPost(req, res, next),
+        )
+      : validateBody(createPostSchema)(req, res, (err) =>
+          err ? next(err) : controller.createPost(req, res, next),
+        ),
+  );
+  // What the composer may offer (minors: text only) and how videos upload.
+  router.get('/me/media-capabilities', ...jugadorOnly, controller.getMediaCapabilities);
+  // Signs a direct browser -> Vercel Blob video upload (handleUpload).
+  router.post('/media/video-upload', ...jugadorOnly, controller.videoUpload);
   router.get('/posts', ...jugadorOnly, controller.listPosts);
   router.delete('/posts/:id', ...jugadorOnly, controller.deleteMyPost);
 

@@ -24,6 +24,8 @@ export function createGetMyProfile({ userRepository }) {
       phone: user.phone,
       birthDate: user.birthDate,
       bio: user.bio,
+      dominantHand: user.dominantHand,
+      backhand: user.backhand,
       avatarUrl: user.avatarUrl,
     };
   };

@@ -1,4 +1,5 @@
 import { generateBracket } from '../../domain/services/generateBracket.js';
+import { drawPublished } from '../events/tournamentEvents.js';
 import { TournamentNotFound } from '../errors/TournamentNotFound.js';
 
 /**
@@ -49,6 +50,12 @@ export function createGenerateDraw({ tournamentRepository, standingsProvider, cl
     const seeds = ranked.map((p, index) => ({ participantId: p.id, seed: index + 1 }));
     const { matches } = generateBracket(ranked.map((p) => p.id));
 
-    return tournamentRepository.saveBracket({ tournament, seeds, matches });
+    // The players are told in the same transaction (outbox).
+    return tournamentRepository.saveBracket({
+      tournament,
+      seeds,
+      matches,
+      events: [drawPublished(tournament, participants)],
+    });
   };
 }

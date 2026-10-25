@@ -8,6 +8,7 @@ import { MaxConcurrentReservationsExceeded } from '../../../../src/modules/booki
 import { SlotNotAvailable } from '../../../../src/modules/booking/application/errors/SlotNotAvailable.js';
 import { MembershipOverdueBookingBlocked } from '../../../../src/modules/booking/application/errors/MembershipOverdueBookingBlocked.js';
 import { NotAuthorizedToBookForUser } from '../../../../src/modules/booking/application/errors/NotAuthorizedToBookForUser.js';
+import { MinorPendingGuardianAuthorization } from '../../../../src/modules/booking/application/errors/MinorPendingGuardianAuthorization.js';
 
 import {
   createFakeCourtRepository,
@@ -56,6 +57,26 @@ describe('createHold', () => {
     createHold = createCreateHold(deps);
   });
 
+  it("a minor pending the guardian's authorization cannot book, not even through the guardian", async () => {
+    const pending = new Set(['hijo']);
+    createHold = createCreateHold({
+      ...deps,
+      minorAuthorizationProvider: { isPendingGuardianAuthorization: async (id) => pending.has(id) },
+      guardianshipProvider: createFakeGuardianshipProvider([['mama', 'hijo']]),
+    });
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo' }),
+    ).rejects.toThrow(MinorPendingGuardianAuthorization);
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo', createdByUserId: 'mama' }),
+    ).rejects.toThrow(MinorPendingGuardianAuthorization);
+
+    pending.delete('hijo'); // the guardian authorized
+    await expect(
+      createHold({ courtId: COURT.id, ...slot(), holderUserId: 'hijo' }),
+    ).resolves.toMatchObject({ reservationId: expect.any(String) });
+  });
+
   it('creates a HOLD reservation and returns its expiry and price', async () => {
     const { periodStart, periodEnd } = slot();
     const result = await createHold({
@@ -66,11 +87,23 @@ describe('createHold', () => {
     });
 
     expect(result.reservationId).toBeTruthy();
-    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 5 * 60_000);
+    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 15 * 60_000);
 
     const stored = await deps.reservationRepository.findById(result.reservationId);
     expect(stored.status).toBe('HOLD');
     expect(stored.holderUserId).toBe('user-1');
+  });
+
+  it("uses the club's configured hold duration (admin setting)", async () => {
+    await deps.bookingPolicySettings.setHoldDurationMinutes(30);
+    const { periodStart, periodEnd } = slot();
+    const result = await createHold({
+      courtId: COURT.id,
+      periodStart,
+      periodEnd,
+      holderUserId: 'user-1',
+    });
+    expect(result.holdExpiresAt.getTime()).toBe(NOW.getTime() + 30 * 60_000);
   });
 
   it('rejects an invalid slot (policy violation) before touching the repository', async () => {

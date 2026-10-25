@@ -4,10 +4,13 @@ import { ClinicalAppointment } from '../../domain/entities/ClinicalAppointment.j
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 
+import { assertHealthAuthorization } from './assertHealthAuthorization.js';
+
 /**
  * @param {{
  *   appointmentRepository: import('../ports/AppointmentRepository.js').AppointmentRepository,
  *   playerEligibilityProvider: import('../ports/PlayerEligibilityProvider.js').PlayerEligibilityProvider,
+ *   healthAuthorizationProvider: import('../ports/HealthAuthorizationProvider.js').HealthAuthorizationProvider,
  *   practitionerEligibilityProvider: import('../ports/PractitionerEligibilityProvider.js').PractitionerEligibilityProvider,
  *   clock: import('../ports/Clock.js').Clock,
  *   clubId: string,
@@ -16,6 +19,7 @@ import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
 export function createScheduleAppointment({
   appointmentRepository,
   playerEligibilityProvider,
+  healthAuthorizationProvider,
   practitionerEligibilityProvider,
   clock,
   clubId,
@@ -32,6 +36,7 @@ export function createScheduleAppointment({
     if (!isPlayerEligible) {
       throw new PlayerNotEligible();
     }
+    await assertHealthAuthorization(healthAuthorizationProvider, playerId);
     const { eligible, discipline } =
       await practitionerEligibilityProvider.getPractitionerEligibility(practitionerId);
     if (!eligible) {

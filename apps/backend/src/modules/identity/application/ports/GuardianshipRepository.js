@@ -35,6 +35,11 @@ export class GuardianshipRepository {
   }
 
   /** @returns {Promise<GuardianshipRow[]>} */
+  /** @returns {Promise<boolean>} whether this user is the minor in an APPROVED guardianship */
+  async existsApprovedAsMinor(_minorUserId) {
+    throw new Error('Not implemented');
+  }
+
   async listByGuardian(_guardianUserId) {
     throw new Error('Not implemented');
   }
@@ -46,6 +51,11 @@ export class GuardianshipRepository {
 
   /** @returns {Promise<GuardianshipRow>} */
   async decide(_id, _status, _decidedAt, _decidedBy, _decisionNotes) {
+    throw new Error('Not implemented');
+  }
+
+  /** Every guardianship where the user is the minor. */
+  async listByMinor(_minorUserId) {
     throw new Error('Not implemented');
   }
 }

@@ -4,12 +4,12 @@ export const AREA_LABELS = {
   FOREHAND: 'Derecha',
   BACKHAND: 'Revés',
   SERVE: 'Saque',
-  RETURN: 'Resto',
+  RETURN: 'Devolución',
   VOLLEY: 'Volea',
   OVERHEAD: 'Remate',
   SLICE: 'Slice',
-  FOOTWORK: 'Juego de pies',
-  FITNESS: 'Condición física',
+  FOOTWORK: 'Pies',
+  FITNESS: 'Físico',
   MENTALITY: 'Mentalidad',
 };
 

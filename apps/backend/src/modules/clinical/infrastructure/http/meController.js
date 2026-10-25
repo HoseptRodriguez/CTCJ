@@ -28,5 +28,25 @@ export function createMeController(container) {
     res.status(200).json(result);
   });
 
-  return { getMyAppointments, getMyNotes, getMyRecoveryPlans, getMyMedicalHistory };
+  const getMyPhysioConsent = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyPhysioConsent({ playerId: req.user.id }));
+  });
+
+  const grantMyPhysioConsent = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.grantMyPhysioConsent({ playerId: req.user.id }));
+  });
+
+  const revokeMyPhysioConsent = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.revokeMyPhysioConsent({ playerId: req.user.id }));
+  });
+
+  return {
+    getMyAppointments,
+    getMyNotes,
+    getMyRecoveryPlans,
+    getMyMedicalHistory,
+    getMyPhysioConsent,
+    grantMyPhysioConsent,
+    revokeMyPhysioConsent,
+  };
 }

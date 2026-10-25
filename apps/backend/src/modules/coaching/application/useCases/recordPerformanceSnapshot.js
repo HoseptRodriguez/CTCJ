@@ -1,4 +1,7 @@
+import { randomUUID } from 'node:crypto';
+
 import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
+import { performanceRecorded } from '../events/coachingEvents.js';
 
 /**
  * @param {{
@@ -23,6 +26,7 @@ export function createRecordPerformanceSnapshot({
       playerId,
       coachId: coachUserId,
       ratings,
+      events: [performanceRecorded({ snapshotId: randomUUID(), playerId })],
     });
   };
 }

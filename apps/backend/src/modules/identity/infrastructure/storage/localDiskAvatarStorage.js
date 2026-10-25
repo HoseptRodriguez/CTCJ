@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export const EXTENSION_BY_MIME_TYPE = {
@@ -28,6 +28,14 @@ export function createLocalDiskAvatarStorage({ uploadsDir, publicPath }) {
       const filename = `${randomUUID()}.${extension}`;
       await writeFile(path.join(uploadsDir, filename), buffer);
       return `${publicPath}/${filename}`;
+    },
+
+    /** Deletes a file this adapter saved; anything else (or a missing file) is ignored. */
+    async remove(url) {
+      const prefix = `${publicPath}/`;
+      if (typeof url !== 'string' || !url.startsWith(prefix)) return;
+      const filename = path.basename(url.slice(prefix.length));
+      await rm(path.join(uploadsDir, filename), { force: true });
     },
   };
 }

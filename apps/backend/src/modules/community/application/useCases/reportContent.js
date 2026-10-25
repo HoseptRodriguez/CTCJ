@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { REPORT_TARGET_TYPE } from '@ctcj/shared';
+import { AUTO_HIDE_REPORT_THRESHOLD, POST_HIDDEN_REASON, REPORT_TARGET_TYPE } from '@ctcj/shared';
 
 import { ContentNotFound } from '../errors/ContentNotFound.js';
 import { ReportAlreadyPending } from '../errors/ReportAlreadyPending.js';
@@ -8,7 +8,9 @@ import { PlayerNotEligible } from '../errors/PlayerNotEligible.js';
 
 /**
  * Generic over POST/COMMENT -- one use case, not two, dispatching to
- * whichever repository matches targetType.
+ * whichever repository matches targetType. A post that reaches
+ * AUTO_HIDE_REPORT_THRESHOLD (3) pending reports -- each from a different
+ * player -- is hidden automatically until staff review it.
  *
  * @param {{
  *   postRepository: import('../ports/PostRepository.js').PostRepository,
@@ -49,13 +51,26 @@ export function createReportContent({
       throw new ReportAlreadyPending();
     }
 
-    return reportRepository.create({
+    const now = clock.now();
+    const report = await reportRepository.create({
       id: randomUUID(),
       targetType,
       targetId,
       reporterId: reporterUserId,
       reason,
-      createdAt: clock.now(),
+      createdAt: now,
     });
+
+    if (targetType === REPORT_TARGET_TYPE.POST && !target.hiddenAt) {
+      const pending = await reportRepository.countPendingByTarget(targetType, targetId);
+      if (pending >= AUTO_HIDE_REPORT_THRESHOLD) {
+        await postRepository.hide(targetId, {
+          reason: POST_HIDDEN_REASON.AUTO_REPORTS,
+          by: null,
+          at: now,
+        });
+      }
+    }
+    return report;
   };
 }

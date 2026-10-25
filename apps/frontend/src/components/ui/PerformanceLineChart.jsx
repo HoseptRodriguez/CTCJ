@@ -62,14 +62,14 @@ export function PerformanceLineChart({ ratings }) {
         <XAxis
           dataKey="recordedAt"
           tickFormatter={(value) => DATE_FORMATTER.format(new Date(value))}
-          tick={{ fill: '#6B7079', fontSize: 11 }}
+          tick={{ fill: '#4A5363', fontSize: 16 }}
         />
-        <YAxis domain={[1, 10]} tick={{ fill: '#6B7079', fontSize: 11 }} />
+        <YAxis domain={[1, 10]} tick={{ fill: '#4A5363', fontSize: 16 }} />
         <Tooltip
           labelFormatter={(value) => DATE_FORMATTER.format(new Date(value))}
-          contentStyle={{ fontSize: 12 }}
+          contentStyle={{ fontSize: 16 }}
         />
-        <Legend wrapperStyle={{ fontSize: 12, color: '#5A606A' }} formatter={describeArea} />
+        <Legend wrapperStyle={{ fontSize: 16, color: '#0E1A33' }} formatter={describeArea} />
         {areasPresent.map((area) => (
           <Line
             key={area}

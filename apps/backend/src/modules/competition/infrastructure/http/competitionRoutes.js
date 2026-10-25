@@ -41,6 +41,12 @@ export function createCompetitionRoutes(controller) {
   router.get('/matches', requireAuth, validateQuery(matchesQuerySchema), controller.listMatches);
   router.get('/matches/recent', requireAuth, controller.getRecentClubMatches);
   router.get('/me/summary', requireAuth, controller.getMyCompetitionSummary);
+  router.get(
+    '/players/:id/summary',
+    requireAuth,
+    requireRole(COMPETITION_STAFF_ROLES),
+    controller.getPlayerSummary,
+  );
 
   router.post(
     '/seasons',

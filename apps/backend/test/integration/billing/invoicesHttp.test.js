@@ -149,7 +149,7 @@ describe('Invoice HTTP API (real Postgres)', () => {
     await request(app)
       .put(`/api/admin/billing/plans/${planId}/price`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ basePriceCop: 999999, validFrom: '2026-03-15' })
+      .send({ basePriceCop: 999999 }) // the player is told; it starts after the notice
       .expect(200);
 
     const getRes = await request(app)

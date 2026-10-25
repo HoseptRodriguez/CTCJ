@@ -6,6 +6,7 @@ import {
   createRecoveryPlanSchema,
   discontinueRecoveryPlanSchema,
   createMedicalHistoryEntrySchema,
+  setFitnessStatusSchema,
   ROLE_CODES,
 } from '@ctcj/shared';
 
@@ -139,6 +140,33 @@ export function createClinicalAdminRoutes(controller) {
     requireAuth,
     requireRole(PHYSIO_ROLES),
     controller.resolveMedicalHistoryEntry,
+  );
+
+  // --- Administration's access to Physiotherapy --------------------------
+  // Operational summary (no clinical content): the administration and the
+  // physiotherapist. Never the front desk.
+  router.get(
+    '/players/:id/physio-summary',
+    requireAuth,
+    requireRole([ROLE_CODES.ADMINISTRADOR, ROLE_CODES.FISIOTERAPEUTA]),
+    controller.getPhysioSummary,
+  );
+  // "Apto / No apto para jugar hasta [fecha]" -- set by the physiotherapist.
+  router.post(
+    '/players/:id/fitness-status',
+    requireAuth,
+    requireRole(PHYSIO_ROLES),
+    validateBody(setFitnessStatusSchema),
+    controller.setFitnessStatus,
+  );
+  // Physiotherapy notes for the administration -- only with the player's
+  // active authorization (checked in the use case, 403 otherwise); every
+  // read is written to audit_logs.
+  router.get(
+    '/players/:id/physio-notes',
+    requireAuth,
+    requireRole(ROLE_CODES.ADMINISTRADOR),
+    controller.listPhysioNotesForAdmin,
   );
 
   return router;

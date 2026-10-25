@@ -1,0 +1,180 @@
+import { Suspense, useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+
+import { guardianshipClient } from '../api/guardianshipClient.js';
+import { HomeIcon } from '../components/icons/HomeIcon.jsx';
+import { InboxIcon } from '../components/icons/InboxIcon.jsx';
+import { CalendarIcon } from '../components/icons/CalendarIcon.jsx';
+import { MessageIcon } from '../components/icons/MessageIcon.jsx';
+import { TrendingUpIcon } from '../components/icons/TrendingUpIcon.jsx';
+import { TrophyIcon } from '../components/icons/TrophyIcon.jsx';
+import { Avatar } from '../components/ui/Avatar.jsx';
+import { ClubMark } from '../components/ui/ClubMark.jsx';
+import { cn } from '../components/ui/cn.js';
+import { FontSizeToggle } from '../components/ui/FontSizeToggle.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { MyCtcjProvider, useMyCtcj } from '../pages/mictcj/MyCtcjContext.jsx';
+import { AccountRequirementsGate } from '../components/legal/AccountRequirementsGate.jsx';
+
+import { LegalLinks } from './LegalLinks.jsx';
+import { NotificationBell } from './NotificationBell.jsx';
+import { RouteLoading } from './RouteLoading.jsx';
+
+/** Tabs of the player area. The last three are for JUGADOR only. */
+export const MY_CTCJ_TABS = [
+  { to: '/mi-ctcj', end: true, label: 'Inicio', Icon: HomeIcon },
+  { to: '/mi-ctcj/reservas', label: 'Reservas', Icon: CalendarIcon },
+  { to: '/mi-ctcj/novedades', label: 'Novedades', Icon: InboxIcon },
+  { to: '/mi-ctcj/progreso', label: 'Mi progreso', Icon: TrendingUpIcon, jugadorOnly: true },
+  { to: '/mi-ctcj/ranking', label: 'Ranking', Icon: TrophyIcon, jugadorOnly: true },
+  { to: '/mi-ctcj/comunidad', label: 'Comunidad', Icon: MessageIcon, jugadorOnly: true },
+];
+
+/**
+ * A minor's account waiting for the guardian's authorization: it can look
+ * around, but not book or post. Says so up front, and what to do.
+ */
+function PendingGuardianNotice() {
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => guardianshipClient.getAccountRestrictions())
+      .then((r) => !cancelled && setPending(r?.pendingGuardianAuthorization === true))
+      .catch(() => {}); // unknown => no notice; the server still enforces the rule
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!pending) return null;
+  return (
+    <div
+      role="status"
+      className="mb-6 rounded-xl border-2 border-amber bg-amber-soft p-4 text-body text-ink"
+    >
+      <p className="font-semibold">Tu cuenta está pendiente de la autorización de tu acudiente.</p>
+      <p className="mt-1">
+        Puedes entrar y ver la información del club, pero todavía no puedes reservar ni publicar en
+        la Comunidad. Pídele a tu acudiente que vincule tu cuenta desde su perfil («Cuentas
+        vinculadas») y dé la autorización.
+      </p>
+    </div>
+  );
+}
+
+export function MyCtcjLayout() {
+  return (
+    <MyCtcjProvider>
+      <MyCtcjShell />
+    </MyCtcjProvider>
+  );
+}
+
+function MyCtcjShell() {
+  const { logout } = useAuth();
+  const { isJugador, profile } = useMyCtcj();
+  const location = useLocation();
+  const tabs = MY_CTCJ_TABS.filter((tab) => isJugador || !tab.jugadorOnly);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [location.pathname]);
+
+  return (
+    <div className="flex min-h-screen flex-col bg-page">
+      <a
+        href="#contenido"
+        className="focus-ring sr-only z-toast rounded-lg bg-lime px-4 py-3 font-semibold text-navy-500 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Saltar al contenido
+      </a>
+      <header className="bg-navy-500 text-white">
+        <div className="mx-auto flex max-w-container items-center justify-between gap-3 px-4 pb-2 pt-3 md:px-8">
+          <Link
+            to="/"
+            className="focus-ring flex min-h-btn items-center gap-3 rounded-lg"
+            aria-label="Club de Tenis Ciudad Jardín, sitio del club"
+          >
+            <ClubMark tone="dark" size="md" />
+            <span className="hidden font-display text-h3 font-bold sm:block">Mi CTCJ</span>
+          </Link>
+          <div className="flex items-center gap-2 md:gap-3">
+            <FontSizeToggle tone="dark" className="hidden md:inline-flex" />
+            <NotificationBell tone="dark" />
+            <Link
+              to="/mi-ctcj/perfil"
+              className="focus-ring flex items-center gap-2 rounded-full pr-1"
+              aria-label={profile?.firstName ? `Mi perfil (${profile.firstName})` : 'Mi perfil'}
+            >
+              <Avatar
+                src={profile?.avatarUrl}
+                firstName={profile?.firstName}
+                lastName={profile?.lastName}
+                className="ring-2 ring-white"
+              />
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="focus-ring hidden min-h-btn rounded-lg border-2 border-white px-3 text-body font-semibold text-white hover:bg-white/10 sm:inline-flex sm:items-center"
+            >
+              Salir
+            </button>
+          </div>
+        </div>
+        <nav aria-label="Mi CTCJ" className="mx-auto max-w-container overflow-x-auto px-2 md:px-6">
+          <ul className="flex min-w-max gap-1">
+            {tabs.map(({ to, end, label, Icon }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    cn(
+                      'focus-ring flex min-h-btn-lg items-center gap-2 rounded-t-xl border-b-4 px-4 text-body font-semibold',
+                      isActive
+                        ? 'border-lime bg-page text-navy-500'
+                        : 'border-transparent text-white hover:bg-white/10',
+                    )
+                  }
+                >
+                  <Icon className="h-6 w-6 shrink-0" />
+                  {label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </header>
+      <main id="contenido" className="mx-auto w-full max-w-container flex-1 px-4 py-8 md:px-8">
+        <PendingGuardianNotice />
+        <AccountRequirementsGate>
+          <Suspense fallback={<RouteLoading />}>
+            <Outlet />
+          </Suspense>
+        </AccountRequirementsGate>
+      </main>
+      <footer className="border-t border-line bg-surface">
+        <div className="mx-auto flex max-w-container flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-8">
+          <FontSizeToggle className="md:hidden" />
+          <button
+            type="button"
+            onClick={logout}
+            className="focus-ring min-h-btn rounded-lg px-3 text-body font-semibold text-navy-500 underline underline-offset-4 sm:hidden"
+          >
+            Salir de mi cuenta
+          </button>
+          <Link
+            to="/"
+            className="focus-ring inline-flex min-h-btn items-center rounded-lg text-body font-semibold text-navy-500 underline underline-offset-4"
+          >
+            Ir al sitio del club
+          </Link>
+        </div>
+        <div className="mx-auto max-w-container border-t border-line px-4 py-3 md:px-8">
+          <LegalLinks />
+        </div>
+      </footer>
+    </div>
+  );
+}

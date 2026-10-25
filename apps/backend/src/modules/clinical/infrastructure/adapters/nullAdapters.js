@@ -29,3 +29,23 @@ export function createNullPlayerDirectoryProvider() {
     },
   };
 }
+
+/** Standalone/test default: collects reads in memory (never touches the DB). */
+export function createInMemoryClinicalAuditLog() {
+  const reads = [];
+  return {
+    reads,
+    async recordNoteReads(read) {
+      reads.push(read);
+    },
+  };
+}
+
+export function createNullHealthAuthorizationProvider() {
+  return {
+    // Fails closed -- no health data is recorded without a known authorization.
+    async hasHealthAuthorization() {
+      return false;
+    },
+  };
+}

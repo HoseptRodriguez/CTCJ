@@ -1,0 +1,52 @@
+{
+  "PRIVACY_POLICY": {
+    "version": "4",
+    "publishedOn": "2026-10-03",
+    "sha256": "5f955b6c2195948fe5f5099fe3b8b6ef310e2d1206c217ed7820fb3e71dce4e4"
+  },
+  "TERMS": {
+    "version": "2",
+    "publishedOn": "2026-10-03",
+    "sha256": "5883e524daa7bc7d6e144bdf66d63a4d0625e8ae0f27576732b6b435870ceb5b"
+  },
+  "COOKIES": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "247fb94e90aaf41a8deaf63f12caf3379d260a4aa9a1c7c1e2d34aa9977d7624"
+  },
+  "REFUNDS": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "9595478c952ff8715eb5337c963d64ded43b4ab304cb4cd19eb31a2a1902c3f6"
+  },
+  "ACCESSIBILITY": {
+    "version": "2",
+    "publishedOn": "2026-09-28",
+    "sha256": "b4a23718a2973e56cfb21958d1b78d33bac3f3516a756fda219393416b763218"
+  },
+  "MINOR_DATA_IMAGE": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "7251d3b4053d3f78aba6dbb7c8a71eff55774783f92eabe24a42dc70dbde6cca"
+  },
+  "HEALTH_DATA": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "43d2dabc0f263d9396fdc7ae325b3b6d50a95e28b0dfcd4b526b3ce061588147"
+  },
+  "COMMUNITY_RULES": {
+    "version": "1",
+    "publishedOn": "2026-09-28",
+    "sha256": "722e885836c5d6f942698a06c6cf17273d1fe659d12683d40aa445a96f97718b"
+  },
+  "MARKETING": {
+    "version": "2",
+    "publishedOn": "2026-10-03",
+    "sha256": "05544f861082b61bd6735bbd1b74c33f625726a64bbcd970fbe6d2b9d4d88672"
+  },
+  "MINOR_PUBLIC_NAME": {
+    "version": "1",
+    "publishedOn": "2026-09-29",
+    "sha256": "e140d1c60ed9fce94a333f5f3e8cc5e35cc83c96aa7446a84d6cb1e62f2c98eb"
+  }
+}

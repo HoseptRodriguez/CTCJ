@@ -6,4 +6,9 @@ export class AvatarStorage {
   async save(_buffer, _mimeType) {
     throw new Error('Not implemented');
   }
+
+  /** Deletes an avatar saved by this storage (used when an account is deleted). */
+  async remove(_url) {
+    throw new Error('Not implemented');
+  }
 }

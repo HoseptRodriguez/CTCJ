@@ -71,7 +71,7 @@ describe('expireHoldsJob (real Postgres + shedlock)', () => {
     const created = await repo.createHold(buildHold());
     const job = createExpireHoldsJob({
       prismaClient: prisma,
-      clock: { now: () => new Date(NOW.getTime() + 6 * 60_000) }, // 6 min later, past the 5-min hold
+      clock: { now: () => new Date(NOW.getTime() + 16 * 60_000) }, // 16 min later, past the 15-min hold
       lockedBy: 'test-instance-1',
     });
 
@@ -86,7 +86,7 @@ describe('expireHoldsJob (real Postgres + shedlock)', () => {
     const created = await repo.createHold(buildHold());
     const job = createExpireHoldsJob({
       prismaClient: prisma,
-      clock: { now: () => new Date(NOW.getTime() + 60_000) }, // 1 min later, still within the 5-min hold
+      clock: { now: () => new Date(NOW.getTime() + 60_000) }, // 1 min later, still within the 15-min hold
       lockedBy: 'test-instance-1',
     });
 

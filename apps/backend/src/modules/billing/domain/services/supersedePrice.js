@@ -1,5 +1,5 @@
 import { InvalidPriceValidFrom } from '../errors/InvalidPriceValidFrom.js';
-import { NegativePrice } from '../errors/NegativePrice.js';
+import { PriceNotPositive } from '../errors/PriceNotPositive.js';
 
 /**
  * Pure domain operation: computes what it takes to supersede a plan's
@@ -14,8 +14,8 @@ import { NegativePrice } from '../errors/NegativePrice.js';
  * @returns {{ closePrevious: {id: string, validTo: Date}|null, newRow: { basePriceCop: number|bigint, validFrom: Date } }}
  */
 export function supersedePrice(currentVigentePrice, newPriceInput) {
-  if (newPriceInput.basePriceCop < 0) {
-    throw new NegativePrice();
+  if (!(newPriceInput.basePriceCop > 0)) {
+    throw new PriceNotPositive();
   }
   if (currentVigentePrice && newPriceInput.validFrom <= currentVigentePrice.validFrom) {
     throw new InvalidPriceValidFrom();

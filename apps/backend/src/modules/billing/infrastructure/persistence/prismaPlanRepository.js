@@ -47,6 +47,26 @@ export function createPrismaPlanRepository(prisma) {
       return record ? toPlanRow(record) : null;
     },
 
+    async findByName(clubId, name) {
+      const record = await prisma.membershipPlan.findFirst({
+        where: { clubId, name: { equals: name.trim(), mode: 'insensitive' } },
+      });
+      return record ? toPlanRow(record) : null;
+    },
+
+    async listCodes(clubId) {
+      const records = await prisma.membershipPlan.findMany({
+        where: { clubId },
+        select: { code: true },
+      });
+      return records.map((r) => r.code);
+    },
+
+    async update(id, changes) {
+      const record = await prisma.membershipPlan.update({ where: { id }, data: changes });
+      return toPlanRow(record);
+    },
+
     async listByClub(clubId) {
       const records = await prisma.membershipPlan.findMany({
         where: { clubId },
@@ -58,6 +78,18 @@ export function createPrismaPlanRepository(prisma) {
     async findCurrentPrice(planId) {
       const record = await prisma.membershipPlanPrice.findFirst({
         where: { planId, validTo: null },
+      });
+      return record ? toPriceRow(record) : null;
+    },
+
+    async findPriceAt(planId, date) {
+      const record = await prisma.membershipPlanPrice.findFirst({
+        where: {
+          planId,
+          validFrom: { lte: date },
+          OR: [{ validTo: null }, { validTo: { gt: date } }],
+        },
+        orderBy: { validFrom: 'desc' },
       });
       return record ? toPriceRow(record) : null;
     },
@@ -93,6 +125,20 @@ export function createPrismaPlanRepository(prisma) {
 
       const results = await prisma.$transaction(operations);
       return toPriceRow(results[results.length - 1]);
+    },
+
+    async cancelScheduledPrice({ scheduledId, previousId }) {
+      await prisma.$transaction([
+        prisma.membershipPlanPrice.delete({ where: { id: scheduledId } }),
+        ...(previousId
+          ? [
+              prisma.membershipPlanPrice.update({
+                where: { id: previousId },
+                data: { validTo: null },
+              }),
+            ]
+          : []),
+      ]);
     },
   };
 }

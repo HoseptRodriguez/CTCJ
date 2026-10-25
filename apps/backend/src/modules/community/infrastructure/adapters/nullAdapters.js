@@ -13,6 +13,27 @@ export function createNullPlayerEligibilityProvider() {
   };
 }
 
+/** Fails closed -- without identity wired, everyone counts as a minor (no media). */
+export function createNullMinorStatusProvider() {
+  return {
+    async isMinor() {
+      return true;
+    },
+    async isPendingGuardianAuthorization() {
+      return true;
+    },
+  };
+}
+
+/** Fails closed -- nobody posts without a known acceptance of the rules. */
+export function createNullCommunityRulesProvider() {
+  return {
+    async hasAcceptedRules() {
+      return false;
+    },
+  };
+}
+
 /** Fails open (empty map) -- this is display enrichment, not an authz gate. */
 export function createNullPlayerDirectoryProvider() {
   return {

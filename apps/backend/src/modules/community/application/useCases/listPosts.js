@@ -17,7 +17,9 @@ const DEFAULT_LIMIT = 20;
 export function createListPosts({ postRepository, postLikeRepository, playerDirectoryProvider }) {
   /** @param {{ callerUserId: string, limit?: number, before?: Date }} input */
   return async function listPosts({ callerUserId, limit = DEFAULT_LIMIT, before } = {}) {
-    const posts = await postRepository.listRecent({ limit, before });
+    // Hidden posts stay out of the feed -- except for their own author,
+    // who sees them marked as hidden while staff review them.
+    const posts = await postRepository.listRecent({ limit, before, viewerId: callerUserId });
     if (posts.length === 0) {
       return { posts: [] };
     }

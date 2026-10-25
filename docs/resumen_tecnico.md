@@ -1,0 +1,2473 @@
+# Resumen técnico — Plataforma CTCJ
+
+Club de Tenis Ciudad Jardín · generado el 2026-10-06 desde la rama `rediseno` (commit `7d99b6a`).
+
+Contenido:
+
+1. Árbol de carpetas
+2. Versiones y dependencias
+3. Scripts npm
+4. Rutas del backend
+5. Variables de entorno
+6. Cómo levantar el proyecto
+7. Pruebas unitarias y cobertura
+8. Schema de Prisma
+
+## 1. Árbol de carpetas
+
+Solo carpetas versionadas en git (sin `node_modules`, `dist`, `build`, `coverage` ni archivos ignorados). Las 32 carpetas de migraciones de Prisma se resumen en una línea.
+
+```
+ctcj-platform/
+├── .github/
+│   └── workflows/
+├── .husky/
+├── apps/
+│   ├── backend/
+│   │   ├── prisma/
+│   │   │   └── migrations/  (32 migraciones)
+│   │   ├── scripts/
+│   │   │   └── data-fixes/
+│   │   ├── src/
+│   │   │   ├── config/
+│   │   │   ├── modules/
+│   │   │   │   ├── billing/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   └── services/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── booking/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── policies/
+│   │   │   │   │   │   └── services/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       ├── jobs/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── challenges/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   └── errors/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── clinical/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   └── errors/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── coaching/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── events/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── community/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   ├── services/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   └── services/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       ├── images/
+│   │   │   │   │       ├── persistence/
+│   │   │   │   │       └── storage/
+│   │   │   │   ├── competition/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── policies/
+│   │   │   │   │   │   └── services/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── goals/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   └── policies/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   ├── identity/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── entities/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── policies/
+│   │   │   │   │   │   └── services/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── email/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   ├── middleware/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       ├── images/
+│   │   │   │   │       ├── persistence/
+│   │   │   │   │       ├── security/
+│   │   │   │   │       └── storage/
+│   │   │   │   ├── inquiries/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   └── errors/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── email/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       ├── jobs/
+│   │   │   │   │       ├── persistence/
+│   │   │   │   │       └── security/
+│   │   │   │   ├── notifications/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── policies/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── email/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       ├── jobs/
+│   │   │   │   │       ├── persistence/
+│   │   │   │   │       ├── security/
+│   │   │   │   │       └── storage/
+│   │   │   │   ├── privacy/
+│   │   │   │   │   ├── application/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   ├── ports/
+│   │   │   │   │   │   └── useCases/
+│   │   │   │   │   ├── domain/
+│   │   │   │   │   │   ├── errors/
+│   │   │   │   │   │   └── policies/
+│   │   │   │   │   └── infrastructure/
+│   │   │   │   │       ├── adapters/
+│   │   │   │   │       ├── http/
+│   │   │   │   │       │   └── validators/
+│   │   │   │   │       └── persistence/
+│   │   │   │   └── tournament/
+│   │   │   │       ├── application/
+│   │   │   │       │   ├── errors/
+│   │   │   │       │   ├── events/
+│   │   │   │       │   ├── ports/
+│   │   │   │       │   └── useCases/
+│   │   │   │       ├── domain/
+│   │   │   │       │   ├── entities/
+│   │   │   │       │   ├── errors/
+│   │   │   │       │   ├── policies/
+│   │   │   │       │   └── services/
+│   │   │   │       └── infrastructure/
+│   │   │   │           ├── adapters/
+│   │   │   │           ├── http/
+│   │   │   │           │   └── validators/
+│   │   │   │           └── persistence/
+│   │   │   └── shared/
+│   │   │       └── errors/
+│   │   ├── test/
+│   │   │   ├── integration/
+│   │   │   │   ├── billing/
+│   │   │   │   ├── booking/
+│   │   │   │   ├── challenges/
+│   │   │   │   ├── clinical/
+│   │   │   │   ├── coaching/
+│   │   │   │   ├── community/
+│   │   │   │   ├── competition/
+│   │   │   │   ├── goals/
+│   │   │   │   ├── identity/
+│   │   │   │   ├── inquiries/
+│   │   │   │   ├── notifications/
+│   │   │   │   ├── privacy/
+│   │   │   │   ├── security/
+│   │   │   │   └── tournament/
+│   │   │   └── unit/
+│   │   │       ├── billing/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── booking/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── challenges/
+│   │   │       │   ├── application/
+│   │   │       │   ├── domain/
+│   │   │       │   └── infrastructure/
+│   │   │       ├── clinical/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── coaching/
+│   │   │       │   └── application/
+│   │   │       ├── community/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── competition/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── config/
+│   │   │       ├── encoding/
+│   │   │       ├── goals/
+│   │   │       │   ├── application/
+│   │   │       │   └── domain/
+│   │   │       ├── identity/
+│   │   │       │   ├── application/
+│   │   │       │   ├── domain/
+│   │   │       │   └── infrastructure/
+│   │   │       ├── inquiries/
+│   │   │       ├── legal/
+│   │   │       ├── notifications/
+│   │   │       │   └── application/
+│   │   │       ├── privacy/
+│   │   │       ├── scripts/
+│   │   │       ├── shared/
+│   │   │       └── tournament/
+│   │   │           ├── application/
+│   │   │           └── domain/
+│   │   └── uploads/
+│   │       └── avatars/
+│   └── frontend/
+│       ├── public/
+│       │   └── img/
+│       │       └── club/
+│       ├── scripts/
+│       ├── src/
+│       │   ├── api/
+│       │   ├── components/
+│       │   │   ├── brochure/
+│       │   │   ├── charts/
+│       │   │   ├── forms/
+│       │   │   ├── icons/
+│       │   │   ├── legal/
+│       │   │   ├── mfa/
+│       │   │   ├── motion/
+│       │   │   └── ui/
+│       │   ├── context/
+│       │   ├── hooks/
+│       │   ├── layout/
+│       │   ├── lib/
+│       │   ├── pages/
+│       │   │   ├── auth/
+│       │   │   ├── community/
+│       │   │   ├── dev/
+│       │   │   ├── home/
+│       │   │   ├── legal/
+│       │   │   ├── mictcj/
+│       │   │   ├── reservation/
+│       │   │   ├── staff/
+│       │   │   └── tournaments/
+│       │   ├── routes/
+│       │   └── styles/
+│       └── test/
+├── docs/
+│   ├── adr/
+│   └── capturas/  (77 capturas para el manual)
+├── packages/
+│   └── shared/
+│       └── src/
+│           ├── constants/
+│           ├── legal/
+│           ├── text/
+│           ├── time/
+│           └── validation/
+└── scripts/
+```
+
+## 2. Versiones y dependencias
+
+| Herramienta                                    | Versión                                        |
+| ---------------------------------------------- | ---------------------------------------------- |
+| Node.js requerido                              | `20.x` (`.nvmrc`; `engines.node` = `>=20.0.0`) |
+| Node.js en esta máquina                        | `v24.16.0`                                     |
+| npm en esta máquina                            | `11.13.0`                                      |
+| PostgreSQL (docker-compose)                    | `16`                                           |
+| Mailhog (docker-compose, correo de desarrollo) | `v1.0.1`                                       |
+
+La versión instalada es la que resuelve `package-lock.json` hoy; el rango es el declarado en cada `package.json`.
+
+### Raíz (monorepo, workspaces)
+
+Paquete `ctcj-platform` versión `0.1.0`.
+
+**Dependencias de desarrollo**
+
+| Paquete                  | Rango declarado | Instalada |
+| ------------------------ | --------------- | --------- |
+| `@vitest/coverage-v8`    | `^2.1.9`        | `2.1.9`   |
+| `dependency-cruiser`     | `^16.4.2`       | `16.10.4` |
+| `eslint`                 | `^8.57.0`       | `8.57.1`  |
+| `eslint-config-prettier` | `^9.1.0`        | `9.1.2`   |
+| `eslint-plugin-import`   | `^2.30.0`       | `2.32.0`  |
+| `husky`                  | `^9.1.5`        | `9.1.7`   |
+| `lint-staged`            | `^15.2.9`       | `15.5.2`  |
+| `playwright`             | `^1.63.0`       | `1.63.0`  |
+| `prettier`               | `^3.3.3`        | `3.9.6`   |
+
+### Backend — `apps/backend`
+
+Paquete `@ctcj/backend` versión `0.1.0`, `"type": "module"`.
+
+**Dependencias**
+
+| Paquete              | Rango declarado | Instalada     |
+| -------------------- | --------------- | ------------- |
+| `@ctcj/shared`       | `*`             | `workspace`   |
+| `@prisma/client`     | `^5.19.1`       | `5.22.0`      |
+| `@vercel/blob`       | `^2.8.0`        | `2.8.0`       |
+| `argon2`             | `^0.41.1`       | `0.41.1`      |
+| `cookie-parser`      | `^1.4.6`        | `1.4.7`       |
+| `cors`               | `^2.8.5`        | `2.8.6`       |
+| `dotenv`             | `^16.4.5`       | `16.6.1`      |
+| `express`            | `^4.22.3`       | `4.22.3`      |
+| `express-rate-limit` | `^8.7.0`        | `8.7.0`       |
+| `helmet`             | `^7.1.0`        | `7.2.0`       |
+| `jsonwebtoken`       | `^9.0.2`        | `9.0.3`       |
+| `multer`             | `^1.4.5-lts.1`  | `1.4.5-lts.2` |
+| `nodemailer`         | `^9.1.1`        | `9.1.1`       |
+| `pino`               | `^9.4.0`        | `9.14.0`      |
+| `pino-http`          | `^10.3.0`       | `10.5.0`      |
+| `qrcode`             | `^1.5.4`        | `1.5.4`       |
+| `resend`             | `^6.30.0`       | `6.30.0`      |
+| `sharp`              | `^0.35.4`       | `0.35.4`      |
+| `zod`                | `^3.23.8`       | `3.25.76`     |
+
+**Dependencias de desarrollo**
+
+| Paquete       | Rango declarado | Instalada |
+| ------------- | --------------- | --------- |
+| `nodemon`     | `^3.1.4`        | `3.1.14`  |
+| `pino-pretty` | `^11.2.2`       | `11.3.0`  |
+| `prisma`      | `^5.19.1`       | `5.22.0`  |
+| `supertest`   | `^7.0.0`        | `7.2.2`   |
+| `vitest`      | `^2.0.5`        | `2.1.9`   |
+
+### Frontend — `apps/frontend`
+
+Paquete `@ctcj/frontend` versión `0.1.0`, `"type": "module"`.
+
+**Dependencias**
+
+| Paquete                      | Rango declarado | Instalada   |
+| ---------------------------- | --------------- | ----------- |
+| `@ctcj/shared`               | `*`             | `workspace` |
+| `@fontsource/archivo`        | `^5.3.0`        | `5.3.0`     |
+| `@fontsource/archivo-narrow` | `^5.3.0`        | `5.3.0`     |
+| `@gsap/react`                | `^2.1.2`        | `2.1.2`     |
+| `@vercel/blob`               | `^2.8.0`        | `2.8.0`     |
+| `framer-motion`              | `^11.11.9`      | `11.18.2`   |
+| `gsap`                       | `^3.15.0`       | `3.15.0`    |
+| `react`                      | `^18.3.1`       | `18.3.1`    |
+| `react-dom`                  | `^18.3.1`       | `18.3.1`    |
+| `react-router-dom`           | `^6.30.6`       | `6.30.6`    |
+| `recharts`                   | `^3.10.1`       | `3.10.1`    |
+| `zod`                        | `^3.23.8`       | `3.25.76`   |
+
+**Dependencias de desarrollo**
+
+| Paquete                       | Rango declarado | Instalada |
+| ----------------------------- | --------------- | --------- |
+| `@testing-library/jest-dom`   | `^6.5.0`        | `6.9.1`   |
+| `@testing-library/react`      | `^16.0.1`       | `16.3.2`  |
+| `@testing-library/user-event` | `^14.5.2`       | `14.6.1`  |
+| `@vitejs/plugin-react`        | `^4.3.1`        | `4.7.0`   |
+| `autoprefixer`                | `^10.4.20`      | `10.5.4`  |
+| `axe-core`                    | `^4.13.0`       | `4.13.0`  |
+| `eslint-plugin-react`         | `^7.35.0`       | `7.37.5`  |
+| `eslint-plugin-react-hooks`   | `^4.6.2`        | `4.6.2`   |
+| `jsdom`                       | `^25.0.0`       | `25.0.1`  |
+| `postcss`                     | `^8.4.45`       | `8.5.25`  |
+| `sharp`                       | `^0.35.4`       | `0.35.4`  |
+| `tailwindcss`                 | `^3.4.10`       | `3.4.19`  |
+| `vite`                        | `^5.4.3`        | `5.4.21`  |
+| `vitest`                      | `^2.0.5`        | `2.1.9`   |
+
+### Compartido — `packages/shared`
+
+Paquete `@ctcj/shared` versión `0.1.0`, `"type": "module"`.
+
+**Dependencias**
+
+| Paquete | Rango declarado | Instalada |
+| ------- | --------------- | --------- |
+| `zod`   | `^3.23.8`       | `3.25.76` |
+
+## 3. Scripts npm
+
+### Raíz (monorepo, workspaces)
+
+| Script           | Comando                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `dev:backend`    | `npm run dev -w apps/backend`                                                                                   |
+| `dev:frontend`   | `npm run dev -w apps/frontend`                                                                                  |
+| `prisma:migrate` | `npm run prisma:migrate -w apps/backend`                                                                        |
+| `prisma:seed`    | `npm run prisma:seed -w apps/backend`                                                                           |
+| `build`          | `npm run legal:check && npm run build -w apps/frontend && npm run prisma:generate -w apps/backend`              |
+| `start`          | `npm run prisma:deploy -w apps/backend && npm run prisma:seed -w apps/backend && npm run start -w apps/backend` |
+| `test`           | `npm run test -w apps/backend && npm run test -w apps/frontend --if-present`                                    |
+| `lint`           | `eslint . --ext .js,.jsx`                                                                                       |
+| `lint:arch`      | `depcruise apps/backend/src --config .dependency-cruiser.js`                                                    |
+| `format`         | `prettier --write .`                                                                                            |
+| `prepare`        | `husky`                                                                                                         |
+| `legal:check`    | `node scripts/legal-check.mjs`                                                                                  |
+| `db:backup`      | `node scripts/backup-db.mjs`                                                                                    |
+
+### Backend — `apps/backend`
+
+| Script             | Comando                                            |
+| ------------------ | -------------------------------------------------- |
+| `dev`              | `nodemon src/server.js`                            |
+| `start`            | `node src/server.js`                               |
+| `prisma:migrate`   | `prisma migrate dev`                               |
+| `prisma:deploy`    | `prisma migrate deploy`                            |
+| `prisma:generate`  | `prisma generate`                                  |
+| `prisma:seed`      | `node prisma/seed.js`                              |
+| `prisma:studio`    | `prisma studio`                                    |
+| `bootstrap:admin`  | `node scripts/bootstrapAdmin.js`                   |
+| `test`             | `vitest run`                                       |
+| `test:watch`       | `vitest`                                           |
+| `test:integration` | `vitest run --config vitest.integration.config.js` |
+
+### Frontend — `apps/frontend`
+
+| Script         | Comando                                             |
+| -------------- | --------------------------------------------------- |
+| `dev`          | `vite`                                              |
+| `build`        | `node scripts/check-photo-rights.mjs && vite build` |
+| `photos:check` | `node scripts/check-photo-rights.mjs`               |
+| `preview`      | `vite preview`                                      |
+| `test`         | `vitest run`                                        |
+| `photos`       | `node scripts/optimize-photos.mjs`                  |
+
+Scripts sueltos (sin entrada en `package.json`):
+
+| Archivo                                  | Uso                                                                                                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `scripts/screenshots.js`                 | `node scripts/screenshots.js [rol ...]` — capturas para el manual en `docs/capturas/` (Playwright, 1366x768).           |
+| `apps/backend/prisma/seedTestUsers.js`   | `node apps/backend/prisma/seedTestUsers.js` — una cuenta de prueba por rol (`isDemo`); se niega a correr en producción. |
+| `apps/backend/scripts/bootstrapAdmin.js` | Concede ADMINISTRADOR a una cuenta ya verificada (el primer administrador). Ver §6.                                     |
+
+## 4. Rutas del backend
+
+208 rutas: 24 públicas, 66 para cualquier usuario con sesión y 118 restringidas por rol. Extraídas de los `*Routes.js` de cada módulo (`requireAuth` / `requireRole`) y del montaje en `apps/backend/src/app.js`.
+
+- **Sesión**: `sí` = `requireAuth` (token de acceso JWT); `opcional` = `optionalAuth` (responde distinto si hay sesión); `no` = pública.
+- **Rol requerido**: vacío = cualquier usuario con sesión. Varios roles = basta con tener uno.
+- Algunas rutas aplican además reglas finas dentro del caso de uso (p. ej. solo el dueño de la reserva, el tutor del menor o el profesional asignado); esas reglas no aparecen en esta tabla.
+- Fuera de las pruebas, `/api/auth/login`, `/api/auth/mfa/verify`, registro y restablecimiento de clave tienen límite de intentos por IP.
+- En producción Express también sirve `apps/frontend/dist` para toda ruta que no empiece por `/api` ni `/uploads`.
+
+### `/api/admin/affiliation-requests`
+
+| Método | Ruta                                           | Sesión | Rol requerido |
+| ------ | ---------------------------------------------- | ------ | ------------- |
+| `GET`  | `/api/admin/affiliation-requests`              | sí     | Administrador |
+| `PUT`  | `/api/admin/affiliation-requests/:id/decision` | sí     | Administrador |
+
+### `/api/admin/announcements`
+
+| Método | Ruta                                  | Sesión | Rol requerido |
+| ------ | ------------------------------------- | ------ | ------------- |
+| `GET`  | `/api/admin/announcements`            | sí     | Administrador |
+| `POST` | `/api/admin/announcements`            | sí     | Administrador |
+| `POST` | `/api/admin/announcements/:id/cancel` | sí     | Administrador |
+| `POST` | `/api/admin/announcements/images`     | sí     | Administrador |
+| `POST` | `/api/admin/announcements/preview`    | sí     | Administrador |
+
+### `/api/admin/billing`
+
+| Método   | Ruta                                             | Sesión | Rol requerido            |
+| -------- | ------------------------------------------------ | ------ | ------------------------ |
+| `GET`    | `/api/admin/billing/invoices`                    | sí     | Administrador, Recepción |
+| `GET`    | `/api/admin/billing/invoices/:id`                | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/billing/invoices/:id/cancel`         | sí     | Administrador            |
+| `POST`   | `/api/admin/billing/invoices/:id/payment`        | sí     | Administrador, Recepción |
+| `GET`    | `/api/admin/billing/invoices/monthly`            | sí     | Administrador, Recepción |
+| `GET`    | `/api/admin/billing/memberships`                 | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/billing/memberships`                 | sí     | Administrador            |
+| `GET`    | `/api/admin/billing/memberships/:id/adjustments` | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/billing/memberships/:id/adjustments` | sí     | Administrador            |
+| `GET`    | `/api/admin/billing/memberships/:id/invoices`    | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/billing/memberships/:id/invoices`    | sí     | Administrador            |
+| `PUT`    | `/api/admin/billing/memberships/:id/status`      | sí     | Administrador            |
+| `GET`    | `/api/admin/billing/plans`                       | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/billing/plans`                       | sí     | Administrador            |
+| `PUT`    | `/api/admin/billing/plans/:id`                   | sí     | Administrador            |
+| `PUT`    | `/api/admin/billing/plans/:id/active`            | sí     | Administrador            |
+| `PUT`    | `/api/admin/billing/plans/:id/price`             | sí     | Administrador            |
+| `DELETE` | `/api/admin/billing/plans/:id/price/scheduled`   | sí     | Administrador            |
+| `GET`    | `/api/admin/billing/plans/:id/prices`            | sí     | Administrador, Recepción |
+| `GET`    | `/api/admin/billing/settings/price-notice`       | sí     | Administrador, Recepción |
+| `PUT`    | `/api/admin/billing/settings/price-notice`       | sí     | Administrador            |
+
+### `/api/admin/clinical`
+
+| Método | Ruta                                                 | Sesión | Rol requerido                                                       |
+| ------ | ---------------------------------------------------- | ------ | ------------------------------------------------------------------- |
+| `GET`  | `/api/admin/clinical/appointments`                   | sí     | Administrador, Recepción, Psicólogo, Neuropsicólogo, Fisioterapeuta |
+| `POST` | `/api/admin/clinical/appointments`                   | sí     | Administrador, Recepción, Psicólogo, Neuropsicólogo, Fisioterapeuta |
+| `POST` | `/api/admin/clinical/appointments/:id/cancel`        | sí     | Administrador, Recepción, Psicólogo, Neuropsicólogo, Fisioterapeuta |
+| `POST` | `/api/admin/clinical/appointments/:id/complete`      | sí     | Administrador, Psicólogo, Neuropsicólogo, Fisioterapeuta            |
+| `POST` | `/api/admin/clinical/appointments/:id/no-show`       | sí     | Administrador, Psicólogo, Neuropsicólogo, Fisioterapeuta            |
+| `POST` | `/api/admin/clinical/medical-history/:id/resolve`    | sí     | Fisioterapeuta                                                      |
+| `POST` | `/api/admin/clinical/players/:id/fitness-status`     | sí     | Fisioterapeuta                                                      |
+| `GET`  | `/api/admin/clinical/players/:id/medical-history`    | sí     | Fisioterapeuta                                                      |
+| `POST` | `/api/admin/clinical/players/:id/medical-history`    | sí     | Fisioterapeuta                                                      |
+| `GET`  | `/api/admin/clinical/players/:id/notes`              | sí     | Psicólogo, Neuropsicólogo, Fisioterapeuta                           |
+| `POST` | `/api/admin/clinical/players/:id/notes`              | sí     | Psicólogo, Neuropsicólogo, Fisioterapeuta                           |
+| `GET`  | `/api/admin/clinical/players/:id/physio-notes`       | sí     | Administrador                                                       |
+| `GET`  | `/api/admin/clinical/players/:id/physio-summary`     | sí     | Administrador, Fisioterapeuta                                       |
+| `GET`  | `/api/admin/clinical/players/:id/recovery-plans`     | sí     | Fisioterapeuta                                                      |
+| `POST` | `/api/admin/clinical/players/:id/recovery-plans`     | sí     | Fisioterapeuta                                                      |
+| `POST` | `/api/admin/clinical/recovery-plans/:id/complete`    | sí     | Fisioterapeuta                                                      |
+| `POST` | `/api/admin/clinical/recovery-plans/:id/discontinue` | sí     | Fisioterapeuta                                                      |
+
+### `/api/admin/coaching`
+
+| Método | Ruta                                          | Sesión | Rol requerido             |
+| ------ | --------------------------------------------- | ------ | ------------------------- |
+| `GET`  | `/api/admin/coaching/players/:id/notes`       | sí     | Administrador, Entrenador |
+| `POST` | `/api/admin/coaching/players/:id/notes`       | sí     | Administrador, Entrenador |
+| `GET`  | `/api/admin/coaching/players/:id/performance` | sí     | Administrador, Entrenador |
+| `POST` | `/api/admin/coaching/players/:id/performance` | sí     | Administrador, Entrenador |
+| `GET`  | `/api/admin/coaching/recent-activity`         | sí     | Administrador, Entrenador |
+
+### `/api/admin/community`
+
+| Método   | Ruta                                       | Sesión | Rol requerido            |
+| -------- | ------------------------------------------ | ------ | ------------------------ |
+| `DELETE` | `/api/admin/community/comments/:id`        | sí     | Administrador, Recepción |
+| `DELETE` | `/api/admin/community/posts/:id`           | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/community/posts/:id/hide`      | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/community/posts/:id/unhide`    | sí     | Administrador, Recepción |
+| `GET`    | `/api/admin/community/reports`             | sí     | Administrador, Recepción |
+| `POST`   | `/api/admin/community/reports/:id/dismiss` | sí     | Administrador, Recepción |
+
+### `/api/admin/directory`
+
+| Método   | Ruta                                           | Sesión | Rol requerido                        |
+| -------- | ---------------------------------------------- | ------ | ------------------------------------ |
+| `GET`    | `/api/admin/directory`                         | sí     | Administrador, Recepción, Entrenador |
+| `GET`    | `/api/admin/directory/:id`                     | sí     | Administrador, Recepción, Entrenador |
+| `POST`   | `/api/admin/directory/:id/deactivate`          | sí     | Administrador                        |
+| `POST`   | `/api/admin/directory/:id/mfa-reset`           | sí     | Administrador                        |
+| `DELETE` | `/api/admin/directory/:id/player-role`         | sí     | Administrador                        |
+| `POST`   | `/api/admin/directory/:id/player-role`         | sí     | Administrador                        |
+| `POST`   | `/api/admin/directory/:id/reactivate`          | sí     | Administrador                        |
+| `POST`   | `/api/admin/directory/:id/resend-verification` | sí     | Administrador, Recepción             |
+| `DELETE` | `/api/admin/directory/:id/roles/:roleCode`     | sí     | Administrador                        |
+| `POST`   | `/api/admin/directory/:id/roles/:roleCode`     | sí     | Administrador                        |
+| `GET`    | `/api/admin/directory/export.csv`              | sí     | Administrador                        |
+
+### `/api/admin/guardianships`
+
+| Método | Ruta                                    | Sesión | Rol requerido |
+| ------ | --------------------------------------- | ------ | ------------- |
+| `GET`  | `/api/admin/guardianships`              | sí     | Administrador |
+| `PUT`  | `/api/admin/guardianships/:id/decision` | sí     | Administrador |
+
+### `/api/admin/info-requests`
+
+| Método | Ruta                                  | Sesión | Rol requerido            |
+| ------ | ------------------------------------- | ------ | ------------------------ |
+| `GET`  | `/api/admin/info-requests`            | sí     | Administrador, Recepción |
+| `POST` | `/api/admin/info-requests/:id/notes`  | sí     | Administrador, Recepción |
+| `PUT`  | `/api/admin/info-requests/:id/status` | sí     | Administrador, Recepción |
+| `GET`  | `/api/admin/info-requests/count-new`  | sí     | Administrador, Recepción |
+
+### `/api/admin/privacy`
+
+| Método | Ruta                                     | Sesión | Rol requerido |
+| ------ | ---------------------------------------- | ------ | ------------- |
+| `GET`  | `/api/admin/privacy/requests`            | sí     | Administrador |
+| `POST` | `/api/admin/privacy/requests/:id/answer` | sí     | Administrador |
+
+### `/api/admin/roles`
+
+| Método | Ruta                     | Sesión | Rol requerido |
+| ------ | ------------------------ | ------ | ------------- |
+| `POST` | `/api/admin/roles/grant` | sí     | Administrador |
+
+### `/api/admin/users`
+
+| Método | Ruta                                     | Sesión | Rol requerido                        |
+| ------ | ---------------------------------------- | ------ | ------------------------------------ |
+| `GET`  | `/api/admin/users/:id/document`          | sí     | Administrador, Recepción             |
+| `PUT`  | `/api/admin/users/:id/document`          | sí     | Administrador, Recepción             |
+| `PUT`  | `/api/admin/users/:id/membership-status` | sí     | Administrador                        |
+| `GET`  | `/api/admin/users/counts`                | sí     | Administrador, Recepción             |
+| `GET`  | `/api/admin/users/lookup`                | sí     | Administrador, Recepción, Entrenador |
+
+### `/api/auth`
+
+| Método | Ruta                               | Sesión | Rol requerido |
+| ------ | ---------------------------------- | ------ | ------------- |
+| `POST` | `/api/auth/login`                  | no     | —             |
+| `POST` | `/api/auth/logout`                 | no     | —             |
+| `POST` | `/api/auth/mfa/setup/confirm`      | no     | —             |
+| `POST` | `/api/auth/mfa/setup/start`        | no     | —             |
+| `POST` | `/api/auth/mfa/verify`             | no     | —             |
+| `POST` | `/api/auth/password-reset/confirm` | no     | —             |
+| `POST` | `/api/auth/password-reset/request` | no     | —             |
+| `POST` | `/api/auth/refresh`                | no     | —             |
+| `POST` | `/api/auth/register`               | no     | —             |
+| `GET`  | `/api/auth/verify`                 | no     | —             |
+
+### `/api/billing`
+
+| Método | Ruta                          | Sesión | Rol requerido         |
+| ------ | ----------------------------- | ------ | --------------------- |
+| `GET`  | `/api/billing/me/invoices`    | sí     | Cualquiera con sesión |
+| `GET`  | `/api/billing/me/memberships` | sí     | Cualquiera con sesión |
+
+### `/api/booking`
+
+| Método   | Ruta                                    | Sesión   | Rol requerido            |
+| -------- | --------------------------------------- | -------- | ------------------------ |
+| `POST`   | `/api/booking/:id/cancel`               | sí       | Cualquiera con sesión    |
+| `POST`   | `/api/booking/:id/payment`              | sí       | Administrador, Recepción |
+| `DELETE` | `/api/booking/:id/second-hour`          | sí       | Cualquiera con sesión    |
+| `POST`   | `/api/booking/:id/second-hour`          | sí       | Cualquiera con sesión    |
+| `POST`   | `/api/booking/confirm`                  | sí       | Cualquiera con sesión    |
+| `GET`    | `/api/booking/courts`                   | no       | —                        |
+| `PUT`    | `/api/booking/courts/:id/price`         | sí       | Administrador            |
+| `GET`    | `/api/booking/courts/:id/price-history` | sí       | Administrador            |
+| `POST`   | `/api/booking/hold`                     | sí       | Cualquiera con sesión    |
+| `GET`    | `/api/booking/me/training-frequency`    | sí       | Cualquiera con sesión    |
+| `GET`    | `/api/booking/my-reservations`          | sí       | Cualquiera con sesión    |
+| `GET`    | `/api/booking/payments`                 | sí       | Administrador, Recepción |
+| `GET`    | `/api/booking/payments/monthly`         | sí       | Administrador, Recepción |
+| `GET`    | `/api/booking/players/:id/reservations` | sí       | Administrador, Recepción |
+| `GET`    | `/api/booking/schedule`                 | opcional | —                        |
+| `GET`    | `/api/booking/settings/hold-duration`   | no       | —                        |
+| `PUT`    | `/api/booking/settings/hold-duration`   | sí       | Administrador            |
+| `GET`    | `/api/booking/settings/overdue-policy`  | sí       | Administrador            |
+| `PUT`    | `/api/booking/settings/overdue-policy`  | sí       | Administrador            |
+| `GET`    | `/api/booking/settings/second-hour`     | no       | —                        |
+| `PUT`    | `/api/booking/settings/second-hour`     | sí       | Administrador            |
+
+### `/api/challenges`
+
+| Método | Ruta                            | Sesión | Rol requerido         |
+| ------ | ------------------------------- | ------ | --------------------- |
+| `GET`  | `/api/challenges/me`            | sí     | Cualquiera con sesión |
+| `POST` | `/api/challenges/me`            | sí     | Cualquiera con sesión |
+| `POST` | `/api/challenges/me/:id/accept` | sí     | Cualquiera con sesión |
+| `POST` | `/api/challenges/me/:id/cancel` | sí     | Cualquiera con sesión |
+| `POST` | `/api/challenges/me/:id/reject` | sí     | Cualquiera con sesión |
+| `POST` | `/api/challenges/me/:id/score`  | sí     | Cualquiera con sesión |
+
+### `/api/clinical`
+
+| Método   | Ruta                                           | Sesión | Rol requerido         |
+| -------- | ---------------------------------------------- | ------ | --------------------- |
+| `GET`    | `/api/clinical/me/appointments`                | sí     | Cualquiera con sesión |
+| `DELETE` | `/api/clinical/me/consents/admin-physio-notes` | sí     | Cualquiera con sesión |
+| `GET`    | `/api/clinical/me/consents/admin-physio-notes` | sí     | Cualquiera con sesión |
+| `POST`   | `/api/clinical/me/consents/admin-physio-notes` | sí     | Cualquiera con sesión |
+| `GET`    | `/api/clinical/me/medical-history`             | sí     | Cualquiera con sesión |
+| `GET`    | `/api/clinical/me/notes`                       | sí     | Cualquiera con sesión |
+| `GET`    | `/api/clinical/me/recovery-plans`              | sí     | Cualquiera con sesión |
+
+### `/api/coaching`
+
+| Método | Ruta                           | Sesión | Rol requerido         |
+| ------ | ------------------------------ | ------ | --------------------- |
+| `GET`  | `/api/coaching/me/notes`       | sí     | Cualquiera con sesión |
+| `GET`  | `/api/coaching/me/performance` | sí     | Cualquiera con sesión |
+
+### `/api/community`
+
+| Método   | Ruta                                   | Sesión | Rol requerido |
+| -------- | -------------------------------------- | ------ | ------------- |
+| `DELETE` | `/api/community/comments/:id`          | sí     | Jugador       |
+| `POST`   | `/api/community/comments/:id/report`   | sí     | Jugador       |
+| `GET`    | `/api/community/me/media-capabilities` | sí     | Jugador       |
+| `POST`   | `/api/community/media/video-upload`    | sí     | Jugador       |
+| `GET`    | `/api/community/posts`                 | sí     | Jugador       |
+| `POST`   | `/api/community/posts`                 | sí     | Jugador       |
+| `DELETE` | `/api/community/posts/:id`             | sí     | Jugador       |
+| `GET`    | `/api/community/posts/:id/comments`    | sí     | Jugador       |
+| `POST`   | `/api/community/posts/:id/comments`    | sí     | Jugador       |
+| `DELETE` | `/api/community/posts/:id/like`        | sí     | Jugador       |
+| `POST`   | `/api/community/posts/:id/like`        | sí     | Jugador       |
+| `POST`   | `/api/community/posts/:id/report`      | sí     | Jugador       |
+
+### `/api/competition`
+
+| Método | Ruta                                   | Sesión | Rol requerido                        |
+| ------ | -------------------------------------- | ------ | ------------------------------------ |
+| `GET`  | `/api/competition/matches`             | sí     | Cualquiera con sesión                |
+| `POST` | `/api/competition/matches`             | sí     | Administrador, Recepción, Entrenador |
+| `POST` | `/api/competition/matches/:id/void`    | sí     | Administrador, Recepción, Entrenador |
+| `GET`  | `/api/competition/matches/recent`      | sí     | Cualquiera con sesión                |
+| `GET`  | `/api/competition/me/summary`          | sí     | Cualquiera con sesión                |
+| `GET`  | `/api/competition/players/:id/summary` | sí     | Administrador, Recepción, Entrenador |
+| `GET`  | `/api/competition/seasons`             | no     | —                                    |
+| `POST` | `/api/competition/seasons`             | sí     | Administrador                        |
+| `POST` | `/api/competition/seasons/:id/close`   | sí     | Administrador                        |
+| `GET`  | `/api/competition/standings`           | sí     | Cualquiera con sesión                |
+
+### `/api/goals`
+
+| Método | Ruta                        | Sesión | Rol requerido         |
+| ------ | --------------------------- | ------ | --------------------- |
+| `GET`  | `/api/goals/me`             | sí     | Cualquiera con sesión |
+| `POST` | `/api/goals/me`             | sí     | Cualquiera con sesión |
+| `POST` | `/api/goals/me/:id/abandon` | sí     | Cualquiera con sesión |
+
+### `/api/identity`
+
+| Método   | Ruta                                                           | Sesión | Rol requerido         |
+| -------- | -------------------------------------------------------------- | ------ | --------------------- |
+| `GET`    | `/api/identity/me`                                             | sí     | Cualquiera con sesión |
+| `PATCH`  | `/api/identity/me`                                             | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/account-requirements`                        | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/account-restrictions`                        | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/achievements`                                | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/affiliation-requests`                        | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/affiliation-requests`                        | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/authorizations`                              | sí     | Cualquiera con sesión |
+| `PUT`    | `/api/identity/me/authorizations/:type`                        | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/avatar`                                      | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/complete-account`                            | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/consents/cookies`                            | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/guardianships`                               | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/guardianships`                               | sí     | Cualquiera con sesión |
+| `PUT`    | `/api/identity/me/guardianships/:id/health-authorization`      | sí     | Cualquiera con sesión |
+| `DELETE` | `/api/identity/me/guardianships/:id/minor-authorization`       | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/guardianships/:id/minor-authorization`       | sí     | Cualquiera con sesión |
+| `PUT`    | `/api/identity/me/guardianships/:id/public-name-authorization` | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/membership-status`                           | sí     | Cualquiera con sesión |
+| `GET`    | `/api/identity/me/mfa`                                         | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/mfa/disable`                                 | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/mfa/recovery-codes`                          | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/mfa/setup/confirm`                           | sí     | Cualquiera con sesión |
+| `POST`   | `/api/identity/me/mfa/setup/start`                             | sí     | Cualquiera con sesión |
+
+### `/api/info-requests`
+
+| Método | Ruta                            | Sesión | Rol requerido |
+| ------ | ------------------------------- | ------ | ------------- |
+| `POST` | `/api/info-requests`            | no     | —             |
+| `GET`  | `/api/info-requests/form-token` | no     | —             |
+
+### `/api/notifications`
+
+| Método | Ruta                                | Sesión            | Rol requerido         |
+| ------ | ----------------------------------- | ----------------- | --------------------- |
+| `POST` | `/api/notifications/email-events`   | firma del webhook | —                     |
+| `GET`  | `/api/notifications/me`             | sí                | Cualquiera con sesión |
+| `POST` | `/api/notifications/me/:id/read`    | sí                | Cualquiera con sesión |
+| `GET`  | `/api/notifications/me/news`        | sí                | Cualquiera con sesión |
+| `GET`  | `/api/notifications/me/preferences` | sí                | Cualquiera con sesión |
+| `PUT`  | `/api/notifications/me/preferences` | sí                | Cualquiera con sesión |
+| `POST` | `/api/notifications/me/read-all`    | sí                | Cualquiera con sesión |
+| `POST` | `/api/notifications/unsubscribe`    | no                | —                     |
+
+### `/api/players`
+
+| Método | Ruta                          | Sesión | Rol requerido             |
+| ------ | ----------------------------- | ------ | ------------------------- |
+| `GET`  | `/api/players/:id/play-style` | sí     | Entrenador, Administrador |
+| `GET`  | `/api/players/search`         | sí     | Cualquiera con sesión     |
+
+### `/api/privacy`
+
+| Método | Ruta                       | Sesión | Rol requerido         |
+| ------ | -------------------------- | ------ | --------------------- |
+| `GET`  | `/api/privacy/me/export`   | sí     | Cualquiera con sesión |
+| `GET`  | `/api/privacy/me/requests` | sí     | Cualquiera con sesión |
+| `POST` | `/api/privacy/me/requests` | sí     | Cualquiera con sesión |
+
+### `/api/tournaments`
+
+| Método   | Ruta                                               | Sesión | Rol requerido                        |
+| -------- | -------------------------------------------------- | ------ | ------------------------------------ |
+| `GET`    | `/api/tournaments`                                 | no     | —                                    |
+| `POST`   | `/api/tournaments`                                 | sí     | Administrador                        |
+| `GET`    | `/api/tournaments/:id`                             | sí     | Cualquiera con sesión                |
+| `POST`   | `/api/tournaments/:id/cancel`                      | sí     | Administrador                        |
+| `POST`   | `/api/tournaments/:id/generate-draw`               | sí     | Administrador                        |
+| `POST`   | `/api/tournaments/:id/matches/:matchId/result`     | sí     | Administrador, Recepción, Entrenador |
+| `PUT`    | `/api/tournaments/:id/matches/:matchId/schedule`   | sí     | Administrador, Recepción, Entrenador |
+| `POST`   | `/api/tournaments/:id/participants`                | sí     | Administrador, Recepción, Entrenador |
+| `DELETE` | `/api/tournaments/:id/participants/:participantId` | sí     | Administrador, Recepción, Entrenador |
+| `PUT`    | `/api/tournaments/:id/public-info`                 | sí     | Administrador                        |
+| `GET`    | `/api/tournaments/players/:id`                     | sí     | Administrador, Recepción, Entrenador |
+| `GET`    | `/api/tournaments/public`                          | no     | —                                    |
+| `GET`    | `/api/tournaments/public/:id`                      | no     | —                                    |
+
+### `/health`
+
+| Método | Ruta      | Sesión | Rol requerido |
+| ------ | --------- | ------ | ------------- |
+| `GET`  | `/health` | no     | —             |
+
+### `/uploads`
+
+| Método | Ruta         | Sesión | Rol requerido |
+| ------ | ------------ | ------ | ------------- |
+| `GET`  | `/uploads/*` | no     | —             |
+
+## 5. Variables de entorno (`.env.example`)
+
+Solo los nombres y los comentarios de la plantilla; **sin valores**. El backend lee `apps/backend/.env` y lo valida al arrancar (`apps/backend/src/config/env.js`). El frontend no usa variables: siempre llama a `/api` en su propio origen.
+
+```dotenv
+# --- Backend (apps/backend/.env) ---
+NODE_ENV=
+PORT=
+
+# Postgres (matches docker-compose.yml defaults)
+DATABASE_URL=
+
+# JWT
+JWT_ACCESS_SECRET=
+JWT_ACCESS_TTL_SECONDS=
+
+# Two-step verification (MFA): 32 random bytes in base64. Required in production.
+# node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+MFA_ENCRYPTION_KEY=
+# "Solicitar información": correo del club que recibe cada solicitud (vacío = sin aviso)
+INFO_REQUEST_TO=
+# Meses tras los cuales se borran las solicitudes descartadas o sin responder (vacío = no se borra nada)
+INFO_REQUEST_RETENTION_MONTHS=
+# Mandatory MFA for Administración, Psicología, Neuropsicología and Fisioterapia.
+# Only .env.test may set it to false; production refuses to start with false.
+MFA_ENFORCE_STAFF=
+
+# Refresh token cookie
+REFRESH_TOKEN_TTL_DAYS=
+REFRESH_COOKIE_NAME=
+
+# Email -- development/test: SMTP pointed at Mailhog (docker-compose.yml)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+
+# Email -- production: Resend. REQUIRED when NODE_ENV=production (the server
+# refuses to boot without them). Leave empty in development to use Mailhog.
+RESEND_API_KEY=
+MAIL_FROM=
+
+# Avatar storage: Vercel Blob. REQUIRED when NODE_ENV=production. Leave empty
+# in development to keep writing avatars to apps/backend/uploads/avatars.
+BLOB_READ_WRITE_TOKEN=
+
+# Production-only: one-time secret for scripts/bootstrapAdmin.js (>= 24 chars).
+# Unset it once the first administrator exists.
+BOOTSTRAP_TOKEN=
+
+# App URL (used to build email verification/reset links). REQUIRED when
+# NODE_ENV=production and must not be localhost -- the server refuses to boot.
+APP_PUBLIC_URL=
+
+# CORS
+CORS_ORIGIN=
+
+# --- Frontend ---
+# No env vars: the frontend always calls /api on its own origin (Vite proxies
+# it to :3000 in development; Express serves both in production).
+
+# Correos de notificaciones (docs/NOTIFICACIONES.md). Límites del plan de Resend:
+# gratis = 100 al día y 3.000 al mes; 10 solicitudes por segundo; 100 por lote.
+EMAIL_DAILY_QUOTA=
+EMAIL_MONTHLY_QUOTA=
+EMAIL_BATCH_SIZE=
+EMAIL_REQUESTS_PER_SECOND=
+# Hora (Colombia) del resumen diario
+EMAIL_DIGEST_HOUR=
+# Secreto del webhook de Resend para registrar aperturas (vacío = no se registran)
+RESEND_WEBHOOK_SECRET=
+# URL pública de esta API, para el encabezado de baja de un clic (vacío = sin encabezado)
+API_PUBLIC_URL=
+```
+
+Obligatorias en producción (el servidor no arranca sin ellas): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `APP_PUBLIC_URL` (no puede ser localhost), `RESEND_API_KEY`, `MAIL_FROM`, `BLOB_READ_WRITE_TOKEN`, `MFA_ENCRYPTION_KEY` (32 bytes en base64) y `MFA_ENFORCE_STAFF=true`. `BOOTSTRAP_TOKEN` solo se usa una vez, para el primer administrador.
+
+## 6. Cómo levantar el proyecto
+
+### En local
+
+Requisitos: Node.js 20 o superior (`.nvmrc`) y Docker Desktop.
+
+```bash
+npm install
+docker compose up -d                  # PostgreSQL 16 en :5432 y Mailhog en :1025 (SMTP) / :8025 (web)
+cp .env.example apps/backend/.env     # y poner un JWT_ACCESS_SECRET propio
+npm run prisma:migrate                # aplica apps/backend/prisma/migrations
+npm run prisma:seed                   # club, 9 roles, permisos y 3 canchas (idempotente)
+
+npm run dev:backend                   # API en http://localhost:3000 (nodemon)
+npm run dev:frontend                  # sitio en http://localhost:5173 (Vite; /api y /uploads van a :3000)
+```
+
+- Comprobación rápida: `http://localhost:3000/health` responde `{"status":"ok"}`.
+- Los correos de verificación y de restablecimiento llegan a Mailhog (`http://localhost:8025`), no a buzones reales.
+- Alternativa con PM2: `ecosystem.config.cjs` define `ctcj-backend` y `ctcj-frontend` (reinicio automático).
+- Primer administrador (la cuenta debe estar registrada y verificada): `npm run -w apps/backend bootstrap:admin -- correo@ejemplo.com`.
+- Cuentas de prueba por rol: `node apps/backend/prisma/seedTestUsers.js` (ver `apps/backend/prisma/testUsers.js`).
+- Si aparece `Can't reach database server at localhost:5432`, Docker Desktop se durmió: `docker compose up -d` otra vez.
+
+Pruebas:
+
+```bash
+npm test                                    # unitarias de backend + frontend (Vitest, sin base de datos)
+npm run -w apps/backend test:integration    # integración (PostgreSQL real + Mailhog; requiere base ctcj_test y apps/backend/.env.test)
+npm run lint && npm run lint:arch           # ESLint y reglas de capas (dependency-cruiser)
+```
+
+### En Render
+
+`render.yaml` es un _blueprint_ de Render con dos recursos (plan gratuito):
+
+- **Base de datos** `ctcj-db`: PostgreSQL, base `ctcj`, usuario `ctcj`. Render inyecta `DATABASE_URL` en el servicio web.
+- **Servicio web** `ctcj-platform` (runtime Node):
+  - Build: `npm ci && npm run build` → verificación de textos legales, build del frontend (`apps/frontend/dist`) y `prisma generate`.
+  - Start: `npm run start` → `prisma migrate deploy`, seed idempotente y `node src/server.js`.
+  - Health check: `/health`.
+  - La API sirve también el frontend desde el mismo origen (sin CORS y con la cookie de refresco `SameSite=Strict`).
+
+Pasos:
+
+1. En Render: **New → Blueprint**, conectar el repositorio y elegir la rama.
+2. Render crea la base y el servicio. `JWT_ACCESS_SECRET` se genera solo.
+3. Completar en el panel las variables marcadas `sync: false`: `APP_PUBLIC_URL` (la URL `onrender.com` o el dominio), `CORS_ORIGIN`, `RESEND_API_KEY`, `MAIL_FROM`, `BLOB_READ_WRITE_TOKEN`, `MFA_ENCRYPTION_KEY`, `INFO_REQUEST_TO`, `INFO_REQUEST_RETENTION_MONTHS`, `RESEND_WEBHOOK_SECRET`, `API_PUBLIC_URL` y, solo para el primer despliegue, `BOOTSTRAP_TOKEN`.
+4. Tras el primer despliegue, registrar y verificar la cuenta del administrador y, desde la consola (_Shell_) de Render:
+   `node apps/backend/scripts/bootstrapAdmin.js correo@ejemplo.com --confirm --token "$BOOTSTRAP_TOKEN"`. Después, borrar `BOOTSTRAP_TOKEN`.
+
+Notas: el disco de Render se borra en cada despliegue (por eso las fotos van a Vercel Blob); el servidor se niega a arrancar en producción si existe alguna cuenta `isDemo`, así que las cuentas de prueba nunca deben llegar a esa base.
+
+## 7. Pruebas unitarias y cobertura
+
+Fuente: `docs/resultado_pruebas.txt` (salida completa). Fecha: 2026-10-06 22:32:09 · Node v24.16.0 · Vitest 2.1.9 · commit 53a8e2a.
+Comando: `npx vitest run --coverage` en cada app (proveedor `@vitest/coverage-v8`).
+
+|                         | Backend              | Frontend                    |
+| ----------------------- | -------------------- | --------------------------- |
+| Archivos de prueba      | 184 passed (184)     | 1 failed · 63 passed (64)   |
+| Pruebas                 | 976 passed (976)     | 1 failed · 467 passed (468) |
+| Cobertura de sentencias | 44.86% (11894/26510) | 85.78% (19568/22811)        |
+| Cobertura de ramas      | 80.36% (2300/2862)   | 82.69% (3613/4369)          |
+| Cobertura de funciones  | 65.92% (768/1165)    | 75.65% (1069/1413)          |
+| Cobertura de líneas     | 44.86% (11894/26510) | 85.78% (19568/22811)        |
+
+Observaciones:
+
+- **Falla 1 prueba del frontend**: `src/pages/HomePage.test.jsx` › _sections in order_. Depende de la hora: después del cierre del club la tarjeta de la portada dice «Libre mañana» y la prueba espera «Libre hoy». Las pruebas se corrieron a las 22:32; en horario del club pasa. No es una regresión, pero conviene fijar el reloj en la prueba.
+- La cobertura del backend (≈45 %) cuenta todo `src/`, pero las pruebas unitarias no tocan la capa de infraestructura (Prisma, rutas Express, adaptadores), que cubren las pruebas de integración (`npm run -w apps/backend test:integration`). Esas no se incluyen aquí porque necesitan la base `ctcj_test`.
+
+## 8. Schema de Prisma (completo)
+
+`apps/backend/prisma/schema.prisma` — 59 modelos, PostgreSQL, 32 migraciones en `apps/backend/prisma/migrations/`.
+
+```prisma
+// CTCJ Platform - Identity + Booking schema (Phase 1)
+// Ported from v7's Flyway migrations (V1-V3). See docs/adr for rationale on
+// deviations from Prisma's defaults (VARCHAR+CHECK instead of native enum,
+// raw-SQL additions for citext/EXCLUDE/partitioning that Prisma can't express).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Platform / multi-tenancy root
+// ---------------------------------------------------------------------------
+
+model Club {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String   @unique @db.VarChar(60)
+  legalName    String   @map("legal_name")
+  displayName  String   @map("display_name")
+  timezone     String   @default("America/Bogota")
+  currency     String   @default("COP") @db.Char(3)
+  countryCode  String   @default("CO") @map("country_code") @db.Char(2)
+  contactEmail String?  @map("contact_email") // citext, see raw-SQL migration additions
+  contactPhone String?  @map("contact_phone")
+  address      String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users                User[]
+  courts               Court[]
+  reservations         Reservation[]
+  payments             Payment[]
+  systemSettings       SystemSetting[]
+  membershipPlans      MembershipPlan[]
+  competitionSeasons   CompetitionSeason[]
+  tournaments          Tournament[]
+  clinicalAppointments ClinicalAppointment[]
+  dataSubjectRequests  DataSubjectRequest[]
+  infoRequests         InfoRequest[]
+
+  announcements Announcement[]
+
+  @@map("clubs")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId           String    @map("club_id") @db.Uuid
+  club             Club      @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  email            String // citext, see raw-SQL migration additions
+  passwordHash     String?   @map("password_hash") @db.VarChar(255)
+  firstName        String    @map("first_name") @db.VarChar(80)
+  lastName         String    @map("last_name") @db.VarChar(80)
+  documentType     String?   @map("document_type") @db.VarChar(10) // CC|TI|CE|PA|NIT
+  documentNumber   String?   @map("document_number")
+  phone            String?
+  birthDate        DateTime? @map("birth_date") @db.Date
+  // Player Profile (Phase 2) -- self-editable, unlike the identity fields
+  // above. See User.updateProfile()/setAvatarUrl().
+  bio              String?
+  avatarUrl        String?   @map("avatar_url") @db.VarChar(255)
+  status           String    @default("PENDING_VERIFICATION") @db.VarChar(20)
+  emailVerifiedAt  DateTime? @map("email_verified_at")
+  mfaEnabled       Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret        String?   @map("mfa_secret") // TOTP secret, encrypted (AES-256-GCM)
+  mfaEnabledAt     DateTime? @map("mfa_enabled_at") @db.Timestamptz(6)
+  mfaFailedCount   Int?      @map("mfa_failed_count") @db.SmallInt
+  mfaLockedUntil   DateTime? @map("mfa_locked_until") @db.Timestamptz(6)
+  mfaLastStep      BigInt?   @map("mfa_last_step")
+  failedLoginCount Int       @default(0) @map("failed_login_count") @db.SmallInt
+  lockedUntil      DateTime? @map("locked_until")
+  lastLoginAt      DateTime? @map("last_login_at")
+  // Optional play style, visible to the player and the coaches.
+  dominantHand     String?   @map("dominant_hand") @db.VarChar(12) // RIGHT|LEFT|AMBIDEXTROUS
+  backhand         String?   @db.VarChar(10) // ONE_HANDED|TWO_HANDED
+  isDemo           Boolean   @default(false) @map("is_demo")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  // Membership/payment status (Phase 5) -- deliberately independent of
+  // `status` above (account-verification lifecycle) and of role grants.
+  // Null means "no membership plan" (not yet enrolled as JUGADOR, or a
+  // non-player account) -- see User.setMembershipStatus()'s JUGADOR-only
+  // invariant. No FK on membershipStatusUpdatedBy, matching
+  // SystemSetting.updatedBy's existing precedent for an audit-only field.
+  membershipStatus          String?   @map("membership_status") @db.VarChar(20)
+  membershipStatusUpdatedAt DateTime? @map("membership_status_updated_at")
+  membershipStatusUpdatedBy String?   @map("membership_status_updated_by") @db.Uuid
+
+  userRolesGranted     UserRole[]           @relation("GrantedBy")
+  userRolesRevoked     UserRole[]           @relation("RevokedBy")
+  userRoles            UserRole[]           @relation("UserRoleOwner")
+  refreshTokens        RefreshToken[]
+  consents             Consent[]            @relation("ConsentSubject")
+  consentsGiven        Consent[]            @relation("ConsentGivenBy")
+  dataRequests         DataSubjectRequest[] @relation("DataRequestSubject")
+  dataRequestsAnswered DataSubjectRequest[] @relation("DataRequestAnsweredBy")
+  emailVerifications   EmailVerification[]
+  passwordResets       PasswordReset[]
+  reservationsHeld     Reservation[]        @relation("HolderUser")
+  reservationsCreated  Reservation[]        @relation("CreatedByUser")
+  paymentsRecorded     Payment[]            @relation("PaymentRecordedBy")
+
+  // Affiliation & guardianship (Phase 6)
+  affiliationRequests     AffiliationRequest[]
+  guardianshipsAsGuardian Guardianship[]       @relation("GuardianOfMinor")
+  guardianshipsAsMinor    Guardianship[]       @relation("MinorOfGuardian")
+
+  // Billing (Phase 7) -- plan enrollments, see PlayerMembership
+  playerMemberships PlayerMembership[] @relation("PlayerMemberships")
+
+  // Coaching (Phase 10) -- notes written about this user as a player
+  coachNotes CoachNote[] @relation("CoachNoteSubject")
+
+  // Coaching (Phase 11) -- skill ratings recorded about this user as a player
+  performanceRatings PerformanceRating[] @relation("PerformanceRatingSubject")
+
+  // Competition (Phase 12) -- match results this user participated in
+  competitionMatchParticipations CompetitionMatchParticipant[] @relation("CompetitionMatchParticipant")
+
+  // Tournament (Phase 13) -- bracket entries this user is a member of
+  tournamentParticipantMemberships TournamentParticipantMember[] @relation("TournamentParticipantMember")
+
+  // Clinical (Phase 14) -- appointments and notes where this user is the patient
+  clinicalAppointments ClinicalAppointment[] @relation("ClinicalAppointmentSubject")
+  clinicalNotes        ClinicalNote[]        @relation("ClinicalNoteSubject")
+
+  // Physiotherapy (Phase 15) -- recovery plans and medical history where this user is the patient
+  recoveryPlans         RecoveryPlan[]          @relation("RecoveryPlanSubject")
+  medicalHistoryEntries MedicalHistoryEntry[]   @relation("MedicalHistorySubject")
+  physioFitnessStatuses PhysioFitnessStatus[]   @relation("PhysioFitnessSubject")
+  clinicalConsents      ClinicalAccessConsent[] @relation("ClinicalConsentSubject")
+
+  // Goals (Phase 2) -- personal goals this user owns
+  goals Goal[] @relation("GoalSubject")
+
+  // Notifications (Phase 3a) -- this user's own inbox
+  notifications Notification[] @relation("NotificationRecipient")
+
+  // Challenges (Phase 3a) -- both sides of a friendly-match proposal
+  challengesAsChallenger Challenge[] @relation("ChallengeAsChallenger")
+  challengesAsOpponent   Challenge[] @relation("ChallengeAsOpponent")
+
+  // Community (Phase 3c) -- posts/comments/likes/reports this user authored
+  communityPosts       CommunityPost[]     @relation("CommunityPostAuthor")
+  communityComments    CommunityComment[]  @relation("CommunityCommentAuthor")
+  communityPostLikes   CommunityPostLike[] @relation("CommunityPostLikeUser")
+  communityReportsMade CommunityReport[]   @relation("CommunityReportReporter")
+  mfaRecoveryCodes     MfaRecoveryCode[]
+
+  // "Solicitar información": requests the staff handled, internal notes.
+  infoRequestsHandled     InfoRequest[]            @relation("InfoRequestHandledBy")
+  infoRequestNotes        InfoRequestNote[]
+  notificationPreferences NotificationPreference[] @relation("NotificationPreferenceOwner")
+  notificationSetting     NotificationSetting?     @relation("NotificationSettingOwner")
+  emailDeliveriesReceived EmailDelivery[]          @relation("EmailDeliveryRecipient")
+  emailDeliveriesAbout    EmailDelivery[]          @relation("EmailDeliveryAbout")
+
+  @@unique([clubId, email])
+  @@map("users")
+}
+
+model Role {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code           String   @unique @db.VarChar(40)
+  name           String
+  description    String?
+  isSystem       Boolean  @default(true) @map("is_system")
+  selfAssignable Boolean  @default(false) @map("self_assignable")
+  requiresMfa    Boolean  @default(false) @map("requires_mfa")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String  @unique @db.VarChar(80) // e.g. "booking:reservation:create"
+  resource    String
+  action      String
+  description String?
+  isSensitive Boolean @default(false) @map("is_sensitive")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  roleId    String    @map("role_id") @db.Uuid
+  grantedBy String?   @map("granted_by") @db.Uuid
+  grantedAt DateTime  @default(now()) @map("granted_at")
+  revokedBy String?   @map("revoked_by") @db.Uuid
+  revokedAt DateTime? @map("revoked_at")
+  reason    String?
+
+  user          User  @relation("UserRoleOwner", fields: [userId], references: [id], onDelete: Cascade)
+  role          Role  @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  grantedByUser User? @relation("GrantedBy", fields: [grantedBy], references: [id])
+  revokedByUser User? @relation("RevokedBy", fields: [revokedBy], references: [id])
+
+  // Unique partial index (active roles only) + revocation-coherence CHECK
+  // added via raw-SQL migration -- Prisma has no partial-index/CHECK DSL.
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(255)
+  familyId   String    @map("family_id") @db.Uuid
+  issuedAt   DateTime  @default(now()) @map("issued_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  replacedBy String?   @unique @map("replaced_by") @db.Uuid
+  ipAddress  String?   @map("ip_address") // inet, see raw-SQL migration additions
+  userAgent  String?   @map("user_agent")
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedByToken RefreshToken? @relation("TokenChain", fields: [replacedBy], references: [id])
+  replacedFrom    RefreshToken? @relation("TokenChain")
+
+  // CHECK (expires_at > issued_at) added via raw-SQL migration.
+  @@map("refresh_tokens")
+}
+
+model EmailVerification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  consumedAt  DateTime? @map("consumed_at")
+  requestedIp String?   @map("requested_ip") // inet, see raw-SQL migration additions
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model SystemSetting {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId      String   @map("club_id") @db.Uuid
+  key         String   @db.VarChar(80)
+  value       Json
+  description String?
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, key])
+  @@map("system_settings")
+}
+
+// Phase 6: USUARIO -> JUGADOR is admin-approved, not automatic (per the
+// club's own docs). Approval here only grants the JUGADOR role -- no
+// plan/category assignment system exists yet.
+model AffiliationRequest {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  status        String    @default("PENDING") @db.VarChar(20) // PENDING|APPROVED|REJECTED
+  requestedAt   DateTime  @default(now()) @map("requested_at")
+  decidedAt     DateTime? @map("decided_at")
+  decidedBy     String?   @map("decided_by") @db.Uuid // no FK, audit-only -- matches membershipStatusUpdatedBy precedent
+  notes         String? // requester's own free-text note
+  decisionNotes String?   @map("decision_notes") // admin's note on approve/reject
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (one PENDING request per user) + status/decision-coherence
+  // CHECKs added via raw-SQL migration -- Prisma has no partial-index/CHECK DSL.
+  @@map("affiliation_requests")
+}
+
+// Phase 6: family/guardian linkage, admin-approved (same shape as affiliation).
+// Deliberately narrow vs. the club's full documented model: only canPay/canBook
+// are tracked (canPay has no runtime effect yet -- no online payment flow
+// exists to gate), no valid_from/valid_to/legal_basis, no age automation --
+// see the Phase 6 plan for why those are explicitly deferred.
+model Guardianship {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  guardianUserId String    @map("guardian_user_id") @db.Uuid
+  minorUserId    String    @map("minor_user_id") @db.Uuid
+  canPay         Boolean   @default(false) @map("can_pay") // captured for a future online-payment flow -- no runtime effect yet
+  canBook        Boolean   @default(false) @map("can_book")
+  status         String    @default("PENDING") @db.VarChar(20) // PENDING|APPROVED|REJECTED
+  requestedAt    DateTime  @default(now()) @map("requested_at")
+  decidedAt      DateTime? @map("decided_at")
+  decidedBy      String?   @map("decided_by") @db.Uuid
+  decisionNotes  String?   @map("decision_notes")
+
+  guardian User @relation("GuardianOfMinor", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  minor    User @relation("MinorOfGuardian", fields: [minorUserId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (one PENDING-or-APPROVED row per guardian+minor pair),
+  // guardian<>minor self-link CHECK, status/decision-coherence CHECKs, and a
+  // partial index for the approved+canBook fast path -- all via raw-SQL migration.
+  @@map("guardianships")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (Phase 7) -- membership price plans. Deliberately not part of
+// `identity`: PlayerMembership.status (ACTIVE|SUSPENDED|ENDED) shares two
+// literal values with identity's unrelated User.membershipStatus enum
+// (Phase 5's coarse payment-standing flag) -- keeping this in its own module
+// with its own domain-entity name avoids that collision entirely.
+// ---------------------------------------------------------------------------
+
+model MembershipPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId      String   @map("club_id") @db.Uuid
+  code        String   @db.VarChar(40)
+  name        String   @db.VarChar(120)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  club        Club                  @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  prices      MembershipPlanPrice[]
+  memberships PlayerMembership[]
+
+  @@unique([clubId, code])
+  @@map("membership_plans")
+}
+
+// This table IS the plan price history; the view plan_price_history (not
+// modeled, read with $queryRaw) adds the previous price to each row.
+// Prices are effective-dated and append-only -- see docs/03-MODELO-DE-DATOS.md
+// §D2: "Una factura emitida congela el importe calculado. Cambiar un precio
+// hoy nunca altera lo facturado ayer." validTo=NULL means "vigente" (current).
+model MembershipPlanPrice {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId       String    @map("plan_id") @db.Uuid
+  basePriceCop BigInt    @map("base_price_cop")
+  validFrom    DateTime  @map("valid_from") @db.Date
+  validTo      DateTime? @map("valid_to") @db.Date
+  createdBy    String    @map("created_by") @db.Uuid // no FK, audit-only, matches Payment.recordedBy precedent; NOT NULL (always known at insert)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  plan MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // Partial unique index (at most one vigente price per plan) + period/price
+  // CHECKs added via raw-SQL migration -- Prisma has no partial-index/CHECK DSL.
+  @@map("membership_plan_prices")
+}
+
+// Domain/Prisma model name PlayerMembership (not "Membership") -- deliberately
+// avoids colliding with identity's User.membershipStatus. Table name stays
+// `memberships`, matching the club's own documented DDL exactly.
+model PlayerMembership {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String    @map("player_id") @db.Uuid // -> users.id (docs say players.id; this codebase has no players table -- JUGADOR is a role on User)
+  planId     String    @map("plan_id") @db.Uuid
+  startDate  DateTime  @map("start_date") @db.Date
+  endDate    DateTime? @map("end_date") @db.Date
+  billingDay Int       @map("billing_day") @db.SmallInt // 1-28, capped to dodge February
+  frequency  String    @default("MONTHLY") @db.VarChar(20)
+  status     String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|SUSPENDED|ENDED
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  player      User                   @relation("PlayerMemberships", fields: [playerId], references: [id], onDelete: Cascade)
+  plan        MembershipPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+  adjustments MembershipAdjustment[]
+  invoices    Invoice[]
+
+  // status/billing_day/period CHECKs added via raw-SQL migration.
+  @@map("memberships")
+}
+
+// "beca, descuento, recargo, precio personalizado" -- every exception is
+// individually justified (reason NOT NULL) and authorized.
+model MembershipAdjustment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId   String    @map("membership_id") @db.Uuid
+  adjustmentType String    @map("adjustment_type") @db.VarChar(20) // DISCOUNT_PCT|DISCOUNT_ABS|SCHOLARSHIP|SURCHARGE|CUSTOM_PRICE
+  value          Decimal   @db.Decimal(12, 2)
+  reason         String
+  validFrom      DateTime  @map("valid_from") @db.Date
+  validTo        DateTime? @map("valid_to") @db.Date
+  authorizedBy   String    @map("authorized_by") @db.Uuid // no FK, audit-only, NOT NULL
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  membership PlayerMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  // adjustment_type CHECK + period CHECK added via raw-SQL migration.
+  @@map("membership_adjustments")
+}
+
+// Phase 8: invoice generation ("cobro asistido" -- staff manually generates,
+// no cutoff job/reminder cascade/gateway yet, see the Phase 8 plan). An
+// issued invoice freezes plan price + active adjustments into InvoiceLines;
+// see docs/03-MODELO-DE-DATOS.md §D2's invariant, already quoted above
+// MembershipPlanPrice -- changing a price later never alters an issued
+// invoice's amount/lines.
+//
+// Payment data lives as inline columns here, not a separate table (unlike
+// booking's Payment): an invoice's payment has no independent reachability
+// in this phase's scope (no cross-invoice "all payments" screen), so a
+// value-object-shaped child table would only cost joins everywhere it's
+// read. onDelete: Restrict (not Cascade, unlike MembershipAdjustment) --
+// this is a financial/audit record that must never silently disappear if a
+// membership row is ever deleted. No club_id column -- matches
+// MembershipAdjustment's own precedent of relying on transitive reachability
+// through membership_id rather than duplicating the tenant key.
+model Invoice {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId String   @map("membership_id") @db.Uuid
+  status       String   @default("PENDING") @db.VarChar(20) // PENDING|PAID|CANCELLED
+  amountCop    BigInt   @map("amount_cop") // frozen total, floored at 0
+  periodStart  DateTime @map("period_start") @db.Date
+  periodEnd    DateTime @map("period_end") @db.Date
+  dueDate      DateTime @map("due_date") @db.Date
+  issuedAt     DateTime @map("issued_at")
+  generatedBy  String?  @map("generated_by") @db.Uuid // no FK, audit-only; nullable so a future scheduled job can use a system sentinel without a migration
+
+  paidAmountCop BigInt?   @map("paid_amount_cop")
+  paidMethod    String?   @map("paid_method") @db.VarChar(20) // CASH|TRANSFER|CARD_IN_PERSON, reuses PAYMENT_METHOD
+  paidBy        String?   @map("paid_by") @db.Uuid // no FK, audit-only
+  paidAt        DateTime? @map("paid_at")
+  paidNotes     String?   @map("paid_notes")
+
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelledBy  String?   @map("cancelled_by") @db.Uuid // no FK, audit-only
+  cancelReason String?   @map("cancel_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  membership PlayerMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  lines      InvoiceLine[]
+
+  // One invoice per membership+period. The underlying unique index is
+  // hand-named invoices_membership_period_unique in the raw-SQL migration
+  // (already created there) -- this @@unique only teaches the generated
+  // client the membershipId_periodStart compound-key selector; it doesn't
+  // create a second index. Status/amount/period/coherence CHECKs are also
+  // migration-only -- Prisma has no CHECK DSL.
+  @@unique([membershipId, periodStart])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoiceId   String   @map("invoice_id") @db.Uuid
+  description String
+  amountCop   BigInt   @map("amount_cop") // signed: negative for discounts/scholarships, positive for base price/surcharges
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_lines")
+}
+
+// ---------------------------------------------------------------------------
+// Coaching (Phase 10) -- ENTRENADOR-authored notes about a player. Append-only
+// staff-authored record; no update/delete this phase -- the note history
+// itself IS "track player progress," no separate metrics table. Any
+// ENTRENADOR can write about any JUGADOR this phase (user-confirmed, no
+// coach-to-player roster/assignment concept yet).
+// ---------------------------------------------------------------------------
+
+// player_id is RESTRICT (not Cascade, unlike e.g. membership_adjustments'
+// cascade-with-parent shape) -- mirrors Invoice's Phase 8 precedent: a
+// player's note history must never silently disappear. coach_id has no FK,
+// audit-only -- matches authorized_by/recorded_by/generated_by precedent
+// used everywhere else in this codebase.
+model CoachNote {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String   @map("player_id") @db.Uuid
+  coachId    String   @map("coach_id") @db.Uuid // no FK, audit-only
+  noteType   String   @map("note_type") @db.VarChar(20) // TRAINING|TECHNICAL|TACTICAL|RECOMMENDATION
+  visibility String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  content    String   @db.Text
+  // Optional tie to a specific skill (dashboards phase) -- lets a coach's
+  // feedback point at exactly which rated skill it's about. Nullable: most
+  // notes are still general, not every note needs a skill tag.
+  area       String?  @map("area") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  player User @relation("CoachNoteSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // note_type CHECK + visibility CHECK + area CHECK + index added via
+  // raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("coach_notes")
+}
+
+// Append-only staff-authored skill assessment (Phase 11), one row per
+// (player, area, point in time) -- a time series, not a mutable "current
+// rating" (matches coach_notes' shape: the rating history itself IS "track
+// progress/technical evolution," no separate metrics/session table).
+// Extends the coaching module rather than a new bounded context -- same
+// actor, same subject, same purpose as coach_notes. player_id FK is
+// RESTRICT, not Cascade, matching coach_notes' precedent: a player's
+// rating history must never silently disappear. coach_id has no FK,
+// audit-only -- matches authorized_by/recorded_by/generated_by/
+// coach_notes.coach_id precedent.
+model PerformanceRating {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId   String   @map("player_id") @db.Uuid
+  coachId    String   @map("coach_id") @db.Uuid // no FK, audit-only
+  area       String   @map("area") @db.VarChar(20) // FOREHAND|BACKHAND|SERVE|RETURN|VOLLEY|OVERHEAD|SLICE|FOOTWORK|FITNESS|MENTALITY
+  rating     Int      @db.SmallInt // 1-10
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  player User @relation("PerformanceRatingSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // area CHECK + rating range CHECK + index added via raw-SQL migration --
+  // this codebase never declares @@index in schema.prisma.
+  @@map("performance_ratings")
+}
+
+// ---------------------------------------------------------------------------
+// Competition (Internal Rankings, Phase 12) -- staff-recorded match results
+// + standings computed live from them at read time (never stored). Mirrors
+// booking's "cobro asistido": staff-only recording, no player self-report/
+// dispute flow. Tournament brackets/draws are a separate future phase -- this
+// is only a ranking ladder built from match results.
+//
+// CompetitionSeason is club-wide config (like MembershipPlan), so it carries
+// club_id directly. CompetitionMatch is a dependent record about specific
+// players (like coach_notes/performance_ratings), so it does NOT duplicate
+// club_id -- it reaches the club only via season_id -> competition_seasons.
+// club_id, matching coach_notes'/performance_ratings' precedent of reaching
+// the club only via player_id -> users.club_id.
+// ---------------------------------------------------------------------------
+
+model CompetitionSeason {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId       String    @map("club_id") @db.Uuid
+  name         String    @db.VarChar(60)
+  year         Int       @db.SmallInt
+  seasonNumber Int       @map("season_number") @db.SmallInt // 1|2 -- two seasons/year
+  status       String    @default("OPEN") @db.VarChar(10) // OPEN|CLOSED
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  createdBy    String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt    DateTime  @default(now()) @map("created_at")
+  closedAt     DateTime? @map("closed_at")
+  closedBy     String?   @map("closed_by") @db.Uuid // no FK, audit-only
+
+  club    Club               @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  matches CompetitionMatch[]
+
+  // one-OPEN-season-per-club partial unique index + status/closed coherence
+  // CHECK added via raw-SQL migration.
+  @@unique([clubId, year, seasonNumber])
+  @@map("competition_seasons")
+}
+
+// A match result, recorded by staff after the fact -- never edited, only
+// voided (a compensating action, matching Invoice.cancel()'s precedent, not
+// a mutation). Participant-count-per-side (1 for singles, 2 for doubles) is
+// a cross-row invariant Postgres CHECK constraints can't express -- enforced
+// at the domain layer (CompetitionMatch.record()) instead, with the match
+// and its participant rows inserted inside one transaction.
+model CompetitionMatch {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seasonId   String    @map("season_id") @db.Uuid
+  category   String    @db.VarChar(20) // SEGUNDA|TERCERA|CUARTA|QUINTA -- no PRIMERA
+  modality   String    @db.VarChar(10) // SINGLES|DOBLES
+  status     String    @default("RECORDED") @db.VarChar(10) // RECORDED|VOID
+  winnerSide String    @map("winner_side") @db.VarChar(1) // A|B
+  setsWonA   Int       @map("sets_won_a") @db.SmallInt
+  setsWonB   Int       @map("sets_won_b") @db.SmallInt
+  playedAt   DateTime  @map("played_at") @db.Date
+  notes      String?
+  recordedBy String    @map("recorded_by") @db.Uuid // no FK, audit-only
+  createdAt  DateTime  @default(now()) @map("created_at")
+  voidedAt   DateTime? @map("voided_at")
+  voidedBy   String?   @map("voided_by") @db.Uuid // no FK, audit-only
+  voidReason String?   @map("void_reason")
+
+  season       CompetitionSeason             @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  participants CompetitionMatchParticipant[]
+
+  // winner/sets coherence CHECK + void coherence CHECK + composite index
+  // added via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("competition_matches")
+}
+
+model CompetitionMatchParticipant {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matchId  String @map("match_id") @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+  side     String @db.VarChar(1) // A|B
+
+  match  CompetitionMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player User             @relation("CompetitionMatchParticipant", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // side CHECK + player index added via raw-SQL migration.
+  @@unique([matchId, playerId]) // no player appears twice in a match
+  @@map("competition_match_participants")
+}
+
+// ---------------------------------------------------------------------------
+// Tournament (Phase 13) -- staff-run single-elimination brackets, seeded by
+// competition's live standings. Fully separate from competition's ranking
+// ladder (a judgment call): a tournament match's result affects ONLY the
+// bracket, never the season standings.
+// ---------------------------------------------------------------------------
+
+model Tournament {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId          String    @map("club_id") @db.Uuid
+  name            String    @db.VarChar(60)
+  category        String    @db.VarChar(20) // SEGUNDA|TERCERA|CUARTA|QUINTA -- reuses competition's vocabulary
+  modality        String    @db.VarChar(10) // SINGLES|DOBLES
+  status          String    @default("DRAFT") @db.VarChar(20) // DRAFT|DRAW_GENERATED|COMPLETED|CANCELLED
+  createdBy       String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt       DateTime  @default(now()) @map("created_at")
+  drawGeneratedAt DateTime? @map("draw_generated_at")
+  completedAt     DateTime? @map("completed_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  championId      String?   @map("champion_id") @db.Uuid // no FK -- points at the winning TournamentParticipant.id once COMPLETED
+  // Public page (/torneos): dates, and when registration was opened publicly
+  // (null = internal draft, never shown on the public site).
+  startsOn        DateTime? @map("starts_on") @db.Date
+  endsOn          DateTime? @map("ends_on") @db.Date
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz(6)
+
+  club         Club                    @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  participants TournamentParticipant[]
+  matches      TournamentMatch[]
+
+  // status/category/modality CHECKs + per-terminal-state coherence CHECKs
+  // added via raw-SQL migration.
+  @@map("tournaments")
+}
+
+// One bracket "entry" -- 1 player for SINGLES, a FIXED pair for DOBLES
+// (unlike competition's ad-hoc per-match doubles pairing, a tournament pair
+// is registered once and plays together the whole bracket). Members live in
+// a normalized join table (not two nullable playerId columns), mirroring
+// competition_match_participants' own reasoning: uniform 1-or-2-player
+// handling, no CHECK-constraint gymnastics.
+model TournamentParticipant {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tournamentId String   @map("tournament_id") @db.Uuid
+  seed         Int?     @db.SmallInt // assigned at draw-generation time, null before
+  registeredBy String   @map("registered_by") @db.Uuid // no FK, audit-only
+  registeredAt DateTime @default(now()) @map("registered_at")
+
+  tournament Tournament                    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  members    TournamentParticipantMember[]
+  matchesAsA TournamentMatch[]             @relation("MatchParticipantA")
+  matchesAsB TournamentMatch[]             @relation("MatchParticipantB")
+  matchesWon TournamentMatch[]             @relation("MatchWinner")
+
+  @@map("tournament_participants")
+}
+
+model TournamentParticipantMember {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participantId String @map("participant_id") @db.Uuid
+  playerId      String @map("player_id") @db.Uuid
+
+  participant TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  player      User                  @relation("TournamentParticipantMember", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // player index added via raw-SQL migration.
+  @@unique([participantId, playerId])
+  @@map("tournament_participant_members")
+}
+
+// A bracket slot. Linkage to "which match feeds which next match" is NOT a
+// stored graph -- it's derived by (round, slot) arithmetic: the match at
+// (round r, 0-indexed slot s) feeds into (round r+1, slot floor(s/2)),
+// landing in participant A if s is even, B if odd. No status enum -- match
+// state is fully derived from the data: both slots null = awaiting a
+// feeder, both filled + no winner = ready to record, winner set with no
+// scores = a bye (auto-resolved at generation, no staff action), winner set
+// with scores = completed.
+model TournamentMatch {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tournamentId        String    @map("tournament_id") @db.Uuid
+  round               Int       @db.SmallInt // 1-indexed, round 1 = first round
+  slot                Int       @db.SmallInt // 0-indexed position within the round
+  participantAId      String?   @map("participant_a_id") @db.Uuid
+  participantBId      String?   @map("participant_b_id") @db.Uuid
+  setsWonA            Int?      @map("sets_won_a") @db.SmallInt // null for byes -- no match was actually played
+  setsWonB            Int?      @map("sets_won_b") @db.SmallInt
+  winnerParticipantId String?   @map("winner_participant_id") @db.Uuid
+  playedAt            DateTime? @map("played_at") @db.Date
+  recordedBy          String?   @map("recorded_by") @db.Uuid // no FK, audit-only; null for byes
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  scheduledAt         DateTime? @map("scheduled_at") @db.Timestamptz(6) // when the match is played
+  courtName           String?   @map("court_name") @db.VarChar(60)
+
+  tournament        Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  // CASCADE, not RESTRICT: a participant can only ever be deleted via its
+  // whole Tournament cascading (removeParticipant is pre-draw only), so
+  // RESTRICT here would just create a same-statement cascade-ordering race
+  // against tournament_participants' own CASCADE from tournaments.
+  participantA      TournamentParticipant? @relation("MatchParticipantA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB      TournamentParticipant? @relation("MatchParticipantB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winnerParticipant TournamentParticipant? @relation("MatchWinner", fields: [winnerParticipantId], references: [id], onDelete: Cascade)
+
+  // winner-participant-valid CHECK + sets-range CHECK + (tournament_id,
+  // round) index added via raw-SQL migration -- this codebase never
+  // declares @@index in schema.prisma, only in the hand-written migration.
+  @@unique([tournamentId, round, slot])
+  @@map("tournament_matches")
+}
+
+// ---------------------------------------------------------------------------
+// Clinical (Phase 14) -- Psychology slice. Module name matches the
+// pre-registered clinical-domain-isolated dependency-cruiser rule (stricter
+// than every other module: no other module may import modules/clinical/domain
+// at all). Physiotherapy (Phase 15) lives in this same module -- shares
+// ClinicalAppointment/ClinicalNote with Psychology (both are "a
+// practitioner books time with / writes about a player"), disambiguated by
+// a discipline column (PSYCHOLOGY|PHYSIOTHERAPY) derived server-side from
+// the practitioner's role, never client-supplied. Note/plan/history content
+// is siloed by discipline: a PSICOLOGO/NEUROPSICOLOGO never sees
+// PHYSIOTHERAPY content and vice versa -- only bare scheduling logistics
+// (ClinicalAppointment, no clinical content) are visible across the whole
+// practitioner team. RecoveryPlan and MedicalHistoryEntry are
+// Physiotherapy-only concepts (no PSYCHOLOGY equivalent), so they carry no
+// discipline column -- gated entirely by practitioner role instead.
+// ---------------------------------------------------------------------------
+
+model ClinicalAppointment {
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId         String                   @map("club_id") @db.Uuid
+  playerId       String                   @map("player_id") @db.Uuid
+  practitionerId String                   @map("practitioner_id") @db.Uuid // no FK, audit-only
+  discipline     String                   @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side at scheduling time
+  // Added via raw-SQL migration (Prisma has no native range-type support),
+  // reusing Reservation's exact pattern -- see the
+  // 20260731180029_init_identity_booking migration's "reservations: range
+  // period + structural double-booking prevention" section.
+  period         Unsupported("tstzrange")
+  periodStart    DateTime                 @map("period_start") // generated column, read-only from Prisma's POV
+  periodEnd      DateTime                 @map("period_end") // generated column, read-only from Prisma's POV
+  status         String                   @default("SCHEDULED") @db.VarChar(20) // SCHEDULED|COMPLETED|CANCELLED|NO_SHOW
+  scheduledBy    String                   @map("scheduled_by") @db.Uuid // no FK, audit-only
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  cancelledAt    DateTime?                @map("cancelled_at")
+  cancelledBy    String?                  @map("cancelled_by") @db.Uuid
+  cancelReason   String?                  @map("cancel_reason")
+  resolvedAt     DateTime?                @map("resolved_at") // set when COMPLETED or NO_SHOW
+  resolvedBy     String?                  @map("resolved_by") @db.Uuid
+
+  club   Club           @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  player User           @relation("ClinicalAppointmentSubject", fields: [playerId], references: [id], onDelete: Restrict)
+  notes  ClinicalNote[]
+
+  // EXCLUDE USING gist (practitioner_id WITH =, period WITH &&) WHERE
+  // status = 'SCHEDULED' + status/coherence CHECKs added via raw-SQL
+  // migration -- a practitioner can never have two overlapping scheduled
+  // appointments, enforced by Postgres itself.
+  @@map("clinical_appointments")
+}
+
+model ClinicalNote {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String   @map("player_id") @db.Uuid
+  practitionerId String   @map("practitioner_id") @db.Uuid // no FK, audit-only
+  discipline     String   @db.VarChar(20) // PSYCHOLOGY|PHYSIOTHERAPY, derived server-side from the authoring practitioner
+  appointmentId  String?  @map("appointment_id") @db.Uuid // optional cross-reference
+  noteType       String   @map("note_type") @db.VarChar(20) // FOLLOW_UP|RECOMMENDATION|SESSION_NOTE|GENERAL
+  visibility     String   @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  player      User                 @relation("ClinicalNoteSubject", fields: [playerId], references: [id], onDelete: Restrict)
+  appointment ClinicalAppointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  // note_type CHECK + visibility CHECK + player index added via raw-SQL
+  // migration, matching coach_notes' exact precedent.
+  @@map("clinical_notes")
+}
+
+// RecoveryPlan and MedicalHistoryEntry -- Physiotherapy-only concepts (the
+// client's doc lists these under Physiotherapy, not Psychology), always
+// authored by FISIOTERAPEUTA, gated purely by practitioner role (no
+// discipline column needed since there is only one discipline that can
+// ever write them).
+model RecoveryPlan {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId          String    @map("player_id") @db.Uuid
+  practitionerId    String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  title             String
+  goal              String?   @db.Text
+  status            String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|COMPLETED|DISCONTINUED
+  visibility        String    @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  createdAt         DateTime  @default(now()) @map("created_at")
+  resolvedAt        DateTime? @map("resolved_at") // set when COMPLETED or DISCONTINUED
+  resolvedBy        String?   @map("resolved_by") @db.Uuid
+  discontinueReason String?   @map("discontinue_reason")
+
+  player User @relation("RecoveryPlanSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("recovery_plans")
+}
+
+model MedicalHistoryEntry {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  condition      String
+  description    String?   @db.Text
+  status         String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|RESOLVED
+  visibility     String    @default("PRIVATE") @db.VarChar(20) // PRIVATE|PLAYER_VISIBLE
+  occurredAt     DateTime? @map("occurred_at") // nullable -- not every condition has a known onset date
+  createdAt      DateTime  @default(now()) @map("created_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  resolvedBy     String?   @map("resolved_by") @db.Uuid
+
+  player User @relation("MedicalHistorySubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("medical_history_entries")
+}
+
+// "Apto / No apto para jugar hasta [fecha]" recorded by a Fisioterapeuta --
+// operational only (no diagnosis). Append-only; newest row = current status.
+// CHECKs (status values, unfit_until only when UNFIT) live in the raw-SQL
+// migration 20260926090000_add_physio_admin_access.
+model PhysioFitnessStatus {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  practitionerId String    @map("practitioner_id") @db.Uuid // no FK, audit-only
+  status         String    @db.VarChar(10) // FIT|UNFIT
+  unfitUntil     DateTime? @map("unfit_until") @db.Date
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  player User @relation("PhysioFitnessSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("physio_fitness_statuses")
+}
+
+// A player's authorization for the club administration to read their
+// physiotherapy notes. Withdrawing sets revokedAt; granting again inserts a
+// new row. One active row per player+scope (partial unique index in SQL).
+model ClinicalAccessConsent {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId  String    @map("player_id") @db.Uuid
+  scope     String    @db.VarChar(40) // ADMIN_PHYSIO_NOTES
+  grantedAt DateTime  @default(now()) @map("granted_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  player User @relation("ClinicalConsentSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@map("clinical_access_consents")
+}
+
+model OutboxEvent {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  eventType     String    @map("event_type")
+  payload       Json
+  occurredAt    DateTime  @default(now()) @map("occurred_at")
+  processedAt   DateTime? @map("processed_at")
+  attempts      Int       @default(0) @db.SmallInt
+  lastError     String?   @map("last_error")
+
+  // Partial index on unprocessed rows added via raw-SQL migration.
+  @@map("outbox_events")
+}
+
+// ---------------------------------------------------------------------------
+// Booking (schema only in Phase 1 -- business logic is Phase 2)
+// ---------------------------------------------------------------------------
+
+model Court {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId          String   @map("club_id") @db.Uuid
+  name            String   @db.VarChar(60)
+  surface         String   @default("CLAY") @db.VarChar(30)
+  hasLighting     Boolean  @default(false) @map("has_lighting")
+  defaultPriceCop BigInt?  @map("default_price_cop")
+  displayOrder    Int?     @map("display_order") @db.SmallInt
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  club         Club                @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  reservations Reservation[]
+  priceHistory CourtPriceHistory[]
+
+  @@unique([clubId, name])
+  @@map("courts")
+}
+
+// Every change of a court's price: the previous one, the new one, who and
+// when. Reservations keep the price they were made with (Reservation.priceCop).
+model CourtPriceHistory {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courtId          String   @map("court_id") @db.Uuid
+  previousPriceCop BigInt?  @map("previous_price_cop")
+  newPriceCop      BigInt   @map("new_price_cop")
+  changedBy        String   @map("changed_by") @db.Uuid // no FK, audit-only
+  changedAt        DateTime @default(now()) @map("changed_at")
+
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  @@index([courtId, changedAt(sort: Desc)], map: "court_price_history_court_idx")
+  @@map("court_price_history")
+}
+
+model Reservation {
+  id              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId          String                   @map("club_id") @db.Uuid
+  courtId         String                   @map("court_id") @db.Uuid
+  // Added via raw-SQL migration (Prisma has no native range-type support).
+  // Declared here (Unsupported) so Prisma's migrate diff stays aware of them
+  // instead of proposing to drop them on the next `prisma migrate dev`.
+  period          Unsupported("tstzrange")
+  periodStart     DateTime                 @map("period_start") // generated column, read-only from Prisma's POV
+  periodEnd       DateTime                 @map("period_end") // generated column, read-only from Prisma's POV
+  status          String                   @db.VarChar(20) // HOLD|CONFIRMED|CANCELLED|EXPIRED|NO_SHOW|COMPLETED
+  reservationType String                   @default("PRIVATE") @map("reservation_type") @db.VarChar(20)
+  holderUserId    String?                  @map("holder_user_id") @db.Uuid
+  createdBy       String                   @map("created_by") @db.Uuid
+  holdExpiresAt   DateTime?                @map("hold_expires_at")
+  priceCop        BigInt?                  @map("price_cop")
+  // Real FK to Payment (Phase 4) -- unique because v1 supports exactly one
+  // full payment per reservation (no partial/split payments). Existing
+  // Phase 2/3 test data had this column holding unconstrained
+  // client-generated UUIDs with no real Payment behind them; the migration
+  // nulls those out before adding this constraint.
+  paymentId       String?                  @unique @map("payment_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  club          Club     @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  court         Court    @relation(fields: [courtId], references: [id], onDelete: Restrict)
+  holderUser    User?    @relation("HolderUser", fields: [holderUserId], references: [id])
+  createdByUser User     @relation("CreatedByUser", fields: [createdBy], references: [id])
+  payment       Payment? @relation(fields: [paymentId], references: [id])
+
+  @@map("reservations")
+}
+
+// Immutable manual-payment audit record ("cobro asistido" -- no online
+// gateway integration yet, see docs/adr). One row per fully-paid reservation;
+// amountCop is always a snapshot of Reservation.priceCop at the moment of
+// payment, never client-supplied, so a later court price change can never
+// retroactively alter an already-recorded payment.
+model Payment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId     String   @map("club_id") @db.Uuid
+  amountCop  BigInt   @map("amount_cop")
+  method     String   @db.VarChar(20) // CASH|TRANSFER|CARD_IN_PERSON
+  recordedBy String   @map("recorded_by") @db.Uuid
+  recordedAt DateTime @default(now()) @map("recorded_at")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  club           Club         @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  recordedByUser User         @relation("PaymentRecordedBy", fields: [recordedBy], references: [id], onDelete: Restrict)
+  // Virtual inverse of Reservation.paymentId -- no physical column here,
+  // Reservation owns the single FK so the two tables can't disagree.
+  reservation    Reservation?
+
+  @@map("payments")
+}
+
+model ShedLock {
+  name      String   @id @db.VarChar(64)
+  lockUntil DateTime @map("lock_until")
+  lockedAt  DateTime @map("locked_at")
+  lockedBy  String   @map("locked_by")
+
+  @@map("shedlock")
+}
+
+// ---------------------------------------------------------------------------
+// Goals (Phase 2) -- player-owned personal targets, connected to real
+// progress data wherever possible (competition standings, coaching skill
+// ratings, training frequency) rather than a separate tracked-progress
+// column: progress is always computed live from those modules on read,
+// never stored/duplicated here, matching how standings/rank are already
+// computed live elsewhere in this codebase. player_id FK is RESTRICT,
+// matching coach_notes'/medical_history_entries' precedent: a player's goal
+// history must never silently disappear.
+// ---------------------------------------------------------------------------
+
+model Goal {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId       String    @map("player_id") @db.Uuid
+  title          String    @db.VarChar(200)
+  metricType     String    @map("metric_type") @db.VarChar(20) // SKILL_RATING|MATCH_WINS|RANKING_POSITION|TRAINING_FREQUENCY|CUSTOM
+  targetArea     String?   @map("target_area") @db.VarChar(20) // SKILL_RATING only -- reuses coaching's skill area vocabulary
+  targetValue    Int?      @map("target_value") // meaning depends on metricType: rating threshold, win count, rank position, sessions/week
+  targetCategory String?   @map("target_category") @db.VarChar(20) // optional scoping for MATCH_WINS/RANKING_POSITION
+  targetModality String?   @map("target_modality") @db.VarChar(10) // optional scoping for MATCH_WINS/RANKING_POSITION
+  status         String    @default("ACTIVE") @db.VarChar(20) // ACTIVE|ACHIEVED|ABANDONED
+  createdAt      DateTime  @default(now()) @map("created_at")
+  achievedAt     DateTime? @map("achieved_at")
+  abandonedAt    DateTime? @map("abandoned_at")
+
+  player User @relation("GoalSubject", fields: [playerId], references: [id], onDelete: Restrict)
+
+  // metric_type CHECK + target_area CHECK + status CHECK + player_id index
+  // added via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("goals")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (Phase 3a) -- a real in-app inbox. recipient_id is CASCADE,
+// not RESTRICT like goals'/coach_notes' precedent -- a notification is
+// ephemeral/transient, not a durable record that must never silently
+// disappear, so it's fine for it to vanish along with the user it was for.
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientId String    @map("recipient_id") @db.Uuid
+  type        String    @db.VarChar(30) // CHALLENGE_RECEIVED|CHALLENGE_ACCEPTED|CHALLENGE_REJECTED|CHALLENGE_CANCELLED
+  title       String    @db.VarChar(200)
+  body        String?
+  linkPath    String?   @map("link_path") @db.VarChar(255)
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  recipient User @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // type CHECK + recipient_id index added via raw-SQL migration -- this
+  // codebase never declares @@index in schema.prisma, only in the
+  // hand-written migration.
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Challenges (Phase 3a) -- player-to-player: one player proposes a friendly
+// match, the other accepts/rejects. Two named FKs to users, mirroring
+// Guardianship's exact precedent (the only other row in this schema linking
+// two existing users by distinct roles). Both CASCADE, not RESTRICT like
+// goals'/coach_notes' -- a challenge has no standalone value once either
+// party is gone.
+// ---------------------------------------------------------------------------
+
+model Challenge {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengerUserId String    @map("challenger_user_id") @db.Uuid
+  opponentUserId   String    @map("opponent_user_id") @db.Uuid
+  message          String?   @db.VarChar(500)
+  status           String    @default("PENDING") @db.VarChar(20) // PENDING|ACCEPTED|REJECTED|CANCELLED|COMPLETED
+  createdAt        DateTime  @default(now()) @map("created_at")
+  respondedAt      DateTime? @map("responded_at")
+  completedAt      DateTime? @map("completed_at")
+
+  challenger  User                  @relation("ChallengeAsChallenger", fields: [challengerUserId], references: [id], onDelete: Cascade)
+  opponent    User                  @relation("ChallengeAsOpponent", fields: [opponentUserId], references: [id], onDelete: Cascade)
+  matchResult ChallengeMatchResult?
+
+  // status CHECK + self-challenge CHECK + response coherence CHECK +
+  // completed coherence CHECK + pending-pair unique index + indexes added
+  // via raw-SQL migration -- this codebase never declares @@index in
+  // schema.prisma, only in the hand-written migration.
+  @@map("challenges")
+}
+
+model ChallengeMatchResult {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId String @unique @map("challenge_id") @db.Uuid
+  status      String @default("PENDING") @db.VarChar(20) // PENDING|CONFIRMED
+
+  challengerCategory    String?   @map("challenger_category") @db.VarChar(20)
+  challengerSetsWonA    Int?      @map("challenger_sets_won_a") @db.SmallInt
+  challengerSetsWonB    Int?      @map("challenger_sets_won_b") @db.SmallInt
+  challengerPlayedAt    DateTime? @map("challenger_played_at") @db.Date
+  challengerSubmittedAt DateTime? @map("challenger_submitted_at")
+
+  opponentCategory    String?   @map("opponent_category") @db.VarChar(20)
+  opponentSetsWonA    Int?      @map("opponent_sets_won_a") @db.SmallInt
+  opponentSetsWonB    Int?      @map("opponent_sets_won_b") @db.SmallInt
+  opponentPlayedAt    DateTime? @map("opponent_played_at") @db.Date
+  opponentSubmittedAt DateTime? @map("opponent_submitted_at")
+
+  // competition_match_id has a real FK + RESTRICT constraint at the DB
+  // level (see the raw-SQL migration), but no Prisma @relation field here
+  // -- nothing in this codebase queries it via Prisma relation traversal,
+  // only as a plain scalar (repository maps columns manually, matching
+  // every other repository's toDomain shape).
+  competitionMatchId String?   @map("competition_match_id") @db.Uuid
+  confirmedAt        DateTime? @map("confirmed_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  // status CHECK + category CHECKs + sets-range CHECKs + no-tie CHECKs +
+  // confirmed-coherence CHECK added via raw-SQL migration -- this codebase
+  // never declares @@index in schema.prisma, only in the hand-written
+  // migration.
+  @@map("challenge_match_results")
+}
+
+// Community (Phase 3c) -----------------------------------------------------
+// The only module in this codebase where a record can be hard-deleted --
+// see the raw-SQL migration's own comment for why.
+
+model CommunityPost {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId     String    @map("author_id") @db.Uuid
+  content      String    @db.VarChar(1000) // '' when the post is media only
+  createdAt    DateTime  @default(now()) @map("created_at")
+  // Hidden (automatically after 3 reports, or by staff) until reviewed.
+  hiddenAt     DateTime? @map("hidden_at")
+  hiddenBy     String?   @map("hidden_by") @db.Uuid // no FK, audit-only; null = automatic
+  hiddenReason String?   @map("hidden_reason") @db.VarChar(20) // AUTO_REPORTS|STAFF
+
+  author   User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  // Real relation fields (unlike ChallengeMatchResult's plain-scalar
+  // precedent) -- needed for Prisma's `_count` aggregation in
+  // listPosts.js, which nothing in the challenges module ever required.
+  comments CommunityComment[]
+  likes    CommunityPostLike[]
+  media    PostMedia[]
+
+  // content-not-blank CHECK + created_at index added via raw-SQL migration.
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User          @relation("CommunityCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  // content-not-blank CHECK + post_id index added via raw-SQL migration.
+  @@map("community_comments")
+}
+
+model CommunityPostLike {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation("CommunityPostLikeUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  // The underlying unique index is hand-named
+  // community_post_likes_post_user_unique in the raw-SQL migration (already
+  // created there) -- this @@unique only teaches the generated client the
+  // postId_userId compound-key selector, used for an atomic upsert()-based
+  // toggle in likePost.js.
+  @@unique([postId, userId])
+  @@map("community_post_likes")
+}
+
+// Up to 4 photos OR 1 video per post (rule enforced by the app); files in
+// Vercel Blob. CHECKs + (post_id, sort_order) unique index in the raw-SQL
+// migration 20260927090000_add_community_media.
+model PostMedia {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId          String   @map("post_id") @db.Uuid
+  type            String   @db.VarChar(10) // IMAGE|VIDEO
+  url             String
+  posterUrl       String?  @map("poster_url") // VIDEO only
+  width           Int?
+  height          Int?
+  durationSeconds Decimal? @map("duration_seconds") @db.Decimal(6, 2) // VIDEO only
+  sortOrder       Int      @default(0) @map("sort_order") @db.SmallInt
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_media")
+}
+
+model CommunityReport {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType String    @map("target_type") @db.VarChar(10) // POST|COMMENT
+  targetId   String    @map("target_id") @db.Uuid // no FK -- points into posts or comments
+  reporterId String    @map("reporter_id") @db.Uuid
+  reason     String?   @db.VarChar(300)
+  status     String    @default("PENDING") @db.VarChar(20) // PENDING|DISMISSED
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+  resolvedBy String?   @map("resolved_by") @db.Uuid // no FK, audit-only
+
+  reporter User @relation("CommunityReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  // target_type/status CHECKs + resolved-coherence CHECK + pending-unique
+  // index + status/target indexes added via raw-SQL migration.
+  @@map("community_reports")
+}
+
+// Proof of every authorization (Ley 1581 de 2012). Append-only: a withdrawal
+// is a new row (a trigger refuses UPDATE; nothing in the app deletes).
+// user = whose data it is about; givenBy = who gave it when not the user
+// (a guardian for a minor's data and image).
+model Consent {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  givenBy         String?  @map("given_by") @db.Uuid
+  consentType     String   @map("consent_type") @db.VarChar(30) // PRIVACY_POLICY|TERMS|MARKETING|MINOR_DATA_IMAGE|HEALTH_DATA|COMMUNITY_RULES|COOKIES
+  documentVersion String   @map("document_version") @db.VarChar(20)
+  action          String   @db.VarChar(10) // ACCEPTED|WITHDRAWN
+  details         Json?
+  ipAddress       String?  @map("ip_address") @db.Inet
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User  @relation("ConsentSubject", fields: [userId], references: [id], onDelete: Restrict)
+  givenByUser User? @relation("ConsentGivenBy", fields: [givenBy], references: [id], onDelete: Restrict)
+
+  @@index([userId, consentType, createdAt(sort: Desc)], map: "consents_user_type_idx")
+  @@map("consents")
+}
+
+// Every version of every legal text, with the SHA-256 of its exact content
+// (see @ctcj/shared legal/). Append-only: a trigger refuses UPDATE.
+model LegalDocument {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  docType       String   @map("doc_type") @db.VarChar(30)
+  version       String   @db.VarChar(20)
+  publishedOn   DateTime @map("published_on") @db.Date
+  title         String   @db.VarChar(200)
+  content       Json
+  contentSha256 String   @map("content_sha256") @db.Char(64)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([docType, version], map: "legal_documents_type_version_unique")
+  @@map("legal_documents")
+}
+
+// Requests of the data subject (Ley 1581 de 2012, arts. 14 y 15): consultas
+// (10 business days) and reclamos (15), each with a radicado.
+model DataSubjectRequest {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId              String    @map("club_id") @db.Uuid
+  radicado            String    @unique @db.VarChar(20)
+  userId              String    @map("user_id") @db.Uuid
+  requestType         String    @map("request_type") @db.VarChar(10) // CONSULTA|RECLAMO
+  kind                String    @db.VarChar(12) // CONSULTA|CORRECCION|SUPRESION|REVOCATORIA|RECLAMO
+  description         String
+  status              String    @default("RECIBIDA") @db.VarChar(12) // RECIBIDA|EN_TRAMITE|RESPONDIDA
+  receivedAt          DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+  dueOn               DateTime  @map("due_on") @db.Date
+  answer              String?
+  answeredAt          DateTime? @map("answered_at") @db.Timestamptz(6)
+  answeredBy          String?   @map("answered_by") @db.Uuid
+  accountAnonymizedAt DateTime? @map("account_anonymized_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  club           Club  @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  user           User  @relation("DataRequestSubject", fields: [userId], references: [id], onDelete: Restrict)
+  answeredByUser User? @relation("DataRequestAnsweredBy", fields: [answeredBy], references: [id], onDelete: Restrict)
+
+  @@index([userId, receivedAt(sort: Desc)], map: "data_subject_requests_user_idx")
+  @@index([status, dueOn], map: "data_subject_requests_open_idx")
+  @@map("data_subject_requests")
+}
+
+// One-time recovery codes of the two-step verification: only a keyed hash.
+model MfaRecoveryCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash") @db.VarChar(64)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, codeHash], map: "mfa_recovery_codes_user_hash_key")
+  @@map("mfa_recovery_codes")
+}
+
+// "Solicitar información": requests from the public site, the staff inbox.
+model InfoRequest {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId         String    @map("club_id") @db.Uuid
+  fullName       String    @map("full_name") @db.VarChar(120)
+  phone          String    @db.VarChar(16)
+  email          String?   @db.VarChar(160)
+  program        String    @db.VarChar(20)
+  forWhom        String    @map("for_whom") @db.VarChar(6)
+  childAge       Int?      @map("child_age") @db.SmallInt
+  preferredTimes String[]  @default([]) @map("preferred_times")
+  message        String?   @db.VarChar(500)
+  marketingOptIn Boolean   @default(false) @map("marketing_opt_in")
+  status         String    @default("NUEVA") @db.VarChar(12)
+  handledBy      String?   @map("handled_by") @db.Uuid
+  handledAt      DateTime? @map("handled_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  club          Club                 @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  handledByUser User?                @relation("InfoRequestHandledBy", fields: [handledBy], references: [id], onDelete: SetNull)
+  notes         InfoRequestNote[]
+  consents      InfoRequestConsent[]
+
+  @@index([clubId, status, createdAt(sort: Desc)], map: "info_requests_status_idx")
+  @@map("info_requests")
+}
+
+model InfoRequestNote {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId String   @map("request_id") @db.Uuid
+  authorId  String?  @map("author_id") @db.Uuid
+  text      String   @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request InfoRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author  User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt], map: "info_request_notes_request_idx")
+  @@map("info_request_notes")
+}
+
+// Proof of the authorization in the form (append-only; outlives the request).
+model InfoRequestConsent {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId       String?  @map("request_id") @db.Uuid
+  consentType     String   @map("consent_type") @db.VarChar(30)
+  documentVersion String   @map("document_version") @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request InfoRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([requestId], map: "info_request_consents_request_idx")
+  @@map("info_request_consents")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications by email and announcements (Ley 2300 de 2023: service vs.
+// promotional). Service-notification switches per category and channel; a
+// missing row means "on". Promotional ones are the MARKETING consent, never
+// stored here. Channel PUSH is reserved for the PWA phase.
+// ---------------------------------------------------------------------------
+
+model NotificationPreference {
+  userId    String   @map("user_id") @db.Uuid
+  category  String   @db.VarChar(30) // RESULTS_NOTES|MY_TOURNAMENTS|CLUB_NOTICES
+  channel   String   @db.VarChar(10) // APP|EMAIL|PUSH
+  enabled   Boolean
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation("NotificationPreferenceOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, category, channel])
+  @@map("notification_preferences")
+}
+
+model NotificationSetting {
+  userId      String   @id @map("user_id") @db.Uuid
+  dailyDigest Boolean  @default(false) @map("daily_digest")
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation("NotificationSettingOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model Announcement {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clubId               String    @map("club_id") @db.Uuid
+  title                String    @db.VarChar(120)
+  body                 String // basic format: **bold**, lists, [links](https://...)
+  imageUrl             String?   @map("image_url")
+  imageAlt             String?   @map("image_alt") @db.VarChar(200)
+  kind                 String    @db.VarChar(15) // SERVICE|PROMOTIONAL
+  audienceType         String    @map("audience_type") @db.VarChar(15) // ALL|PLAYERS|CATEGORY|TOURNAMENT|GUARDIANS
+  audienceCategory     String?   @map("audience_category") @db.VarChar(20)
+  audienceTournamentId String?   @map("audience_tournament_id") @db.Uuid // no FK, like the rest of cross-module links
+  status               String    @default("SCHEDULED") @db.VarChar(15) // SCHEDULED|SENT|CANCELLED
+  scheduledFor         DateTime  @map("scheduled_for") @db.Timestamptz(6)
+  dispatchedAt         DateTime? @map("dispatched_at") @db.Timestamptz(6)
+  recipientsCount      Int?      @map("recipients_count")
+  excludedCount        Int?      @map("excluded_count")
+  createdBy            String    @map("created_by") @db.Uuid // no FK, audit-only
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  cancelledAt          DateTime? @map("cancelled_at") @db.Timestamptz(6)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
+
+  // kind/audience/status/image CHECKs and indexes via raw-SQL migration.
+  @@map("announcements")
+}
+
+// One email to one person: the send queue and its history. No health data.
+model EmailDelivery {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientUserId   String?   @map("recipient_user_id") @db.Uuid // who receives it (the guardian, for a minor)
+  aboutUserId       String?   @map("about_user_id") @db.Uuid // who it is about
+  toEmail           String    @map("to_email") @db.VarChar(254)
+  kind              String    @db.VarChar(15) // SERVICE|PROMOTIONAL
+  category          String    @db.VarChar(30)
+  subject           String    @db.VarChar(200)
+  html              String
+  text              String
+  sourceType        String    @map("source_type") @db.VarChar(20) // EVENT|ANNOUNCEMENT|DIGEST
+  sourceId          String?   @map("source_id") @db.Uuid
+  status            String    @default("QUEUED") @db.VarChar(15) // QUEUED|DIGEST|SENT|FAILED|CANCELLED
+  notBefore         DateTime  @default(now()) @map("not_before") @db.Timestamptz(6)
+  deferredReason    String?   @map("deferred_reason") @db.VarChar(20) // HOURS|QUOTA
+  attempts          Int       @default(0) @db.SmallInt
+  lastError         String?   @map("last_error")
+  providerMessageId String?   @unique(map: "email_deliveries_provider_id_key") @map("provider_message_id") @db.VarChar(100)
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  openedAt          DateTime? @map("opened_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recipient User? @relation("EmailDeliveryRecipient", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  about     User? @relation("EmailDeliveryAbout", fields: [aboutUserId], references: [id], onDelete: SetNull)
+
+  // kind/status/source/attempts CHECKs and partial indexes via raw-SQL migration.
+  @@map("email_deliveries")
+}
+```

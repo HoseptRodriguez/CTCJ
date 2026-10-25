@@ -13,5 +13,9 @@ export function createPlayersController(container) {
     res.status(200).json(result);
   });
 
-  return { searchPlayers };
+  const getPlayStyle = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getPlayerPlayStyle({ playerId: req.params.id }));
+  });
+
+  return { searchPlayers, getPlayStyle };
 }

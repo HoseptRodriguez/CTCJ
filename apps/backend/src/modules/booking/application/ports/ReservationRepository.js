@@ -41,6 +41,17 @@ export class ReservationRepository {
   }
 
   /**
+   * Occupying (HOLD/CONFIRMED) reservations over [from, to) where `userId`
+   * is the holder OR the one who created it (a guardian booking for a
+   * minor) -- the same "own booking" rule reservationPrivacy.js applies.
+   * Ordered by start.
+   * @returns {Promise<Reservation[]>}
+   */
+  async listOccupyingByParticipantAndDateRange(_userId, _from, _to) {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Atomically transitions status only if the row is currently in one of
    * `fromStatuses` -- a 0 result means the row changed underneath the call
    * (e.g. the expiry job fired first), which the caller must handle.
@@ -52,6 +63,26 @@ export class ReservationRepository {
     toStatus: _toStatus,
     extra: _extra,
   }) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Reservations of a court that still hold it (HOLD or CONFIRMED) and start
+   * after `from` -- the ones a price change leaves at their own price.
+   * @returns {Promise<number>}
+   */
+  async countUpcomingByCourt(_courtId, _from) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Moves the end of a HOLD (adding or removing its second hour) and sets
+   * its price, in one conditional update. Throws SlotNotAvailable when the
+   * database's exclusion constraint rejects the new period.
+   * @param {{ id: string, periodEnd: Date, priceCop: bigint|null }} _input
+   * @returns {Promise<import('../../domain/entities/Reservation.js').Reservation|null>} null if it's no longer a HOLD
+   */
+  async resizeHold(_input) {
     throw new Error('Not implemented');
   }
 }

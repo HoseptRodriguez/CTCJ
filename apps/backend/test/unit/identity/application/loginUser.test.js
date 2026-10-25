@@ -5,6 +5,7 @@ import { User } from '../../../../src/modules/identity/domain/entities/User.js';
 import { InvalidCredentials } from '../../../../src/modules/identity/domain/errors/InvalidCredentials.js';
 import { AccountLockedError } from '../../../../src/modules/identity/domain/errors/AccountLockedError.js';
 import { EmailNotVerified } from '../../../../src/modules/identity/domain/errors/EmailNotVerified.js';
+import { AccountNotActive } from '../../../../src/modules/identity/domain/errors/AccountNotActive.js';
 
 import {
   createFakeUserRepository,
@@ -143,6 +144,23 @@ describe('loginUser', () => {
       loginUser({ email: 'sinverificar@example.com', password: 'ClaveSegura123' }),
     ).rejects.toThrow(EmailNotVerified);
   });
+
+  it.each(['DEACTIVATED', 'SUSPENDED'])(
+    'a %s account cannot sign in, even with the right password',
+    async (status) => {
+      const user = await seedActiveUser(deps.userRepository);
+      user.status = status;
+      await deps.userRepository.update(user);
+
+      await expect(
+        loginUser({ email: 'jugador@example.com', password: 'ClaveSegura123' }),
+      ).rejects.toThrow(AccountNotActive);
+      // ...and a wrong password still gets the generic answer (nothing leaks).
+      await expect(loginUser({ email: 'jugador@example.com', password: 'otra' })).rejects.toThrow(
+        InvalidCredentials,
+      );
+    },
+  );
 
   it('a successful login resets the failed-attempt counter', async () => {
     await seedActiveUser(deps.userRepository);

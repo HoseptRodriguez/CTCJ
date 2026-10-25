@@ -7,7 +7,18 @@ import { InvalidTimeSlot } from '../errors/InvalidTimeSlot.js';
 export const MAX_ADVANCE_DAYS = 7;
 export const MIN_ADVANCE_MINUTES = 30;
 export const SLOT_DURATION_MINUTES = 60;
-export const HOLD_DURATION_MINUTES = 5;
+// A reservation is booked as one hour; the next hour of the same court can
+// be added to it while it's still held (club setting, on by default).
+export const MAX_HOURS_PER_RESERVATION = 2;
+export const DEFAULT_SECOND_HOUR_ENABLED = true;
+// How long a HOLD waits for confirmation. Club-configurable by an admin
+// (SystemSetting 'booking.holdDurationMinutes'); these are the default and
+// the accepted range, shared with the validation schema.
+export {
+  DEFAULT_HOLD_DURATION_MINUTES,
+  MIN_HOLD_DURATION_MINUTES,
+  MAX_HOLD_DURATION_MINUTES,
+} from '@ctcj/shared';
 export const MAX_CONCURRENT_PER_PLAYER = 2;
 
 const MINUTE_MS = 60_000;

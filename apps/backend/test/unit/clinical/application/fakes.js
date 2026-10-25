@@ -108,6 +108,16 @@ export function createFakePlayerEligibilityProvider(eligiblePlayerIds = new Set(
   };
 }
 
+/** @param {Set<string>} authorizedPlayerIds players whose health-data authorization is in force */
+export function createFakeHealthAuthorizationProvider(authorizedPlayerIds = new Set()) {
+  return {
+    authorizedPlayerIds,
+    async hasHealthAuthorization(playerId) {
+      return authorizedPlayerIds.has(playerId);
+    },
+  };
+}
+
 /** @param {Map<string, 'PSYCHOLOGY'|'PHYSIOTHERAPY'>} disciplineByPractitionerId */
 export function createFakePractitionerEligibilityProvider(disciplineByPractitionerId = new Map()) {
   return {
@@ -190,4 +200,60 @@ export function createFakePlayerDirectoryProvider(summariesById = new Map()) {
 /** @param {Date} now */
 export function createFakeClock(now = new Date('2026-01-01T00:00:00.000Z')) {
   return { now: () => now };
+}
+
+export function createFakeConsentRepository() {
+  const rows = [];
+  let seq = 0;
+  const latest = (playerId, scope) =>
+    rows.filter((r) => r.playerId === playerId && r.scope === scope).at(-1) ?? null;
+  return {
+    rows,
+    async findActive(playerId, scope) {
+      const r = latest(playerId, scope);
+      return r && r.revokedAt == null ? { ...r } : null;
+    },
+    async findLatest(playerId, scope) {
+      const r = latest(playerId, scope);
+      return r ? { ...r } : null;
+    },
+    async grant(playerId, scope, now) {
+      seq += 1;
+      const row = { id: `consent-${seq}`, playerId, scope, grantedAt: now, revokedAt: null };
+      rows.push(row);
+      return { ...row };
+    },
+    async revoke(playerId, scope, now) {
+      const r = latest(playerId, scope);
+      if (!r || r.revokedAt) return false;
+      r.revokedAt = now;
+      return true;
+    },
+  };
+}
+
+export function createFakeFitnessStatusRepository() {
+  const rows = [];
+  return {
+    rows,
+    async findCurrent(playerId) {
+      return rows.filter((r) => r.playerId === playerId).at(-1) ?? null;
+    },
+    async record(record) {
+      const row = { ...record, createdAt: new Date('2026-09-20T12:00:00Z') };
+      rows.push(row);
+      return row;
+    },
+  };
+}
+
+export function createFakeAuditLog({ fail = false } = {}) {
+  const reads = [];
+  return {
+    reads,
+    async recordNoteReads(read) {
+      if (fail) throw new Error('audit unavailable');
+      reads.push(read);
+    },
+  };
 }

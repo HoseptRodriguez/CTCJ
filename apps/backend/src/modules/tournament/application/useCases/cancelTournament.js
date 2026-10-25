@@ -1,4 +1,5 @@
 import { TournamentNotFound } from '../errors/TournamentNotFound.js';
+import { tournamentCancelled } from '../events/tournamentEvents.js';
 
 /**
  * @param {{
@@ -16,6 +17,9 @@ export function createCancelTournament({ tournamentRepository, clock }) {
 
     tournament.cancel({ now: clock.now() }); // throws InvalidTournamentState
 
-    return tournamentRepository.update(tournament);
+    const participants = await tournamentRepository.listParticipants(tournament.id);
+    return tournamentRepository.update(tournament, {
+      events: participants.length ? [tournamentCancelled(tournament, participants)] : [],
+    });
   };
 }

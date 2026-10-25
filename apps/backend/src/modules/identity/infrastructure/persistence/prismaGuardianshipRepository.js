@@ -38,6 +38,14 @@ export function createPrismaGuardianshipRepository(prisma) {
       return record ? toRow(record) : null;
     },
 
+    async existsApprovedAsMinor(minorUserId) {
+      const record = await prisma.guardianship.findFirst({
+        where: { minorUserId, status: 'APPROVED' },
+        select: { id: true },
+      });
+      return record != null;
+    },
+
     async existsApprovedBookable(guardianUserId, minorUserId) {
       const record = await prisma.guardianship.findFirst({
         where: { guardianUserId, minorUserId, status: 'APPROVED', canBook: true },
@@ -49,6 +57,14 @@ export function createPrismaGuardianshipRepository(prisma) {
     async listByGuardian(guardianUserId) {
       const records = await prisma.guardianship.findMany({
         where: { guardianUserId },
+        orderBy: { requestedAt: 'desc' },
+      });
+      return records.map(toRow);
+    },
+
+    async listByMinor(minorUserId) {
+      const records = await prisma.guardianship.findMany({
+        where: { minorUserId },
         orderBy: { requestedAt: 'desc' },
       });
       return records.map(toRow);

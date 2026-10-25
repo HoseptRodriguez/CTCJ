@@ -23,7 +23,9 @@ function cloneReservation(reservation) {
 
 export function createFakeCourtRepository(courts = []) {
   const byId = new Map(courts.map((c) => [c.id, c]));
+  const history = []; // newest last
   return {
+    history,
     async listActive(_clubId) {
       return Array.from(byId.values()).filter((c) => c.isActive !== false);
     },
@@ -31,12 +33,26 @@ export function createFakeCourtRepository(courts = []) {
       const court = byId.get(courtId);
       return court && court.isActive !== false ? court : null;
     },
-    async setPrice(_clubId, courtId, priceCop) {
+    async setPrice(_clubId, courtId, priceCop, changedBy) {
       const court = byId.get(courtId);
       if (!court || court.isActive === false) return null;
       const updated = { ...court, priceCop: BigInt(priceCop) };
       byId.set(courtId, updated);
-      return updated;
+      history.push({
+        id: `h${history.length + 1}`,
+        courtId,
+        previousPriceCop: court.priceCop ?? null,
+        newPriceCop: BigInt(priceCop),
+        changedBy,
+        changedAt: new Date(Date.UTC(2026, 2, 1 + history.length)),
+      });
+      return { court: updated, previousPriceCop: court.priceCop ?? null };
+    },
+    async listPriceHistory(courtId) {
+      return history
+        .filter((h) => h.courtId === courtId)
+        .map(({ courtId: _c, ...row }) => row)
+        .reverse();
     },
   };
 }
@@ -49,6 +65,12 @@ export function createFakeCourtRepository(courts = []) {
  */
 export function createFakeReservationRepository(byId = new Map()) {
   return {
+    async countUpcomingByCourt(courtId, from) {
+      return Array.from(byId.values()).filter(
+        (r) =>
+          r.courtId === courtId && OCCUPYING_STATUSES.includes(r.status) && r.periodStart > from,
+      ).length;
+    },
     async createHold(reservation) {
       const conflict = Array.from(byId.values()).some(
         (existing) =>
@@ -93,6 +115,38 @@ export function createFakeReservationRepository(byId = new Map()) {
         )
         .map(cloneReservation);
     },
+    async listOccupyingByParticipantAndDateRange(userId, from, to) {
+      return Array.from(byId.values())
+        .filter(
+          (r) =>
+            (r.holderUserId === userId || r.createdBy === userId) &&
+            OCCUPYING_STATUSES.includes(r.status) &&
+            r.periodStart >= from &&
+            r.periodStart < to,
+        )
+        .sort((a, b) => a.periodStart - b.periodStart)
+        .map(cloneReservation);
+    },
+    // Same guard as the database: the new period can't overlap another
+    // HOLD/CONFIRMED reservation of the same court.
+    async resizeHold({ id, periodEnd, priceCop }) {
+      const reservation = byId.get(id);
+      if (!reservation || reservation.status !== 'HOLD') return null;
+      const clash = Array.from(byId.values()).some(
+        (other) =>
+          other.id !== id &&
+          other.courtId === reservation.courtId &&
+          OCCUPYING_STATUSES.includes(other.status) &&
+          periodsOverlap(other.periodStart, other.periodEnd, reservation.periodStart, periodEnd),
+      );
+      if (clash) {
+        throw new SlotNotAvailable();
+      }
+      reservation.periodEnd = periodEnd;
+      reservation.priceCop = priceCop;
+      return reservation;
+    },
+
     async transitionStatus({ id, fromStatuses, toStatus, extra = {} }) {
       const reservation = byId.get(id);
       if (!reservation || !fromStatuses.includes(reservation.status)) {
@@ -164,14 +218,32 @@ export function createFakeMembershipStatusProvider(statusByUserId = {}) {
   };
 }
 
-export function createFakeBookingPolicySettings(enabled = false) {
+export function createFakeBookingPolicySettings(
+  enabled = false,
+  holdMinutes = 15,
+  secondHourEnabled = true,
+) {
   let current = enabled;
+  let minutes = holdMinutes;
+  let secondHour = secondHourEnabled;
   return {
+    async isSecondHourEnabled() {
+      return secondHour;
+    },
+    async setSecondHourEnabled(next) {
+      secondHour = next;
+    },
     async isOverdueBookingBlockEnabled() {
       return current;
     },
     async setOverdueBookingBlockEnabled(next) {
       current = next;
+    },
+    async getHoldDurationMinutes() {
+      return minutes;
+    },
+    async setHoldDurationMinutes(next) {
+      minutes = next;
     },
   };
 }

@@ -9,6 +9,7 @@ import {
   createFakeClock,
   createFakeMedicalHistoryRepository,
   createFakePlayerEligibilityProvider,
+  createFakeHealthAuthorizationProvider,
   createFakePractitionerEligibilityProvider,
 } from './fakes.js';
 
@@ -21,6 +22,7 @@ describe('createMedicalHistoryEntry', () => {
     createMedicalHistoryEntry = createCreateMedicalHistoryEntry({
       medicalHistoryRepository,
       playerEligibilityProvider: createFakePlayerEligibilityProvider(new Set(['player-1'])),
+      healthAuthorizationProvider: createFakeHealthAuthorizationProvider(new Set(['player-1'])),
       practitionerEligibilityProvider: createFakePractitionerEligibilityProvider(
         new Map([
           ['physio-1', 'PHYSIOTHERAPY'],

@@ -47,6 +47,36 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const addSecondHour = asyncHandler(async (req, res) => {
+    const result = await container.addSecondHour({
+      reservationId: req.params.id,
+      userId: req.user.id,
+      isStaff: isStaff(req.user.roles),
+    });
+    res.status(200).json(result);
+  });
+
+  const removeSecondHour = asyncHandler(async (req, res) => {
+    const result = await container.removeSecondHour({
+      reservationId: req.params.id,
+      userId: req.user.id,
+      isStaff: isStaff(req.user.roles),
+    });
+    res.status(200).json(result);
+  });
+
+  const getSecondHourPolicy = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getSecondHourPolicy());
+  });
+
+  const setSecondHourPolicy = asyncHandler(async (req, res) => {
+    const result = await container.setSecondHourPolicy({
+      enabled: req.body.enabled,
+      updatedByUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
   const cancel = asyncHandler(async (req, res) => {
     const result = await container.cancelReservation({
       reservationId: req.params.id,
@@ -60,8 +90,14 @@ export function createBookingController(container) {
     const result = await container.setCourtPrice({
       courtId: req.params.id,
       priceCop: req.body.priceCop,
+      actorUserId: req.user.id,
+      actorRoles: req.user.roles ?? [],
     });
     res.status(200).json(result);
+  });
+
+  const getCourtPriceHistory = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getCourtPriceHistory({ courtId: req.params.id }));
   });
 
   const recordPayment = asyncHandler(async (req, res) => {
@@ -93,6 +129,16 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const getMyReservations = asyncHandler(async (req, res) => {
+    const result = await container.getMyReservations({ userId: req.user.id });
+    res.status(200).json(result);
+  });
+
+  // Staff: a player's reservations, for their file in the directory.
+  const getPlayerReservations = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getMyReservations({ userId: req.params.id }));
+  });
+
   const getOverduePolicy = asyncHandler(async (req, res) => {
     const result = await container.getOverdueBookingPolicy();
     res.status(200).json(result);
@@ -106,18 +152,39 @@ export function createBookingController(container) {
     res.status(200).json(result);
   });
 
+  const getHoldDuration = asyncHandler(async (req, res) => {
+    res.status(200).json(await container.getHoldDurationPolicy());
+  });
+
+  const setHoldDuration = asyncHandler(async (req, res) => {
+    const result = await container.setHoldDurationPolicy({
+      minutes: req.body.minutes,
+      updatedByUserId: req.user.id,
+    });
+    res.status(200).json(result);
+  });
+
   return {
     listCourts,
     getSchedule,
     hold,
     confirm,
     cancel,
+    addSecondHour,
+    removeSecondHour,
+    getSecondHourPolicy,
+    setSecondHourPolicy,
     setCourtPrice,
+    getCourtPriceHistory,
     recordPayment,
     listPayments,
     getMonthlyRevenue,
     getMyTrainingFrequency,
+    getMyReservations,
+    getPlayerReservations,
     getOverduePolicy,
     setOverduePolicy,
+    getHoldDuration,
+    setHoldDuration,
   };
 }

@@ -10,11 +10,16 @@ import { PractitionerNotEligible } from '../errors/PractitionerNotEligible.js';
  * @param {{
  *   noteRepository: import('../ports/NoteRepository.js').NoteRepository,
  *   practitionerEligibilityProvider: import('../ports/PractitionerEligibilityProvider.js').PractitionerEligibilityProvider,
+ *   auditLog: import('../ports/ClinicalAuditLog.js').ClinicalAuditLog,
  * }} deps
  */
-export function createListPlayerNotes({ noteRepository, practitionerEligibilityProvider }) {
-  /** @param {{ playerId: string, practitionerUserId: string }} input */
-  return async function listPlayerNotes({ playerId, practitionerUserId }) {
+export function createListPlayerNotes({
+  noteRepository,
+  practitionerEligibilityProvider,
+  auditLog,
+}) {
+  /** @param {{ playerId: string, practitionerUserId: string, actorRoles?: string[] }} input */
+  return async function listPlayerNotes({ playerId, practitionerUserId, actorRoles = [] }) {
     const { eligible, discipline } =
       await practitionerEligibilityProvider.getPractitionerEligibility(practitionerUserId);
     if (!eligible) {
@@ -22,6 +27,14 @@ export function createListPlayerNotes({ noteRepository, practitionerEligibilityP
     }
 
     const notes = await noteRepository.listByPlayer(playerId, { discipline });
+    // Every staff read of clinical notes is audited, before serving them.
+    await auditLog.recordNoteReads({
+      actorUserId: practitionerUserId,
+      actorRoles,
+      playerId,
+      noteIds: notes.map((n) => n.id),
+      via: 'PRACTITIONER',
+    });
     return { notes };
   };
 }

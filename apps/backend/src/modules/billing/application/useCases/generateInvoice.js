@@ -43,8 +43,10 @@ export function createGenerateInvoice({
       throw new InvoiceAlreadyExists();
     }
 
+    // The price in effect when the period starts: a price scheduled for a
+    // later day never reaches an earlier period's invoice.
     const plan = await planRepository.findById(membership.planId);
-    const currentPrice = plan ? await planRepository.findCurrentPrice(plan.id) : null;
+    const currentPrice = plan ? await planRepository.findPriceAt(plan.id, periodStart) : null;
     if (!currentPrice) {
       throw new PlanPriceNotSet();
     }

@@ -21,6 +21,13 @@ export function resolveClubDayRangeUtc(dateStr) {
   return { dayStart, dayEnd };
 }
 
+/** The club-local calendar day ("YYYY-MM-DD") containing the UTC instant `now`. */
+export function getClubLocalDateKey(now) {
+  return new Date(now.getTime() - CLUB_UTC_OFFSET_HOURS * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
 /** @returns {{ year: number, month: number }} the club-local calendar year/month (1-12) containing the UTC instant `now`. */
 export function getClubLocalYearMonth(now) {
   const clubLocal = new Date(now.getTime() - CLUB_UTC_OFFSET_HOURS * 60 * 60 * 1000);

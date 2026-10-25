@@ -70,4 +70,43 @@ export class UserRepository {
   async searchPlayersByName(_clubId, _query, _limit) {
     throw new Error('Not implemented');
   }
+
+  /**
+   * Account deletion (Ley 1581 de 2012, supresión): replaces every personal
+   * field with neutral values, deactivates the account and sets deletedAt.
+   * The row stays so what the law requires to keep (invoices, clinical
+   * records, consents) still points to it.
+   * @returns {Promise<void>}
+   */
+  async anonymize(_userId, _now) {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<number>} accounts marked as demonstration data (isDemo) */
+  async countDemo() {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Every account of the club for the staff directory, with its active role
+   * codes and the guardians of an approved guardianship where it's the minor.
+   * @returns {Promise<Array<{ id: string, firstName: string, lastName: string, email: string,
+   *   phone: string|null, birthDate: Date|null, avatarUrl: string|null, status: string,
+   *   membershipStatus: string|null, dominantHand: string|null, backhand: string|null,
+   *   lastLoginAt: Date|null, emailVerifiedAt: Date|null, createdAt: Date, deletedAt: Date|null,
+   *   roleCodes: string[], approvedGuardianIds: string[] }>>}
+   */
+  async listForDirectory(_clubId) {
+    throw new Error('Not implemented');
+  }
+
+  /** Ends an active role grant (the row stays, with who and when). */
+  async revokeRoleGrant(_userId, _roleCode, _revokedByUserId) {
+    throw new Error('Not implemented');
+  }
+
+  /** @returns {Promise<number>} registered accounts, excluding deleted (anonymized) ones */
+  async countUsers(_clubId) {
+    throw new Error('Not implemented');
+  }
 }

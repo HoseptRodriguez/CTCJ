@@ -1,188 +1,179 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { bookingClient } from '../../api/bookingClient.js';
 import { coachingClient } from '../../api/coachingClient.js';
 import { membershipClient } from '../../api/membershipClient.js';
+import { ToastProvider } from '../../components/ui/Toast.jsx';
 
 import { CoachNotesPage } from './CoachNotesPage.jsx';
 
 vi.mock('../../api/membershipClient.js', () => ({
-  membershipClient: { lookupUser: vi.fn() },
+  membershipClient: { lookupUser: vi.fn(), searchPlayers: vi.fn() },
 }));
-
+vi.mock('../../api/bookingClient.js', () => ({ bookingClient: { getSchedule: vi.fn() } }));
 vi.mock('../../api/coachingClient.js', () => ({
   coachingClient: {
     createNote: vi.fn(),
     listPlayerNotes: vi.fn(),
-    getMyNotes: vi.fn(),
     recordPerformanceSnapshot: vi.fn(),
     listPlayerPerformance: vi.fn(),
-    getMyPerformance: vi.fn(),
   },
 }));
 
 const PLAYER = {
   id: 'user-1',
-  email: 'jugador@example.com',
+  email: 'ana@example.com',
   firstName: 'Ana',
-  lastName: 'Gomez',
+  lastName: 'Gómez',
   roleCodes: ['USUARIO', 'JUGADOR'],
 };
 
-const NOT_A_PLAYER = { ...PLAYER, id: 'user-2', roleCodes: ['USUARIO'] };
-
-async function searchFor(user, email) {
-  await user.type(screen.getByLabelText('Correo del jugador'), email);
-  await user.click(screen.getByRole('button', { name: 'Buscar' }));
+function renderPage(path = '/staff/notas') {
+  return render(
+    <ToastProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <CoachNotesPage />
+      </MemoryRouter>
+    </ToastProvider>,
+  );
 }
 
-describe('CoachNotesPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    coachingClient.listPlayerNotes.mockResolvedValue({ notes: [] });
-    coachingClient.listPlayerPerformance.mockResolvedValue({
-      ratings: [],
-      summary: { ratedAreas: [], latestByArea: {}, progressByArea: {} },
-    });
-  });
+const withPlayer = '/staff/notas?jugador=user-1&nombre=Ana%20G%C3%B3mez';
 
-  it('shows the note form and list only for a JUGADOR target', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+beforeEach(() => {
+  vi.clearAllMocks();
+  bookingClient.getSchedule.mockResolvedValue({ courts: [], reservations: [] });
+  coachingClient.listPlayerNotes.mockResolvedValue({ notes: [] });
+  coachingClient.listPlayerPerformance.mockResolvedValue({ ratings: [], summary: {} });
+  membershipClient.searchPlayers.mockResolvedValue({ players: [PLAYER] });
+  membershipClient.lookupUser.mockResolvedValue(PLAYER);
+});
 
+describe('CoachNotesPage (Notas y rendimiento)', () => {
+  it('asks to choose a player, then finds one by name and opens the blue card', async () => {
     const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
+    renderPage();
+    expect(screen.getByText('Elige un jugador')).toBeInTheDocument();
 
-    expect(await screen.findByText('Ana Gomez')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Agregar nota' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Nombre o correo del jugador'), 'Ana');
+    await user.click(await screen.findByRole('button', { name: 'Ana Gómez' }, { timeout: 2000 }));
+
+    expect(await screen.findByRole('heading', { level: 2, name: 'Ana Gómez' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Notas' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Rendimiento' })).toBeInTheDocument();
   });
 
-  it('does not show the note form for a non-JUGADOR target', async () => {
-    membershipClient.lookupUser.mockResolvedValue(NOT_A_PLAYER);
-
+  it('an e-mail that is not a player says so', async () => {
+    membershipClient.lookupUser.mockResolvedValue({ ...PLAYER, roleCodes: ['USUARIO'] });
     const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, NOT_A_PLAYER.email);
-
-    expect(await screen.findByText('Este usuario no tiene el rol Jugador.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Agregar nota' })).not.toBeInTheDocument();
+    renderPage();
+    await user.type(screen.getByLabelText('Nombre o correo del jugador'), 'otro@example.com');
+    expect(
+      await screen.findByText('Esa cuenta no es de un jugador.', {}, { timeout: 2000 }),
+    ).toBeInTheDocument();
   });
 
-  it('creates a note and refreshes the list', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    coachingClient.createNote.mockResolvedValue({ id: 'note-1' });
-
-    const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-    await waitFor(() => expect(coachingClient.listPlayerNotes).toHaveBeenCalledWith('user-1'));
-
-    await user.selectOptions(screen.getByLabelText('Tipo'), 'TECHNICAL');
-    await user.selectOptions(screen.getByLabelText('Visibilidad'), 'PLAYER_VISIBLE');
-    await user.type(screen.getByLabelText('Nota'), 'Buen revés hoy.');
-    await user.click(screen.getByRole('button', { name: 'Agregar nota' }));
-
-    await waitFor(() =>
-      expect(coachingClient.createNote).toHaveBeenCalledWith('user-1', {
-        noteType: 'TECHNICAL',
-        visibility: 'PLAYER_VISIBLE',
-        content: 'Buen revés hoy.',
-      }),
-    );
-    await waitFor(() => expect(coachingClient.listPlayerNotes).toHaveBeenCalledTimes(2));
-  });
-
-  it('tags a note with a skill area when one is selected', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    coachingClient.createNote.mockResolvedValue({ id: 'note-1' });
-
-    const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-    await waitFor(() => expect(coachingClient.listPlayerNotes).toHaveBeenCalledWith('user-1'));
-
-    await user.selectOptions(screen.getByLabelText('Habilidad (opcional)'), 'SERVE');
-    await user.type(screen.getByLabelText('Nota'), 'Sube más el toss.');
-    await user.click(screen.getByRole('button', { name: 'Agregar nota' }));
-
-    await waitFor(() =>
-      expect(coachingClient.createNote).toHaveBeenCalledWith(
-        'user-1',
-        expect.objectContaining({ area: 'SERVE' }),
-      ),
-    );
-  });
-
-  it('lists existing notes with type/visibility/content', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+  it('opens the player from the link (?jugador=) and lists notes with who can see them', async () => {
     coachingClient.listPlayerNotes.mockResolvedValue({
       notes: [
         {
-          id: 'note-1',
-          noteType: 'TACTICAL',
+          id: 'n1',
+          noteType: 'TECHNICAL',
           visibility: 'PRIVATE',
-          content: 'Necesita trabajar el saque.',
-          createdAt: '2026-03-01T00:00:00.000Z',
+          content: 'Codo alto en el saque.',
+          area: 'SERVE',
+          createdAt: '2026-09-01T12:00:00Z',
         },
       ],
     });
-
-    const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-
-    expect(await screen.findByText('Necesita trabajar el saque.')).toBeInTheDocument();
-    // Type + visibility render as one self-contained text node ("Táctica · Privada"),
-    // distinct from the same words appearing separately as <option>s in the form below.
-    expect(screen.getByText(/Táctica\s*·\s*Privada/)).toBeInTheDocument();
+    renderPage(withPlayer);
+    expect(await screen.findByText('Codo alto en el saque.')).toBeInTheDocument();
+    const list = screen.getByText('Codo alto en el saque.').closest('li');
+    expect(within(list).getByText('Técnica')).toBeInTheDocument();
+    expect(within(list).getByText('Solo entrenadores')).toBeInTheDocument();
+    expect(within(list).getByText('Saque')).toBeInTheDocument();
   });
 
-  it('switches to the Rendimiento tab and shows the empty state with no ratings yet', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-
+  it('new note: 4 type buttons, visibility choice, the no-edit warning, and saves', async () => {
+    const saved = {
+      id: 'n2',
+      noteType: 'TACTICAL',
+      visibility: 'PLAYER_VISIBLE',
+      content: 'Sube más a la red.',
+      createdAt: '2026-09-25T12:00:00Z',
+    };
+    coachingClient.createNote.mockResolvedValue(saved);
     const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-    await screen.findByRole('button', { name: 'Agregar nota' });
+    renderPage(withPlayer);
 
-    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
+    const types = await screen.findByRole('group', { name: 'Tipo de nota' });
+    expect(within(types).getAllByRole('radio')).toHaveLength(4);
+    expect(
+      screen.getByText('Las notas no se pueden editar después de guardarlas.'),
+    ).toBeInTheDocument();
 
-    expect(await screen.findByText('Sin evaluaciones registradas todavía.')).toBeInTheDocument();
-    expect(coachingClient.listPlayerPerformance).toHaveBeenCalledWith('user-1');
+    await user.click(within(types).getByRole('radio', { name: 'Táctica' }));
+    await user.type(screen.getByLabelText('Nota'), 'Sube más a la red.');
+    // Must choose who sees it.
+    await user.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Elige quién puede ver la nota.');
+    expect(coachingClient.createNote).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('radio', { name: /La ve el jugador/ }));
+    await user.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    expect(coachingClient.createNote).toHaveBeenCalledWith('user-1', {
+      noteType: 'TACTICAL',
+      visibility: 'PLAYER_VISIBLE',
+      content: 'Sube más a la red.',
+      area: undefined,
+    });
+    expect(await screen.findByText('Sube más a la red.', { selector: 'p' })).toBeInTheDocument();
   });
 
-  it('records a partial performance snapshot with only the filled-in areas', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
-    coachingClient.recordPerformanceSnapshot.mockResolvedValue({ ratings: [] });
-
+  it('Rendimiento: 10 skills × 10 numbered buttons; saves only what was rated', async () => {
+    coachingClient.recordPerformanceSnapshot.mockResolvedValue({});
     const user = userEvent.setup();
-    render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
-    await screen.findByText('Sin evaluaciones registradas todavía.');
+    renderPage(withPlayer);
+    await user.click(await screen.findByRole('tab', { name: 'Rendimiento' }));
 
-    await user.type(screen.getByLabelText('Saque'), '7');
-    await user.click(screen.getByRole('button', { name: 'Registrar evaluación' }));
+    const groups = await screen.findAllByRole('radiogroup');
+    expect(groups).toHaveLength(10);
+    for (const g of groups) expect(within(g).getAllByRole('radio')).toHaveLength(10);
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: 'Saque' })).getByRole('radio', {
+        name: '7 de 10',
+      }),
+    );
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: 'Devolución' })).getByRole('radio', {
+        name: '5 de 10',
+      }),
+    );
+    expect(screen.getByText('2 de 10 calificadas')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Guardar calificación' }));
 
     await waitFor(() =>
-      expect(coachingClient.recordPerformanceSnapshot).toHaveBeenCalledWith('user-1', { SERVE: 7 }),
+      expect(coachingClient.recordPerformanceSnapshot).toHaveBeenCalledWith('user-1', {
+        SERVE: 7,
+        RETURN: 5,
+      }),
     );
   });
 
-  it('renders charts when performance ratings exist', async () => {
-    membershipClient.lookupUser.mockResolvedValue(PLAYER);
+  it('Rendimiento: shows the last rating of each skill and the radar when there is history', async () => {
     coachingClient.listPlayerPerformance.mockResolvedValue({
-      ratings: [{ id: 'r1', area: 'SERVE', rating: 7, recordedAt: '2026-03-01T00:00:00.000Z' }],
-      summary: { ratedAreas: ['SERVE'], latestByArea: { SERVE: 7 }, progressByArea: {} },
+      ratings: [{ area: 'FOREHAND', rating: 8, recordedAt: '2026-09-20T12:00:00Z' }],
+      summary: {},
     });
-
     const user = userEvent.setup();
-    const { container } = render(<CoachNotesPage />);
-    await searchFor(user, PLAYER.email);
-    await user.click(screen.getByRole('tab', { name: 'Rendimiento' }));
-
-    await waitFor(() => expect(coachingClient.listPlayerPerformance).toHaveBeenCalled());
-    await waitFor(() => expect(container.querySelectorAll('svg').length).toBeGreaterThan(0));
+    renderPage(withPlayer);
+    await user.click(await screen.findByRole('tab', { name: 'Rendimiento' }));
+    expect(await screen.findByText('Última: 8')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cómo va' })).toBeInTheDocument();
   });
 });
